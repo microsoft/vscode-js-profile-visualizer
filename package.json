@@ -1,0 +1,90 @@
+{
+  "name": "vscode-js-profile-visualizer",
+  "displayName": "vscode-js-profile-visualizer",
+  "description": "Visualizer for profiles taken from the JavaScript debugger",
+  "version": "0.0.1",
+  "publisher": "ms-vscode",
+  "enableProposedApi": true,
+  "sideEffects": false,
+  "engines": {
+    "vscode": "^1.43.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCustomEditor:jsProfileVisualizer.cpuprofile"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Microsoft/vscode-js-profile-visualizer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Microsoft/vscode-js-profile-visualizer/issues"
+  },
+  "main": "./out/extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "jsProfileVisualizer.cpuprofile",
+        "displayName": "CPU Profile Visualuzer",
+        "priority": "default",
+        "selector": [
+          {
+            "filenamePattern": "*.cpuprofile"
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "rimraf out && concurrently \"npm:compile:*\"",
+    "compile:extension": "tsc -p ./",
+    "compile:cpu": "cross-env TARGET=cpu webpack --mode production",
+    "watch": "rimraf out && concurrently \"npm:watch:*\"",
+    "watch:extension": "tsc -watch -p ./",
+    "watch:cpu": "cross-env TARGET=cpu webpack --mode development --watch",
+    "fmt": "prettier --write \"src/**/*.{ts,tsx,css}\"&& npm run test:lint -- --fix",
+    "test": "nnpm run test:lint && npm run test:fmt",
+    "test:fmt": "prettier --list-different \"src/**/*.{ts,tsx,css}\"",
+    "test:lint": "eslint  \"src/**/*.{ts,tsx}\"",
+    "test:unit": "node ./out/test/runTest.js",
+    "pretest": "npm run compile && npm run lint"
+  },
+  "prettier": {
+    "trailingComma": "all",
+    "singleQuote": true,
+    "printWidth": 100,
+    "tabWidth": 2
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.1",
+    "@types/mocha": "^7.0.1",
+    "@types/node": "^12.11.7",
+    "@typescript-eslint/eslint-plugin": "^2.18.0",
+    "@typescript-eslint/parser": "^2.18.0",
+    "autoprefixer": "^9.7.4",
+    "concurrently": "^5.1.0",
+    "cross-env": "^7.0.2",
+    "css-loader": "^3.4.2",
+    "devtools-protocol": "0.0.748504",
+    "eslint": "^6.8.0",
+    "eslint-plugin-header": "^3.0.0",
+    "eslint-plugin-react": "^7.19.0",
+    "glob": "^7.1.6",
+    "mocha": "^7.0.1",
+    "postcss-loader": "^3.0.0",
+    "preact": "^10.3.4",
+    "prettier": "^1.19.1",
+    "style-loader": "^1.1.3",
+    "svg-inline-loader": "^0.8.2",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.7.5",
+    "vscode-codicons": "github:microsoft/vscode-codicons",
+    "vscode-debugprotocol": "^1.39.0",
+    "vscode-test": "^1.3.0",
+    "webpack": "^4.42.0",
+    "webpack-cli": "^3.3.11"
+  }
+}

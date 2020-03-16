@@ -1,0 +1,44 @@
+.rows {
+  display: grid;
+  grid-template-columns: 100px 110px 1fr;
+  font-family: var(--vscode-editor-font-family);
+}
+
+.rows > div {
+  padding: 2px 4px;
+}
+
+.heading.timing {
+  text-align: right;
+  cursor: pointer;
+}
+
+.heading svg {
+  display: inline-block;
+  height: 1em;
+  margin-right: 0.25em;
+}
+
+.duration {
+  color: var(--vscode-terminal-ansiYellow);
+  text-align: right;
+}
+
+.file {
+  color: var(--vscode-terminal-foreground);
+  white-space: nowrap;
+}
+
+.file.virtual {
+  opacity: 0.5;
+}
+
+.file a {
+  color: var(--vscode-terminal-foreground);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.file a:hover {
+  text-decoration: none;
+}
