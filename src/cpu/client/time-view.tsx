@@ -11,8 +11,12 @@ import { classes } from '../../common/client/util';
 import { IOpenDocumentMessage } from '../types';
 import * as ChevronDown from 'vscode-codicons/src/icons/chevron-down.svg';
 import { Icon } from '../../common/client/icons';
+import VirtualList from 'preact-virtual-list';
 
-const numberFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
+const decimalFormat = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+});
 
 type SortFn = (node: ILocation) => number;
 
@@ -38,13 +42,19 @@ export const TimeView: FunctionComponent<{
     [model, filterFn, sortFn],
   );
 
+  const renderRow = useCallback((row: ILocation) => <TimeViewRow {...row} />, []);
+
   return (
-    <div className={styles.rows}>
+    <Fragment>
       <TimeViewHeader sortFn={sortFn} onChangeSort={setSort} />
-      {sorted.map((location, i) => (
-        <TimeViewRow {...location} key={i} />
-      ))}
-    </div>
+      <VirtualList
+        className={styles.rows}
+        data={sorted}
+        renderRow={renderRow}
+        rowHeight={20}
+        overscanCount={10}
+      />
+    </Fragment>
   );
 };
 
@@ -52,7 +62,7 @@ const TimeViewHeader: FunctionComponent<{
   sortFn: SortFn;
   onChangeSort: (newFn: () => SortFn) => void;
 }> = ({ sortFn, onChangeSort }) => (
-  <Fragment>
+  <div className={styles.row}>
     <div
       className={classes(styles.heading, styles.timing)}
       aria-sort={sortFn === selfTime ? 'descending' : undefined}
@@ -70,7 +80,7 @@ const TimeViewHeader: FunctionComponent<{
       Total Time
     </div>
     <div className={styles.heading}>File</div>
-  </Fragment>
+  </div>
 );
 
 const TimeViewRow: FunctionComponent<ILocation & { children?: ILocation[] }> = ({
@@ -111,9 +121,9 @@ const TimeViewRow: FunctionComponent<ILocation & { children?: ILocation[] }> = (
   const func = callFrame.functionName || '(anonymous)';
 
   return (
-    <Fragment>
-      <div className={styles.duration}>{numberFormat.format(selfTime / 1000)}ms</div>
-      <div className={styles.duration}>{numberFormat.format(aggregateTime / 1000)}ms</div>
+    <div className={styles.row}>
+      <div className={styles.duration}>{decimalFormat.format(selfTime / 1000)}ms</div>
+      <div className={styles.duration}>{decimalFormat.format(aggregateTime / 1000)}ms</div>
       {!location ? (
         <div className={classes(styles.file, styles.virtual)}>{func}</div>
       ) : !src ? (
@@ -125,6 +135,6 @@ const TimeViewRow: FunctionComponent<ILocation & { children?: ILocation[] }> = (
           {func} @ <a onClick={onClick}>{location}</a>
         </div>
       )}
-    </Fragment>
+    </div>
   );
 };

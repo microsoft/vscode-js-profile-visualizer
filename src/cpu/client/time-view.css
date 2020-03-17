@@ -1,15 +1,24 @@
 .rows {
-  display: grid;
-  grid-template-columns: 100px 110px 1fr;
   font-family: var(--vscode-editor-font-family);
+  flex-grow: 1;
+  overflow: auto;
 }
 
-.rows > div {
+.row {
+  display: flex;
+}
+
+.row > div {
   padding: 2px 4px;
 }
 
+.duration,
 .heading.timing {
   text-align: right;
+  width: 110px;
+}
+
+.heading.timing {
   cursor: pointer;
 }
 
@@ -21,7 +30,7 @@
 
 .duration {
   color: var(--vscode-terminal-ansiYellow);
-  text-align: right;
+  flex-shrink: 0;
 }
 
 .file {

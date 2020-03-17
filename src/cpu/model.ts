@@ -3,8 +3,8 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
-import { ICpuProfileRaw, ISourceLocation } from './types';
-import { properRelative } from '../common/pathUtils';
+import { ICpuProfileRaw, ISourceLocation, IAnnotationLocation } from './types';
+import { properRelative, maybeFileUrlToPath } from '../common/pathUtils';
 
 /**
  * One measured node in the call stack. Contains the time it spent in itself,
@@ -24,6 +24,7 @@ export interface IComputedNode {
 export interface ILocation {
   selfTime: number;
   aggregateTime: number;
+  ticks: number;
   callFrame: Cdp.Runtime.CallFrame;
   src?: ISourceLocation & { relativePath?: string };
 }
@@ -76,6 +77,77 @@ const getBestLocation = (profile: ICpuProfileRaw, candidates?: ReadonlyArray<ISo
 };
 
 /**
+ * Ensures that all profile nodes have a location ID, setting them if they
+ * aren't provided by default.
+ */
+const ensureSourceLocations = (profile: ICpuProfileRaw): ReadonlyArray<IAnnotationLocation> => {
+  if (profile.$vscode) {
+    return profile.$vscode.locations; // profiles we generate are already good
+  }
+
+  let locationIdCounter = 0;
+  const locationsByRef = new Map<
+    string,
+    { id: number; callFrame: Cdp.Runtime.CallFrame; location: ISourceLocation }
+  >();
+
+  const getLocationIdFor = (callFrame: Cdp.Runtime.CallFrame) => {
+    const ref = [
+      callFrame.functionName,
+      callFrame.url,
+      callFrame.scriptId,
+      callFrame.lineNumber,
+      callFrame.columnNumber,
+    ].join(':');
+
+    const existing = locationsByRef.get(ref);
+    if (existing) {
+      return existing.id;
+    }
+    const id = locationIdCounter++;
+    locationsByRef.set(ref, {
+      id,
+      callFrame,
+      location: {
+        lineNumber: callFrame.lineNumber,
+        columnNumber: callFrame.columnNumber,
+        source: {
+          name: maybeFileUrlToPath(callFrame.url),
+          path: maybeFileUrlToPath(callFrame.url),
+          sourceReference: 0,
+        },
+      },
+    });
+
+    return id;
+  };
+
+  for (const node of profile.nodes) {
+    node.locationId = getLocationIdFor(node.callFrame);
+    node.positionTicks = node.positionTicks?.map(tick => ({
+      ...tick,
+      // weirdly, line numbers here are 1-based, not 0-based. The position tick
+      // only gives line-level granularity, so 'mark' the entire range of source
+      // code the tick refers to
+      startLocationId: getLocationIdFor({
+        ...node.callFrame,
+        lineNumber: tick.line - 1,
+        columnNumber: 0,
+      }),
+      endLocationId: getLocationIdFor({
+        ...node.callFrame,
+        lineNumber: tick.line,
+        columnNumber: 0,
+      }),
+    }));
+  }
+
+  return [...locationsByRef.values()]
+    .sort((a, b) => a.id - b.id)
+    .map(l => ({ locations: [l.location], callFrame: l.callFrame }));
+};
+
+/**
  * Computes the model for the given profile.
  */
 export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
@@ -88,44 +160,34 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
     };
   }
 
+  const sourceLocations = ensureSourceLocations(profile);
+  const locations: ILocation[] = sourceLocations.map(l => ({
+    selfTime: 0,
+    aggregateTime: 0,
+    ticks: 0,
+    callFrame: l.callFrame,
+    src: getBestLocation(profile, l.locations),
+  }));
+
   // 1. Created a sorted list of nodes. It seems that the profile always has
   // incrementing IDs, although they are just not initially sorted.
   const nodes = new Array<IComputedNode>(profile.nodes.length);
-  const locationsByRef = new Map<string, ILocation & { id: number }>();
-  let locationIdCounter = 0;
-
   for (let i = 0; i < profile.nodes.length; i++) {
     const node = profile.nodes[i];
-    const locationRef = [
-      node.callFrame.functionName,
-      node.callFrame.url,
-      node.callFrame.scriptId,
-      node.callFrame.lineNumber,
-      node.callFrame.columnNumber,
-    ].join(':');
-
-    let locationId: number;
-    if (locationsByRef.has(locationRef)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      locationId = locationsByRef.get(locationRef)!.id;
-    } else {
-      locationId = locationIdCounter++;
-      locationsByRef.set(locationRef, {
-        id: locationId,
-        selfTime: 0,
-        aggregateTime: 0,
-        callFrame: node.callFrame,
-        src: getBestLocation(profile, profile.$vscode?.locations?.[i] || undefined),
-      });
-    }
 
     // make them 0-based:
     nodes[node.id - 1] = {
       selfTime: 0,
       aggregateTime: 0,
-      locationId,
+      locationId: node.locationId as number,
       children: node.children?.map(n => n - 1) || [],
     };
+
+    for (const child of node.positionTicks || []) {
+      if (child.startLocationId) {
+        locations[child.startLocationId].ticks += child.ticks;
+      }
+    }
   }
 
   // 2. The profile samples are the 'bottom-most' node, the currently running
@@ -135,7 +197,6 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
   }
 
   // 3. Add the aggregate times for all node children and locations
-  const locations = [...locationsByRef.values()].sort((a, b) => a.id - b.id);
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     const location = locations[node.locationId];

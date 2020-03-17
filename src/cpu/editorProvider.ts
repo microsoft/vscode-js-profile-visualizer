@@ -9,6 +9,8 @@ import { promises as fs } from 'fs';
 import { properRelative } from '../common/pathUtils';
 import { resolve, join } from 'path';
 import { buildModel, IProfileModel } from './model';
+import { LensCollection } from '../lensCollection';
+import { ProfileCodeLensProvider } from '../profileCodeLensProvider';
 
 const exists = async (file: string) => {
   try {
@@ -19,7 +21,18 @@ const exists = async (file: string) => {
   }
 };
 
+const decimalFormat = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+});
+
+const integerFormat = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 0,
+});
+
 export class CpuProfileEditorProvider implements vscode.CustomEditorProvider {
+  constructor(private readonly lens: ProfileCodeLensProvider) {}
+
   /**
    * @inheritdoc
    */
@@ -27,6 +40,7 @@ export class CpuProfileEditorProvider implements vscode.CustomEditorProvider {
     const content = await vscode.workspace.fs.readFile(document.uri);
     const raw: ICpuProfileRaw = JSON.parse(content.toString());
     document.userData = buildModel(raw);
+    this.lens.registerLenses(this.createLensCollection(document));
   }
 
   /**
@@ -52,6 +66,44 @@ export class CpuProfileEditorProvider implements vscode.CustomEditorProvider {
     });
   }
 
+  private createLensCollection(document: vscode.CustomDocument<IProfileModel>) {
+    const lenses = new LensCollection<{ self: number; agg: number; ticks: number }>(dto => {
+      let title: string;
+      if (dto.self > 10 || dto.agg > 10) {
+        title =
+          `${decimalFormat.format(dto.self / 1000)}ms Self Time / ` +
+          `${decimalFormat.format(dto.agg / 1000)}ms Total`;
+      } else if (dto.ticks) {
+        title = `${integerFormat.format(dto.ticks)} Ticks`;
+      } else {
+        return;
+      }
+
+      return { command: '', title };
+    });
+
+    for (const location of document.userData?.locations || []) {
+      const src = location.src;
+      if (!src || src.source.sourceReference !== 0 || !src.source.path) {
+        continue;
+      }
+
+      for (const path of getPossibleSourcePaths(document, src.source.path)) {
+        lenses.set(
+          path,
+          new vscode.Position(src.lineNumber - 1, src.columnNumber - 1),
+          existing => ({
+            ticks: existing ? existing.ticks + location.ticks : location.ticks,
+            self: existing ? existing.self + location.selfTime : location.selfTime,
+            agg: existing ? existing.agg + location.aggregateTime : location.aggregateTime,
+          }),
+        );
+      }
+    }
+
+    return lenses;
+  }
+
   private async openDocument(
     document: vscode.CustomDocument<IProfileModel>,
     message: IOpenDocumentMessage,
@@ -69,21 +121,32 @@ export class CpuProfileEditorProvider implements vscode.CustomEditorProvider {
     document: vscode.CustomDocument<IProfileModel>,
     originalPath: string,
   ) {
-    if (await exists(originalPath)) {
-      return originalPath;
+    const candidates = getPossibleSourcePaths(document, originalPath);
+    for (const candidate of candidates) {
+      if (await exists(candidate)) {
+        return candidate;
+      }
     }
 
-    if (!document.userData?.rootPath) {
-      return originalPath;
-    }
-
-    const folder = vscode.workspace.getWorkspaceFolder(document.uri);
-    if (!folder) {
-      return originalPath;
-    }
-
-    // compute the relative path using the original platform's logic, and
-    // then resolve it using the current platform
-    return resolve(folder.uri.fsPath, properRelative(document.userData.rootPath, originalPath));
+    return candidates[0];
   }
 }
+
+const getPossibleSourcePaths = (
+  document: vscode.CustomDocument<IProfileModel>,
+  originalPath: string,
+) => {
+  const locations = [originalPath];
+  if (document.userData?.rootPath) {
+    const folder = vscode.workspace.getWorkspaceFolder(document.uri);
+    if (folder) {
+      // compute the relative path using the original platform's logic, and
+      // then resolve it using the current platform
+      locations.push(
+        resolve(folder.uri.fsPath, properRelative(document.userData.rootPath, originalPath)),
+      );
+    }
+  }
+
+  return locations;
+};
