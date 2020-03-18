@@ -8,6 +8,7 @@ import { TimeView } from './client/time-view';
 import styles from './client.css';
 import { IProfileModel } from './model';
 import { createBottomUpGraph } from './bottomUpGraph';
+import { FlameGraph } from './client/flame-graph';
 
 declare const MODEL: IProfileModel;
 
@@ -15,6 +16,7 @@ const bottomUp = createBottomUpGraph(MODEL);
 
 const App: FunctionComponent = () => {
   const [filter, setFilter] = useState<IRichFilter>({ text: '' });
+  const [flameGraph] = useState(true);
   const filterFn = useMemo(() => compileFilter(filter), [filter]);
 
   return (
@@ -23,7 +25,11 @@ const App: FunctionComponent = () => {
         <RichFilter value={filter} onChange={setFilter} placeholder="Filter functions or files" />
       </div>
       <div className={styles.rows}>
-        <TimeView model={MODEL} graph={bottomUp} filterFn={filterFn} />
+        {flameGraph ? (
+          <FlameGraph model={MODEL} filterFn={filterFn} />
+        ) : (
+          <TimeView graph={bottomUp} filterFn={filterFn} />
+        )}
       </div>
     </Fragment>
   );

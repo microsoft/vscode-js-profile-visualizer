@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { ILocation, IProfileModel, IComputedNode, IGraphNode } from './model';
+import { ILocation, IProfileModel, IComputedNode, IGraphNode, Category } from './model';
 
 class BottomUpNode implements IGraphNode {
   public children = new Map<number, BottomUpNode>();
@@ -20,6 +20,10 @@ class BottomUpNode implements IGraphNode {
 
   public get src() {
     return this.location.src;
+  }
+
+  public get category() {
+    return this.location.category;
   }
 
   constructor(public readonly location: ILocation, public readonly parent?: BottomUpNode) {}
@@ -56,6 +60,7 @@ export const createBottomUpGraph = (model: IProfileModel) => {
 
   const root = new BottomUpNode({
     id: -1,
+    category: Category.System,
     selfTime: 0,
     aggregateTime: 0,
     ticks: 0,

@@ -7,6 +7,15 @@ import { ICpuProfileRaw, ISourceLocation, IAnnotationLocation } from './types';
 import { properRelative, maybeFileUrlToPath } from '../common/pathUtils';
 
 /**
+ * Category of call frames. Grouped into system, modules, and user code.
+ */
+export const enum Category {
+  System,
+  User,
+  Module,
+}
+
+/**
  * One measured node in the call stack. Contains the time it spent in itself,
  * the time all its children took, references to its children, and finally
  * the ID of its location in the {@link IProfileModel.locations} array.
@@ -28,6 +37,7 @@ export interface ILocation {
   selfTime: number;
   aggregateTime: number;
   ticks: number;
+  category: Category;
   callFrame: Cdp.Runtime.CallFrame;
   src?: ISourceLocation & { relativePath?: string };
 }
@@ -47,6 +57,8 @@ export interface IGraphNode extends ILocation {
 export interface IProfileModel {
   nodes: ReadonlyArray<IComputedNode>;
   locations: ReadonlyArray<ILocation>;
+  samples: ReadonlyArray<number>;
+  timeDeltas: ReadonlyArray<number>;
   rootPath?: string;
   duration: number;
 }
@@ -82,6 +94,22 @@ const getBestLocation = (profile: ICpuProfileRaw, candidates?: ReadonlyArray<ISo
   }
 
   return { ...onDisk, relativePath };
+};
+
+/**
+ * Categorizes the given call frame.
+ */
+const categorize = (callFrame: Cdp.Runtime.CallFrame, src: ISourceLocation | undefined) => {
+  callFrame.functionName = callFrame.functionName || '(anonymous)';
+  if (callFrame.lineNumber < 0) {
+    return Category.System;
+  }
+
+  if (callFrame.url.includes('node_modules') || !src) {
+    return Category.Module;
+  }
+
+  return Category.User;
 };
 
 /**
@@ -163,20 +191,27 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
     return {
       nodes: [],
       locations: [],
+      samples: profile.samples || [],
+      timeDeltas: profile.timeDeltas || [],
       rootPath: profile.$vscode?.rootPath,
       duration: profile.endTime - profile.startTime,
     };
   }
 
   const sourceLocations = ensureSourceLocations(profile);
-  const locations: ILocation[] = sourceLocations.map((l, id) => ({
-    id,
-    selfTime: 0,
-    aggregateTime: 0,
-    ticks: 0,
-    callFrame: l.callFrame,
-    src: getBestLocation(profile, l.locations),
-  }));
+  const locations: ILocation[] = sourceLocations.map((l, id) => {
+    const src = getBestLocation(profile, l.locations);
+
+    return {
+      id,
+      selfTime: 0,
+      aggregateTime: 0,
+      ticks: 0,
+      category: categorize(l.callFrame, src),
+      callFrame: l.callFrame,
+      src,
+    };
+  });
 
   // 1. Created a sorted list of nodes. It seems that the profile always has
   // incrementing IDs, although they are just not initially sorted.
@@ -223,6 +258,8 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
   return {
     nodes,
     locations,
+    samples: profile.samples.map(id => id - 1),
+    timeDeltas: profile.timeDeltas || [],
     rootPath: profile.$vscode?.rootPath,
     duration: profile.endTime - profile.startTime,
   };

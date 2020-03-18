@@ -1,9 +1,11 @@
 const path = require('path');
 
 const target = process.env.TARGET;
+const production = process.env.MODE === 'production';
 
 module.exports = {
-  devtool: process.argv.includes('production') ? false : 'source-map',
+  mode: production ? 'production' : 'development',
+  devtool: production ? false : 'inline-source-map',
   entry: `./src/${target}/client.tsx`,
   output: {
     path: path.join(__dirname, 'out'),

@@ -6,18 +6,14 @@ import { h, FunctionComponent, Fragment } from 'preact';
 import styles from './time-view.css';
 import { useMemo, useCallback, useContext, useState } from 'preact/hooks';
 import { VsCodeApi } from '../../common/client/vscodeApi';
-import { IProfileModel, ILocation, IGraphNode } from '../model';
+import { ILocation, IGraphNode } from '../model';
 import { classes } from '../../common/client/util';
 import { IOpenDocumentMessage } from '../types';
 import * as ChevronDown from 'vscode-codicons/src/icons/chevron-down.svg';
 import * as ChevronRight from 'vscode-codicons/src/icons/chevron-right.svg';
 import { Icon } from '../../common/client/icons';
 import VirtualList from 'preact-virtual-list';
-
-const decimalFormat = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-});
+import { decimalFormat, getLocationText } from './display';
 
 type SortFn = (node: ILocation) => number;
 
@@ -25,7 +21,6 @@ const selfTime: SortFn = n => n.selfTime;
 const aggTime: SortFn = n => n.aggregateTime;
 
 export const TimeView: FunctionComponent<{
-  model: IProfileModel;
   graph: IGraphNode;
   filterFn: (input: string) => boolean;
 }> = ({ filterFn, graph }) => {
@@ -153,21 +148,7 @@ const TimeViewRow: FunctionComponent<{
     onExpandChange(newSet);
   }, [expanded, onExpandChange, node]);
 
-  let location: string | undefined;
-  if (!node.callFrame.url) {
-    location = undefined; // 'virtual' frames like (program) or (idle)
-  } else if (!node.src?.source.path) {
-    location = `${node.callFrame.url}`;
-    if (node.callFrame.lineNumber >= 0) {
-      location += `:${node.callFrame.lineNumber}`;
-    }
-  } else if (node.src.relativePath) {
-    location = `${node.src.relativePath}:${node.src.lineNumber}`;
-  } else {
-    location = `${node.src.source.path}:${node.src.lineNumber}`;
-  }
-
-  const func = node.callFrame.functionName || '(anonymous)';
+  const location = getLocationText(node);
   const selfImpact = node.selfTime / (node.parent?.selfTime || 1);
   const aggImpact = node.aggregateTime / (node.parent?.aggregateTime || 1);
   const expand =
@@ -191,15 +172,15 @@ const TimeViewRow: FunctionComponent<{
       </div>
       {!location ? (
         <div className={classes(styles.file, styles.virtual)} style={{ marginLeft: depth * 15 }}>
-          {expand} {func}
+          {expand} {node.callFrame.functionName}
         </div>
       ) : !node.src ? (
         <div className={styles.file} style={{ marginLeft: depth * 15 }}>
-          {expand} {func} @ {location}
+          {expand} {node.callFrame.functionName} @ {location}
         </div>
       ) : (
         <div className={styles.file} style={{ marginLeft: depth * 15 }}>
-          {expand} {func} @{' '}
+          {expand} {node.callFrame.functionName} @{' '}
           <a href="#" onClick={onClick}>
             {location}
           </a>
