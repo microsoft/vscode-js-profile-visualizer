@@ -12,9 +12,11 @@ import { properRelative, maybeFileUrlToPath } from '../common/pathUtils';
  * the ID of its location in the {@link IProfileModel.locations} array.
  */
 export interface IComputedNode {
+  id: number;
   selfTime: number;
   aggregateTime: number;
   children: number[];
+  parent?: number;
   locationId: number;
 }
 
@@ -22,11 +24,17 @@ export interface IComputedNode {
  * One location in the source. Multiple nodes can reference a single location.
  */
 export interface ILocation {
+  id: number;
   selfTime: number;
   aggregateTime: number;
   ticks: number;
   callFrame: Cdp.Runtime.CallFrame;
   src?: ISourceLocation & { relativePath?: string };
+}
+
+export interface IGraphNode extends ILocation {
+  children: ReadonlyMap<number, IGraphNode>;
+  parent?: IGraphNode;
 }
 
 /**
@@ -161,7 +169,8 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
   }
 
   const sourceLocations = ensureSourceLocations(profile);
-  const locations: ILocation[] = sourceLocations.map(l => ({
+  const locations: ILocation[] = sourceLocations.map((l, id) => ({
+    id,
     selfTime: 0,
     aggregateTime: 0,
     ticks: 0,
@@ -177,6 +186,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 
     // make them 0-based:
     nodes[node.id - 1] = {
+      id: node.id - 1,
       selfTime: 0,
       aggregateTime: 0,
       locationId: node.locationId as number,
@@ -187,6 +197,12 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
       if (child.startLocationId) {
         locations[child.startLocationId].ticks += child.ticks;
       }
+    }
+  }
+
+  for (const node of nodes) {
+    for (const child of node.children) {
+      nodes[child].parent = node.id;
     }
   }
 

@@ -7,8 +7,11 @@ import { IRichFilter, RichFilter, compileFilter } from '../common/client/rich-fi
 import { TimeView } from './client/time-view';
 import styles from './client.css';
 import { IProfileModel } from './model';
+import { createBottomUpGraph } from './bottomUpGraph';
 
 declare const MODEL: IProfileModel;
+
+const bottomUp = createBottomUpGraph(MODEL);
 
 const App: FunctionComponent = () => {
   const [filter, setFilter] = useState<IRichFilter>({ text: '' });
@@ -20,7 +23,7 @@ const App: FunctionComponent = () => {
         <RichFilter value={filter} onChange={setFilter} placeholder="Filter functions or files" />
       </div>
       <div className={styles.rows}>
-        <TimeView model={MODEL} filterFn={filterFn} />
+        <TimeView model={MODEL} graph={bottomUp} filterFn={filterFn} />
       </div>
     </Fragment>
   );

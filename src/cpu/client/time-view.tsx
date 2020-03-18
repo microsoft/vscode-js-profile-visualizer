@@ -6,10 +6,11 @@ import { h, FunctionComponent, Fragment } from 'preact';
 import styles from './time-view.css';
 import { useMemo, useCallback, useContext, useState } from 'preact/hooks';
 import { VsCodeApi } from '../../common/client/vscodeApi';
-import { IProfileModel, ILocation } from '../model';
+import { IProfileModel, ILocation, IGraphNode } from '../model';
 import { classes } from '../../common/client/util';
 import { IOpenDocumentMessage } from '../types';
 import * as ChevronDown from 'vscode-codicons/src/icons/chevron-down.svg';
+import * as ChevronRight from 'vscode-codicons/src/icons/chevron-right.svg';
 import { Icon } from '../../common/client/icons';
 import VirtualList from 'preact-virtual-list';
 
@@ -25,31 +26,68 @@ const aggTime: SortFn = n => n.aggregateTime;
 
 export const TimeView: FunctionComponent<{
   model: IProfileModel;
+  graph: IGraphNode;
   filterFn: (input: string) => boolean;
-}> = ({ model, filterFn }) => {
+}> = ({ filterFn, graph }) => {
   const [sortFn, setSort] = useState(() => selfTime);
+  const [expanded, setExpanded] = useState<ReadonlySet<IGraphNode>>(new Set<IGraphNode>());
 
-  const sorted = useMemo(
+  const getSortedChildren = (node: IGraphNode) =>
+    [...node.children.values()].sort((a, b) => sortFn(b) - sortFn(a));
+
+  // 1. Top level sorted items
+  const sorted = useMemo(() => getSortedChildren(graph), [graph, sortFn]);
+
+  // 2. Expand nested child nodes
+  const unfiltered = useMemo(() => {
+    const output = sorted.map(node => ({ node, depth: 0 }));
+    for (let i = 0; i < output.length; i++) {
+      const { node, depth } = output[i];
+      if (expanded.has(node)) {
+        const toAdd = getSortedChildren(node).map(node => ({ node, depth: depth + 1 }));
+        output.splice(i + 1, 0, ...toAdd);
+        // we don't increment i further since we want to recurse and expand these nodes
+      }
+    }
+
+    return output;
+  }, [sorted, expanded, sortFn]);
+
+  // 3. Filter based on query text
+  const rendered = useMemo(
     () =>
-      model.locations
-        .filter(
-          n =>
-            filterFn(n.callFrame.functionName) ||
-            filterFn(n.callFrame.url) ||
-            filterFn(n.src?.source.path || ''),
-        )
-        .sort((a, b) => sortFn(b) - sortFn(a)),
-    [model, filterFn, sortFn],
+      unfiltered.filter(
+        ({ node: n }) =>
+          filterFn(n.callFrame.functionName) ||
+          filterFn(n.callFrame.url) ||
+          filterFn(n.src?.source.path || ''),
+      ),
+    [unfiltered, filterFn],
   );
 
-  const renderRow = useCallback((row: ILocation) => <TimeViewRow {...row} />, []);
+  const maxDepth = useMemo(() => rendered.reduce((max, n) => Math.max(n.depth, max), 0), [
+    rendered,
+  ]);
+
+  const renderRow = useCallback(
+    (row: { node: IGraphNode; depth: number }) => (
+      <TimeViewRow
+        node={row.node}
+        depth={row.depth}
+        expanded={expanded}
+        maxDepth={maxDepth}
+        onExpandChange={setExpanded}
+      />
+    ),
+    [expanded, setExpanded],
+  );
 
   return (
     <Fragment>
       <TimeViewHeader sortFn={sortFn} onChangeSort={setSort} />
       <VirtualList
         className={styles.rows}
-        data={sorted}
+        data={rendered}
         renderRow={renderRow}
         rowHeight={20}
         overscanCount={10}
@@ -83,56 +121,88 @@ const TimeViewHeader: FunctionComponent<{
   </div>
 );
 
-const TimeViewRow: FunctionComponent<ILocation & { children?: ILocation[] }> = ({
-  selfTime,
-  aggregateTime,
-  callFrame,
-  src,
-}) => {
+const TimeViewRow: FunctionComponent<{
+  node: IGraphNode;
+  depth: number;
+  maxDepth: number;
+  expanded: ReadonlySet<IGraphNode>;
+  onExpandChange: (expanded: ReadonlySet<IGraphNode>) => void;
+}> = ({ node, maxDepth, depth, expanded, onExpandChange }) => {
   const vscode = useContext(VsCodeApi);
   const onClick = useCallback(
     (evt: MouseEvent) =>
-      src &&
-      src.source.path &&
+      node.src?.source.path &&
       vscode.postMessage<IOpenDocumentMessage>({
         type: 'openDocument',
-        path: src.source.path,
-        lineNumber: src.lineNumber,
-        columnNumber: src.columnNumber,
+        path: node.src.source.path,
+        lineNumber: node.src.lineNumber,
+        columnNumber: node.src.columnNumber,
         toSide: evt.altKey,
       }),
-    [vscode, src],
+    [vscode, node],
   );
 
-  let location: string | undefined;
-  if (!callFrame.url) {
-    location = undefined; // 'virtual' frames like (program) or (idle)
-  } else if (!src?.source.path) {
-    location = `${callFrame.url}`;
-    if (callFrame.lineNumber >= 0) {
-      location += `:${callFrame.lineNumber}`;
+  const onToggleExpand = useCallback(() => {
+    const newSet = new Set([...expanded]);
+    if (newSet.has(node)) {
+      newSet.delete(node);
+    } else {
+      newSet.add(node);
     }
-  } else if (src.relativePath) {
-    location = `${src.relativePath}:${src.lineNumber}`;
+
+    onExpandChange(newSet);
+  }, [expanded, onExpandChange, node]);
+
+  let location: string | undefined;
+  if (!node.callFrame.url) {
+    location = undefined; // 'virtual' frames like (program) or (idle)
+  } else if (!node.src?.source.path) {
+    location = `${node.callFrame.url}`;
+    if (node.callFrame.lineNumber >= 0) {
+      location += `:${node.callFrame.lineNumber}`;
+    }
+  } else if (node.src.relativePath) {
+    location = `${node.src.relativePath}:${node.src.lineNumber}`;
   } else {
-    location = `${src.source.path}:${src.lineNumber}`;
+    location = `${node.src.source.path}:${node.src.lineNumber}`;
   }
 
-  const func = callFrame.functionName || '(anonymous)';
+  const func = node.callFrame.functionName || '(anonymous)';
+  const selfImpact = node.selfTime / (node.parent?.selfTime || 1);
+  const aggImpact = node.aggregateTime / (node.parent?.aggregateTime || 1);
+  const expand =
+    node.children.size > 0 ? (
+      <button className={styles.expander} onClick={onToggleExpand}>
+        <Icon i={expanded.has(node) ? ChevronDown : ChevronRight} />
+      </button>
+    ) : (
+      <span className={styles.expanderSpacer} />
+    );
 
   return (
-    <div className={styles.row}>
-      <div className={styles.duration}>{decimalFormat.format(selfTime / 1000)}ms</div>
-      <div className={styles.duration}>{decimalFormat.format(aggregateTime / 1000)}ms</div>
+    <div className={styles.row} style={{ opacity: Math.max(0.7, 1 - (maxDepth - depth) * 0.1) }}>
+      <div className={styles.duration}>
+        <div className={styles.impactBar} style={{ width: `${selfImpact * 100}%` }} />
+        {decimalFormat.format(node.selfTime / 1000)}ms
+      </div>
+      <div className={styles.duration}>
+        <div className={styles.impactBar} style={{ width: `${aggImpact * 100}%` }} />
+        {decimalFormat.format(node.aggregateTime / 1000)}ms
+      </div>
       {!location ? (
-        <div className={classes(styles.file, styles.virtual)}>{func}</div>
-      ) : !src ? (
-        <div className={styles.file}>
-          {func} @ {location}
+        <div className={classes(styles.file, styles.virtual)} style={{ marginLeft: depth * 15 }}>
+          {expand} {func}
+        </div>
+      ) : !node.src ? (
+        <div className={styles.file} style={{ marginLeft: depth * 15 }}>
+          {expand} {func} @ {location}
         </div>
       ) : (
-        <div className={styles.file}>
-          {func} @ <a onClick={onClick}>{location}</a>
+        <div className={styles.file} style={{ marginLeft: depth * 15 }}>
+          {expand} {func} @{' '}
+          <a href="#" onClick={onClick}>
+            {location}
+          </a>
         </div>
       )}
     </div>
