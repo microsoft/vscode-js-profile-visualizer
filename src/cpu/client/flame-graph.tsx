@@ -11,11 +11,15 @@ import { getLocationText, decimalFormat } from './display';
 import { classes } from '../../common/client/util';
 import { VsCodeApi } from '../../common/client/vscodeApi';
 import { IOpenDocumentMessage } from '../types';
+import { useCssVariables } from '../../common/client/useCssVariables';
+import { TextCache } from './textCache';
 
 const enum Constants {
   BoxHeight = 20,
   TextColor = '#fff',
   BoxColor = '#000',
+  ZoomHeight = 22,
+  ZoomLabelSpacing = 200,
 }
 
 interface IColumn {
@@ -35,44 +39,45 @@ const buildColumns = (model: IProfileModel) => {
 
   // 1. Build initial columns
   for (let i = 1; i < model.samples.length - 1; i++) {
-    let node = model.nodes[model.samples[i]];
-    let aggregateTime = 0;
-
-    const rows: (ILocation & { graphId: number })[] = [];
-    while (true) {
-      aggregateTime += node.selfTime;
-      rows.unshift({
-        ...model.locations[node.locationId],
+    const root = model.nodes[model.samples[i]];
+    const selfTime = model.timeDeltas[i - 1];
+    const rows = [
+      {
+        ...model.locations[root.locationId],
         graphId: graphIdCounter++,
-        selfTime: node.selfTime,
-        aggregateTime,
+        selfTime,
+        aggregateTime: 0,
+      },
+    ];
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    for (let id = root.parent; id; id = model.nodes[id!].parent) {
+      rows.unshift({
+        ...model.locations[model.nodes[id].locationId],
+        graphId: graphIdCounter++,
+        selfTime: 0,
+        aggregateTime: selfTime,
       });
-
-      if (!node.parent) {
-        break;
-      }
-
-      node = model.nodes[node.parent];
     }
 
-    columns.push({ width: model.timeDeltas[i + 1] / model.duration, rows });
+    columns.push({ width: selfTime / model.duration, rows });
   }
 
   // 2. Merge them
-  for (let x = 0; x < columns.length; x++) {
+  for (let x = 1; x < columns.length; x++) {
     const col = columns[x];
     for (let y = 0; y < col.rows.length; y++) {
       const current = col.rows[y] as ILocation;
       const prevOrNumber = columns[x - 1]?.rows[y];
-
       if (typeof prevOrNumber === 'number') {
-        if (current.id === (columns[prevOrNumber].rows[y] as ILocation).id) {
-          col.rows[y] = prevOrNumber;
+        if (current.id !== (columns[prevOrNumber].rows[y] as ILocation).id) {
+          break;
         }
+        col.rows[y] = prevOrNumber;
       } else if (prevOrNumber?.id === current.id) {
         col.rows[y] = x - 1;
       } else {
-        continue;
+        break;
       }
 
       const prev =
@@ -126,6 +131,7 @@ const buildBoxes = (columns: IColumn[]) => {
   const boxes: Map<string, IBox> = new Map();
 
   let offset = 0;
+  let maxY = 0;
   for (let x = 0; x < columns.length; x++) {
     const col = columns[x];
     for (let y = 0; y < col.rows.length; y++) {
@@ -134,26 +140,32 @@ const buildBoxes = (columns: IColumn[]) => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         boxes.get(`${loc}:${y}`)!.x2 = (offset + col.width) * width;
       } else {
-        const y2 = Constants.BoxHeight * (y + 1);
+        const y1 = Constants.BoxHeight * y + Constants.ZoomHeight;
+        const y2 = y1 + Constants.BoxHeight;
         boxes.set(`${x}:${y}`, {
           x1: offset * width,
           x2: (offset + col.width) * width,
-          y1: Constants.BoxHeight * y,
+          y1,
           y2,
           level: y,
           text: loc.callFrame.functionName,
           color: pickColor(loc),
           loc,
         });
+
+        maxY = Math.max(y2, maxY);
       }
     }
 
     offset += col.width;
   }
 
-  return [...boxes.values()].sort((a, b) =>
-    a.level !== b.level ? a.level - b.level : a.x1 - b.x1,
-  );
+  return {
+    boxes: [...boxes.values()].sort((a, b) =>
+      a.level !== b.level ? a.level - b.level : a.x1 - b.x1,
+    ),
+    maxY,
+  };
 };
 
 const getBoxAtPosition = (x: number, y: number, boxes: ReadonlyArray<IBox>) => {
@@ -212,13 +224,30 @@ const findLast = <T extends {}>(
 interface IBounds {
   minX: number;
   maxX: number;
+  y: number;
   level: number;
+}
+
+interface IDrag {
+  timestamp: number;
+  pageXOrigin: number;
+  pageYOrigin: number;
+  originalY: number;
+  originalX: number;
+  xPerPixel: number;
 }
 
 const enum HighlightSource {
   Hover,
   Keyboard,
 }
+
+const clamp = (min: number, v: number, max: number) => Math.max(Math.min(v, max), min);
+
+const timelineFormat = new Intl.NumberFormat(undefined, {
+  maximumSignificantDigits: 3,
+  minimumSignificantDigits: 3,
+});
 
 const dpr = window.devicePixelRatio || 1;
 
@@ -229,17 +258,24 @@ export const FlameGraph: FunctionComponent<{
   const canvas = useRef<HTMLCanvasElement>();
   const context = useMemo(() => canvas.current?.getContext('2d'), [canvas.current]);
   const windowSize = useWindowSize();
-  const [canvasWidth, setCanvasWidth] = useState(100);
+  const [canvasSize, setCanvasSize] = useState({ width: 100, height: 100 });
   const [highlight, setHighlight] = useState<{ box: IBox; src: HighlightSource } | undefined>(
     undefined,
   );
-  const [bounds, setBounds] = useState<IBounds>({ minX: 0, maxX: 1, level: 0 });
+  const [bounds, setBounds] = useState<IBounds>({ minX: 0, maxX: 1, y: 0, level: 0 });
   const [focused, setFocused] = useState<IBox | undefined>(undefined);
+  const [drag, setDrag] = useState<IDrag | undefined>(undefined);
+  const cssVariables = useCssVariables();
   const vscode = useContext(VsCodeApi);
 
   const columns = useMemo(() => buildColumns(model), [model]);
   const rawBoxes = useMemo(() => buildBoxes(columns), [columns]);
-  const boxData = useMemo(() => getBoundedBoxes(rawBoxes, bounds), [rawBoxes, bounds]);
+  const boxData = useMemo(() => getBoundedBoxes(rawBoxes.boxes, bounds), [
+    rawBoxes.boxes,
+    bounds.minX,
+    bounds.maxX,
+    bounds.level,
+  ]);
 
   const openBox = useCallback(
     (box: IBox, evt: { altKey: boolean }) => {
@@ -259,71 +295,123 @@ export const FlameGraph: FunctionComponent<{
     [vscode],
   );
 
+  const textCache = useMemo(() => {
+    const cache = new TextCache();
+    cache.setup(dpr, ctx => {
+      ctx.fillStyle = Constants.TextColor;
+    });
+    return cache;
+  }, [cssVariables]);
+
   const drawBox = useCallback(
     (
       box: IBox,
       isHighlit = highlight?.box.loc.graphId === box.loc.graphId,
       isFocused = focused?.loc.graphId === box.loc.graphId,
+      isOneOff = true,
     ) => {
       if (!context) {
         return;
       }
 
-      const { y1, y2, text } = box;
-      const x1 = box.x1 * canvasWidth;
-      const x2 = box.x2 * canvasWidth;
+      if (box.y2 < bounds.y || box.y1 > bounds.y + canvasSize.height) {
+        return;
+      }
+
+      const text = box.text;
+      const y1 = box.y1 - bounds.y;
+      const y2 = box.y2 - bounds.y;
+      const x1 = box.x1 * canvasSize.width;
+      const x2 = box.x2 * canvasSize.width;
       const width = x2 - x1;
       const height = y2 - y1;
 
-      context.fillStyle = isFocused
-        ? 'rgb(14, 99, 156)'
-        : isHighlit
-        ? box.color.dark
-        : box.color.light;
-
-      context.fillRect(x1, y1, width, height - 1);
-
-      if (width > 10) {
+      const needsClip = isOneOff && y1 < Constants.ZoomHeight;
+      if (needsClip) {
         context.save();
         context.beginPath();
-        context.rect(x1, y1, width - 3, height);
+        context.rect(0, Constants.ZoomHeight, canvasSize.width, canvasSize.height);
         context.clip();
+      }
 
-        context.fillStyle = Constants.TextColor;
-        context.fillText(text, x1 + 3, y1 + Constants.BoxHeight / 2);
+      context.fillStyle = isHighlit ? box.color.dark : box.color.light;
+      context.fillRect(x1, y1, width, height - 1);
+
+      if (isFocused) {
+        context.strokeStyle = cssVariables.focusBorder;
+        context.lineWidth = 2;
+        context.strokeRect(x1 + 1, y1 + 1, width - 2, height - 3);
+      }
+
+      if (width > 10) {
+        textCache.drawText(context, text, x1 + 3, y1, width - 6, Constants.BoxHeight);
+      }
+
+      if (needsClip) {
         context.restore();
       }
     },
-    [context, highlight, focused, bounds, canvasWidth],
+    [context, highlight, focused, bounds.y, canvasSize, cssVariables],
   );
 
-  // Re-render when the box data changes
+  // Re-render boxes when data changes
   useEffect(() => {
     if (!context) {
       return;
     }
 
-    const { boxes, maxY } = boxData;
-    context.textBaseline = 'middle';
-    context.canvas.height = maxY * dpr;
-    context.canvas.style.height = `${maxY}px`;
-    context.scale(dpr, dpr);
-    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-
-    for (const box of boxes) {
-      drawBox(box);
+    context.clearRect(0, Constants.ZoomHeight, context.canvas.width, context.canvas.height);
+    for (const box of boxData.boxes) {
+      drawBox(box, undefined, undefined, false);
     }
-  }, [context, boxData, canvasWidth]);
+  }, [context, bounds, boxData, canvasSize, cssVariables]);
 
-  // Update the canvas size when the window size changes, and on initial render
+  // Re-render the zoom indicator when bounds change
   useEffect(() => {
-    if (!canvas.current) {
+    if (!context) {
       return;
     }
 
-    const { width } = (canvas.current.parentElement as HTMLElement).getBoundingClientRect();
-    if (width !== canvasWidth) {
-      setCanvasWidth(width);
+    context.clearRect(0, 0, context.canvas.width, Constants.ZoomHeight);
+    context.fillStyle = cssVariables['editor-foreground'];
+    context.font = context.textAlign = 'right';
+    context.strokeStyle = cssVariables['editorRuler-foreground'];
+    context.lineWidth = 1 / dpr;
+
+    const labels = Math.round(canvasSize.width / Constants.ZoomLabelSpacing);
+    const spacing = canvasSize.width / labels;
+
+    const timeRange = model.duration * (bounds.maxX - bounds.minX);
+    const timeStart = model.duration * bounds.minX;
+
+    context.beginPath();
+    for (let i = 1; i <= labels; i++) {
+      const time = (i / labels) * timeRange + timeStart;
+      const x = i * spacing;
+      context.fillText(`${timelineFormat.format(time / 1000)}ms`, x - 3, Constants.ZoomHeight / 2);
+      context.moveTo(x, 0);
+      context.lineTo(x, Constants.ZoomHeight);
+    }
+
+    context.stroke();
+    context.textAlign = 'left';
+  }, [context, model, canvasSize, bounds, cssVariables]);
+
+  // Update the canvas size when the window size changes, and on initial render
+  useEffect(() => {
+    if (!canvas.current || !context) {
+      return;
+    }
+
+    const { width, height } = (canvas.current.parentElement as HTMLElement).getBoundingClientRect();
+    if (width !== canvasSize.width || height !== canvasSize.height) {
+      canvas.current.style.width = `${width}px`;
+      canvas.current.width = width * dpr;
+      canvas.current.style.height = `${height}px`;
+      canvas.current.height = height * dpr;
+      context.textBaseline = 'middle';
+      context.scale(dpr, dpr);
+      setCanvasSize({ width, height });
     }
   }, [windowSize, canvas]);
 
@@ -331,11 +419,16 @@ export const FlameGraph: FunctionComponent<{
   const zoomToBox = useCallback(
     (box: IBox) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const original = rawBoxes.find(b => b.loc.graphId === box.loc.graphId)!;
-      setBounds({ minX: original.x1, maxX: original.x2, level: box.level });
+      const original = rawBoxes.boxes.find(b => b.loc.graphId === box.loc.graphId)!;
+      setBounds({
+        minX: original.x1,
+        maxX: original.x2,
+        y: clamp(0, original.y1, rawBoxes.maxY - canvasSize.height),
+        level: box.level,
+      });
       setFocused(box);
     },
-    [rawBoxes, setBounds, setFocused],
+    [rawBoxes, bounds, setBounds, setFocused],
   );
 
   // Key event handler, deals with focus navigation and escape/enter
@@ -346,7 +439,7 @@ export const FlameGraph: FunctionComponent<{
           // If there's a tooltip open, close that on first escape
           return highlight?.src === HighlightSource.Keyboard
             ? setHighlight(undefined)
-            : setBounds({ minX: 0, maxX: 1, level: 0 });
+            : setBounds({ minX: 0, maxX: 1, y: 0, level: 0 });
         case 'Enter':
           if ((evt.metaKey || evt.ctrlKey) && highlight) {
             return openBox(highlight.box, evt);
@@ -397,8 +490,8 @@ export const FlameGraph: FunctionComponent<{
       }
 
       if (nextFocus) {
-        drawBox(f, undefined, false);
-        drawBox(nextFocus, undefined, true);
+        drawBox(f, false, false);
+        drawBox(nextFocus, true, true);
         setFocused(nextFocus);
         setHighlight({ box: nextFocus, src: HighlightSource.Keyboard });
       }
@@ -419,31 +512,36 @@ export const FlameGraph: FunctionComponent<{
       }
 
       const { top, left, width } = canvas.current.getBoundingClientRect();
-      return getBoxAtPosition((evt.pageX - left) / width, evt.pageY - top, boxData.boxes);
-    },
-    [canvas, boxData],
-  );
-
-  const onClick = useCallback(
-    (evt: MouseEvent) => {
-      const box = getBoxUnderCursor(evt);
-      if (box && (evt.ctrlKey || evt.metaKey)) {
-        openBox(box, evt);
-      } else if (box) {
-        zoomToBox(box);
-      } else {
-        setBounds({ minX: 0, maxX: 1, level: 0 });
+      const fromTop = evt.pageY - top;
+      const fromLeft = evt.pageX - left;
+      if (fromTop < Constants.ZoomHeight) {
+        return;
       }
 
-      setHighlight(undefined);
+      return getBoxAtPosition(fromLeft / width, fromTop + bounds.y, boxData.boxes);
     },
-    [getBoxUnderCursor, setBounds, rawBoxes, setHighlight],
+    [canvas, bounds.y, boxData],
   );
 
-  const onMove = useCallback(
+  const onMouseMove = useCallback(
     (evt: MouseEvent) => {
       if (!context) {
         return;
+      }
+
+      if (drag) {
+        const range = bounds.maxX - bounds.minX;
+        const minX = Math.max(
+          0,
+          Math.min(1 - range, drag.originalX - (evt.pageX - drag.pageXOrigin) * drag.xPerPixel),
+        );
+        const y = drag.originalY - (evt.pageY - drag.pageYOrigin);
+        setBounds({
+          minX,
+          maxX: minX + range,
+          y: clamp(0, y, rawBoxes.maxY - canvasSize.height),
+          level: bounds.level,
+        });
       }
 
       const box = getBoxUnderCursor(evt);
@@ -468,23 +566,91 @@ export const FlameGraph: FunctionComponent<{
         setHighlight(undefined);
       }
     },
-    [getBoxUnderCursor, context, canvasWidth, highlight, setHighlight, boxData],
+    [getBoxUnderCursor, drag, bounds, context, canvasSize, highlight, setHighlight, boxData],
+  );
+
+  const onWheel = useCallback(
+    (evt: WheelEvent) => {
+      if (!canvas.current) {
+        return;
+      }
+
+      const { left, width } = canvas.current.getBoundingClientRect();
+      const range = bounds.maxX - bounds.minX;
+      const center = bounds.minX + (range * (evt.pageX - left)) / width;
+      const scale = evt.deltaY / 400;
+      setBounds({
+        minX: Math.max(0, bounds.minX + scale * (center - bounds.minX)),
+        maxX: Math.min(1, bounds.maxX - scale * (bounds.maxX - center)),
+        y: bounds.y,
+        level: bounds.level,
+      });
+
+      evt.preventDefault();
+    },
+    [canvas.current, bounds, setBounds],
+  );
+
+  const onMouseDown = useCallback(
+    (evt: MouseEvent) => {
+      setDrag({
+        timestamp: Date.now(),
+        pageXOrigin: evt.pageX,
+        pageYOrigin: evt.pageY,
+        xPerPixel: (bounds.maxX - bounds.minX) / canvasSize.width,
+        originalX: bounds.minX,
+        originalY: bounds.y,
+      });
+    },
+    [setDrag, canvasSize, bounds],
+  );
+
+  const onMouseUp = useCallback(
+    (evt: MouseEvent) => {
+      if (!drag) {
+        return;
+      }
+
+      const isClick =
+        Date.now() - drag.timestamp < 500 &&
+        Math.abs(evt.pageX - drag.pageXOrigin) < 100 &&
+        Math.abs(evt.pageY - drag.pageYOrigin) < 100;
+
+      setDrag(undefined);
+
+      if (!isClick) {
+        return;
+      }
+
+      const box = getBoxUnderCursor(evt);
+      if (box && (evt.ctrlKey || evt.metaKey)) {
+        openBox(box, evt);
+      } else if (box) {
+        zoomToBox(box);
+      } else {
+        setBounds({ minX: 0, y: 0, maxX: 1, level: 0 });
+      }
+
+      setHighlight(undefined);
+    },
+    [drag, setDrag, getBoxUnderCursor, openBox, zoomToBox, setBounds, setHighlight],
   );
 
   return (
     <Fragment>
       <canvas
         ref={canvas}
-        width={canvasWidth * dpr}
-        style={{ width: canvasWidth, cursor: highlight ? 'pointer' : 'default' }}
-        onClick={onClick}
-        onMouseMove={onMove}
+        style={{ cursor: highlight ? 'pointer' : 'default' }}
+        onMouseDown={onMouseDown}
+        onMouseUp={onMouseUp}
+        onMouseMove={onMouseMove}
+        onWheel={onWheel}
       />
       {highlight && (
         <Tooltip
-          left={Math.min(canvasWidth - 300, canvasWidth * highlight.box.x1)}
+          left={Math.min(canvasSize.width - 300, canvasSize.width * highlight.box.x1 + 10)}
           src={highlight.src}
-          top={highlight.box.y2}
+          top={highlight.box.y2 - bounds.y}
           location={highlight.box.loc}
         />
       )}
