@@ -13,13 +13,15 @@ import { VsCodeApi } from '../../common/client/vscodeApi';
 import { IOpenDocumentMessage } from '../types';
 import { useCssVariables } from '../../common/client/useCssVariables';
 import { TextCache } from './textCache';
+import { MiddleOut } from '../../common/client/middleOutCompression';
 
 const enum Constants {
   BoxHeight = 20,
   TextColor = '#fff',
   BoxColor = '#000',
-  ZoomHeight = 22,
-  ZoomLabelSpacing = 200,
+  TimelineHeight = 22,
+  TimelineLabelSpacing = 200,
+  MinWindow = 0.005,
 }
 
 interface IColumn {
@@ -140,7 +142,7 @@ const buildBoxes = (columns: IColumn[]) => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         boxes.get(`${loc}:${y}`)!.x2 = (offset + col.width) * width;
       } else {
-        const y1 = Constants.BoxHeight * y + Constants.ZoomHeight;
+        const y1 = Constants.BoxHeight * y + Constants.TimelineHeight;
         const y2 = y1 + Constants.BoxHeight;
         boxes.set(`${x}:${y}`, {
           x1: offset * width,
@@ -192,7 +194,7 @@ const getBoundedBoxes = (rawBoxes: IBox[], { minX, maxX, level }: IBounds) => {
   const filtered: IBox[] = [];
   let maxY = 0;
   for (const box of rawBoxes) {
-    if (box.x1 <= maxX && box.x2 > minX) {
+    if (box.x1 < maxX && box.x2 > minX) {
       filtered.push({
         ...box,
         color: box.level < level ? pickColor(box.loc, true) : box.color,
@@ -228,13 +230,20 @@ interface IBounds {
   level: number;
 }
 
+const enum LockBound {
+  None = 0,
+  Y = 1 << 0,
+  MinX = 1 << 1,
+  MaxX = 1 << 2,
+}
+
 interface IDrag {
   timestamp: number;
   pageXOrigin: number;
   pageYOrigin: number;
-  originalY: number;
-  originalX: number;
+  original: IBounds;
   xPerPixel: number;
+  lock: LockBound;
 }
 
 const enum HighlightSource {
@@ -326,11 +335,11 @@ export const FlameGraph: FunctionComponent<{
       const width = x2 - x1;
       const height = y2 - y1;
 
-      const needsClip = isOneOff && y1 < Constants.ZoomHeight;
+      const needsClip = isOneOff && y1 < Constants.TimelineHeight;
       if (needsClip) {
         context.save();
         context.beginPath();
-        context.rect(0, Constants.ZoomHeight, canvasSize.width, canvasSize.height);
+        context.rect(0, Constants.TimelineHeight, canvasSize.width, canvasSize.height);
         context.clip();
       }
 
@@ -344,7 +353,7 @@ export const FlameGraph: FunctionComponent<{
       }
 
       if (width > 10) {
-        textCache.drawText(context, text, x1 + 3, y1, width - 6, Constants.BoxHeight);
+        textCache.drawText(context, text, x1 + 3, y1 + 3, width - 6, Constants.BoxHeight);
       }
 
       if (needsClip) {
@@ -360,7 +369,7 @@ export const FlameGraph: FunctionComponent<{
       return;
     }
 
-    context.clearRect(0, Constants.ZoomHeight, context.canvas.width, context.canvas.height);
+    context.clearRect(0, Constants.TimelineHeight, context.canvas.width, context.canvas.height);
     for (const box of boxData.boxes) {
       drawBox(box, undefined, undefined, false);
     }
@@ -372,13 +381,13 @@ export const FlameGraph: FunctionComponent<{
       return;
     }
 
-    context.clearRect(0, 0, context.canvas.width, Constants.ZoomHeight);
+    context.clearRect(0, 0, context.canvas.width, Constants.TimelineHeight);
     context.fillStyle = cssVariables['editor-foreground'];
     context.font = context.textAlign = 'right';
     context.strokeStyle = cssVariables['editorRuler-foreground'];
     context.lineWidth = 1 / dpr;
 
-    const labels = Math.round(canvasSize.width / Constants.ZoomLabelSpacing);
+    const labels = Math.round(canvasSize.width / Constants.TimelineLabelSpacing);
     const spacing = canvasSize.width / labels;
 
     const timeRange = model.duration * (bounds.maxX - bounds.minX);
@@ -388,9 +397,13 @@ export const FlameGraph: FunctionComponent<{
     for (let i = 1; i <= labels; i++) {
       const time = (i / labels) * timeRange + timeStart;
       const x = i * spacing;
-      context.fillText(`${timelineFormat.format(time / 1000)}ms`, x - 3, Constants.ZoomHeight / 2);
+      context.fillText(
+        `${timelineFormat.format(time / 1000)}ms`,
+        x - 3,
+        Constants.TimelineHeight / 2,
+      );
       context.moveTo(x, 0);
-      context.lineTo(x, Constants.ZoomHeight);
+      context.lineTo(x, Constants.TimelineHeight);
     }
 
     context.stroke();
@@ -423,12 +436,16 @@ export const FlameGraph: FunctionComponent<{
       setBounds({
         minX: original.x1,
         maxX: original.x2,
-        y: clamp(0, original.y1, rawBoxes.maxY - canvasSize.height),
+        y: clamp(
+          0,
+          original.y1 > bounds.y + canvasSize.height ? original.y1 : bounds.y,
+          rawBoxes.maxY - canvasSize.height,
+        ),
         level: box.level,
       });
       setFocused(box);
     },
-    [rawBoxes, bounds, setBounds, setFocused],
+    [rawBoxes, canvasSize.height, bounds],
   );
 
   // Key event handler, deals with focus navigation and escape/enter
@@ -496,7 +513,7 @@ export const FlameGraph: FunctionComponent<{
         setHighlight({ box: nextFocus, src: HighlightSource.Keyboard });
       }
     },
-    [setBounds, setFocused, zoomToBox, focused, boxData, drawBox],
+    [zoomToBox, focused, boxData, drawBox],
   );
 
   // Keyboard events
@@ -514,7 +531,7 @@ export const FlameGraph: FunctionComponent<{
       const { top, left, width } = canvas.current.getBoundingClientRect();
       const fromTop = evt.pageY - top;
       const fromLeft = evt.pageX - left;
-      if (fromTop < Constants.ZoomHeight) {
+      if (fromTop < Constants.TimelineHeight) {
         return;
       }
 
@@ -523,25 +540,57 @@ export const FlameGraph: FunctionComponent<{
     [canvas, bounds.y, boxData],
   );
 
-  const onMouseMove = useCallback(
-    (evt: MouseEvent) => {
-      if (!context) {
-        return;
+  // Listen for drag events on the window when it's running
+  useEffect(() => {
+    if (!drag) {
+      return;
+    }
+
+    const { original, pageXOrigin, xPerPixel, pageYOrigin, lock } = drag;
+    const onMove = (evt: MouseEvent) => {
+      const range = original.maxX - original.minX;
+      let minX: number;
+      let maxX: number;
+      if (!(lock & LockBound.MinX)) {
+        const upper = lock & LockBound.MaxX ? bounds.maxX - Constants.MinWindow : 1 - range;
+        minX = clamp(0, original.minX - (evt.pageX - pageXOrigin) * xPerPixel, upper);
+        maxX = lock & LockBound.MaxX ? original.maxX : Math.min(1, minX + range);
+      } else {
+        minX = original.minX;
+        maxX = clamp(
+          minX + Constants.MinWindow,
+          original.maxX - (evt.pageX - pageXOrigin) * xPerPixel,
+          1,
+        );
       }
 
-      if (drag) {
-        const range = bounds.maxX - bounds.minX;
-        const minX = Math.max(
-          0,
-          Math.min(1 - range, drag.originalX - (evt.pageX - drag.pageXOrigin) * drag.xPerPixel),
-        );
-        const y = drag.originalY - (evt.pageY - drag.pageYOrigin);
-        setBounds({
-          minX,
-          maxX: minX + range,
-          y: clamp(0, y, rawBoxes.maxY - canvasSize.height),
-          level: bounds.level,
-        });
+      const y =
+        lock & LockBound.Y
+          ? bounds.y
+          : clamp(0, original.y - (evt.pageY - pageYOrigin), rawBoxes.maxY - canvasSize.height);
+      setBounds({ minX, maxX, y, level: bounds.level });
+    };
+
+    const onUp = (evt: MouseEvent) => {
+      onMove(evt);
+      setDrag(undefined);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseleave', onUp);
+    document.addEventListener('mouseup', onUp);
+
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseleave', onUp);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, [drag]);
+
+  const onMouseMove = useCallback(
+    (evt: MouseEvent) => {
+      if (!context || drag) {
+        return;
       }
 
       const box = getBoxUnderCursor(evt);
@@ -566,7 +615,7 @@ export const FlameGraph: FunctionComponent<{
         setHighlight(undefined);
       }
     },
-    [getBoxUnderCursor, drag, bounds, context, canvasSize, highlight, setHighlight, boxData],
+    [getBoxUnderCursor, drag, bounds, context, canvasSize, highlight, boxData],
   );
 
   const onWheel = useCallback(
@@ -588,7 +637,7 @@ export const FlameGraph: FunctionComponent<{
 
       evt.preventDefault();
     },
-    [canvas.current, bounds, setBounds],
+    [canvas.current, bounds],
   );
 
   const onMouseDown = useCallback(
@@ -598,11 +647,12 @@ export const FlameGraph: FunctionComponent<{
         pageXOrigin: evt.pageX,
         pageYOrigin: evt.pageY,
         xPerPixel: (bounds.maxX - bounds.minX) / canvasSize.width,
-        originalX: bounds.minX,
-        originalY: bounds.y,
+        original: bounds,
+        lock: LockBound.None,
       });
+      evt.preventDefault();
     },
-    [setDrag, canvasSize, bounds],
+    [canvasSize, bounds],
   );
 
   const onMouseUp = useCallback(
@@ -615,8 +665,6 @@ export const FlameGraph: FunctionComponent<{
         Date.now() - drag.timestamp < 500 &&
         Math.abs(evt.pageX - drag.pageXOrigin) < 100 &&
         Math.abs(evt.pageY - drag.pageYOrigin) < 100;
-
-      setDrag(undefined);
 
       if (!isClick) {
         return;
@@ -632,25 +680,59 @@ export const FlameGraph: FunctionComponent<{
       }
 
       setHighlight(undefined);
+      setDrag(undefined);
+
+      evt.stopPropagation();
+      evt.preventDefault();
     },
-    [drag, setDrag, getBoxUnderCursor, openBox, zoomToBox, setBounds, setHighlight],
+    [drag, getBoxUnderCursor, openBox, zoomToBox],
   );
+
+  const onMouseLeave = useCallback(
+    (evt: MouseEvent) => {
+      onMouseUp(evt);
+      setHighlight(undefined);
+    },
+    [onMouseUp],
+  );
+
+  const onFocus = useCallback(() => {
+    if (focused) {
+      setHighlight({ box: focused, src: HighlightSource.Keyboard });
+    } else {
+      setFocused(boxData.boxes[0]);
+      setHighlight({ box: boxData.boxes[0], src: HighlightSource.Keyboard });
+    }
+  }, [boxData.boxes[0], focused]);
 
   return (
     <Fragment>
+      <DragHandle
+        bounds={bounds}
+        current={drag}
+        canvasWidth={canvasSize.width}
+        startDrag={setDrag}
+      />
       <canvas
         ref={canvas}
         style={{ cursor: highlight ? 'pointer' : 'default' }}
+        role="application"
+        tabIndex={0}
+        onFocus={onFocus}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
         onMouseMove={onMouseMove}
         onWheel={onWheel}
       />
       {highlight && (
         <Tooltip
-          left={Math.min(canvasSize.width - 300, canvasSize.width * highlight.box.x1 + 10)}
+          canvasWidth={canvasSize.width}
+          canvasHeight={canvasSize.height}
+          left={highlight.box.x1}
+          upperY={highlight.box.y1 - bounds.y}
+          lowerY={highlight.box.y2 - bounds.y}
           src={highlight.src}
-          top={highlight.box.y2 - bounds.y}
           location={highlight.box.loc}
         />
       )}
@@ -658,28 +740,106 @@ export const FlameGraph: FunctionComponent<{
   );
 };
 
-const Tooltip: FunctionComponent<{
-  left: number;
-  top: number;
-  location: ILocation;
-  src: HighlightSource;
-}> = ({ left, top, src, location }) => {
-  const label = getLocationText(location);
+const DragHandle: FunctionComponent<{
+  canvasWidth: number;
+  bounds: IBounds;
+  current: IDrag | undefined;
+  startDrag: (bounds: IDrag) => void;
+}> = ({ current, bounds, startDrag, canvasWidth }) => {
+  const start = useCallback(
+    (evt: MouseEvent, lock: LockBound, original: IBounds = bounds) => {
+      startDrag({
+        timestamp: Date.now(),
+        pageXOrigin: evt.pageX,
+        pageYOrigin: evt.pageY,
+        original,
+        xPerPixel: -1 / canvasWidth,
+        lock: lock | LockBound.Y,
+      });
+      evt.preventDefault();
+      evt.stopPropagation();
+    },
+    [canvasWidth, bounds],
+  );
+
+  const range = bounds.maxX - bounds.minX;
+  const lock = current?.lock ?? 0;
 
   return (
-    <div className={styles.tooltip} style={{ left, top }}>
-      <div className={styles.function}>{location.callFrame.functionName}</div>
-      {label && (
-        <div className={classes(styles.label, location.src && styles.clickable)}>{label}</div>
-      )}
-      <div className={styles.time}>
-        <span>Self Time</span>
-        <span>{decimalFormat.format(location.selfTime / 1000)}ms</span>
+    <div
+      className={classes(styles.handle, current && styles.active)}
+      style={{ height: Constants.TimelineHeight }}
+    >
+      <div
+        className={classes(styles.bg, lock === LockBound.Y && styles.active)}
+        onMouseDown={useCallback((evt: MouseEvent) => start(evt, LockBound.Y), [start])}
+        style={{ transform: `scaleX(${range}) translateX(${(bounds.minX / range) * 100}%)` }}
+      />
+      <div
+        className={classes(styles.bookend, lock & LockBound.MaxX && styles.active)}
+        style={{ transform: `translateX(${bounds.minX * 100}%)` }}
+      >
+        <div
+          style={{ left: 0 }}
+          onMouseDown={useCallback((evt: MouseEvent) => start(evt, LockBound.MaxX), [start])}
+        />
       </div>
-      <div className={styles.time}>
-        <span>Aggregate Time</span>
-        <span>{decimalFormat.format(location.aggregateTime / 1000)}ms</span>
+      <div
+        className={classes(styles.bookend, lock & LockBound.MinX && styles.active)}
+        style={{ transform: `translateX(${(bounds.maxX - 1) * 100}%)` }}
+      >
+        <div
+          style={{ right: 0 }}
+          onMouseDown={useCallback((evt: MouseEvent) => start(evt, LockBound.MinX), [start])}
+        />
       </div>
+    </div>
+  );
+};
+
+const Tooltip: FunctionComponent<{
+  canvasWidth: number;
+  canvasHeight: number;
+  left: number;
+  upperY: number;
+  lowerY: number;
+  location: ILocation;
+  src: HighlightSource;
+}> = ({ left, lowerY, upperY, src, location, canvasWidth, canvasHeight }) => {
+  const label = getLocationText(location);
+  const above = lowerY + 300 > canvasHeight && lowerY > canvasHeight / 2;
+
+  const file = label?.split(/\\|\//g).pop();
+  return (
+    <div
+      className={styles.tooltip}
+      aria-live="polite"
+      aria-atomic={true}
+      style={{
+        left: Math.min(canvasWidth - 400, canvasWidth * left + 10),
+        top: above ? 'initial' : lowerY + 10,
+        bottom: above ? upperY + 10 : 'initial',
+      }}
+    >
+      <dl>
+        <dt>Function</dt>
+        <dd className={styles.function}>{location.callFrame.functionName}</dd>
+        {label && (
+          <Fragment>
+            <dt>File</dt>
+            <dd
+              aria-label={file}
+              className={classes(styles.label, location.src && styles.clickable)}
+            >
+              <MiddleOut aria-hidden={true} endChars={file?.length} text={label} />
+            </dd>
+          </Fragment>
+        )}
+        <dt className={styles.time}>Self Time</dt>
+        <dd className={styles.time}>{decimalFormat.format(location.selfTime / 1000)}ms</dd>
+        <dt className={styles.time}>Aggregate Time</dt>
+        <dd className={styles.time}>{decimalFormat.format(location.aggregateTime / 1000)}ms</dd>
+      </dl>
       {location.src && (
         <div className={styles.hint}>
           Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to file

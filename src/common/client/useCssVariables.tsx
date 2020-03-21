@@ -25,7 +25,7 @@ export const useCssVariables = () => {
     });
 
     return () => observer.disconnect();
-  }, [setVars]);
+  }, []);
 
   return vars;
 };
