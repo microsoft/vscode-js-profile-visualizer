@@ -2,12 +2,13 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { h, FunctionComponent, Fragment } from 'preact';
+import { h, FunctionComponent, Fragment, ComponentChild } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
 import { Filter } from './filter';
 import { ToggleButton } from './toggle-button';
 import * as CaseSensitive from 'vscode-codicons/src/icons/case-sensitive.svg';
 import * as Regex from 'vscode-codicons/src/icons/regex.svg';
+import styles from './rich-filter.css';
 
 /**
  * Filter that the RichFilter returns,
@@ -39,7 +40,8 @@ export const RichFilter: FunctionComponent<{
   placeholder: string;
   value: IRichFilter;
   onChange: (value: IRichFilter) => void;
-}> = ({ placeholder, value, onChange }) => {
+  foot?: ComponentChild;
+}> = ({ placeholder, value, onChange, foot }) => {
   const [regex, setRegex] = useState(!!value.regex);
   const [caseSensitive, setCaseSensitive] = useState(!!value.caseSensitive);
   const [text, setText] = useState(value.text);
@@ -49,26 +51,29 @@ export const RichFilter: FunctionComponent<{
   }, [regex, caseSensitive, text]);
 
   return (
-    <Filter
-      value={text}
-      placeholder={placeholder}
-      onChange={setText}
-      foot={
-        <Fragment>
-          <ToggleButton
-            icon={CaseSensitive}
-            label="Match Case"
-            checked={caseSensitive}
-            onChange={setCaseSensitive}
-          />
-          <ToggleButton
-            icon={Regex}
-            label="Use Regular Expression"
-            checked={regex}
-            onChange={setRegex}
-          />
-        </Fragment>
-      }
-    />
+    <div className={styles.f}>
+      <Filter
+        value={text}
+        placeholder={placeholder}
+        onChange={setText}
+        foot={
+          <Fragment>
+            <ToggleButton
+              icon={CaseSensitive}
+              label="Match Case"
+              checked={caseSensitive}
+              onChange={setCaseSensitive}
+            />
+            <ToggleButton
+              icon={Regex}
+              label="Use Regular Expression"
+              checked={regex}
+              onChange={setRegex}
+            />
+          </Fragment>
+        }
+      />
+      {foot}
+    </div>
   );
 };

@@ -1,5 +1,6 @@
 .wrapper {
   background: var(--vscode-editor-background);
+  flex-grow: 1;
   display: flex;
   align-items: center;
   border: 1px solid transparent;
@@ -31,7 +32,9 @@
 
 .wrapper > button {
   flex-shrink: 0;
-  margin-top: 3px;
-  margin-bottom: 3px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
   align-self: stretch;
 }

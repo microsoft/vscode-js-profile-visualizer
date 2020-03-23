@@ -14,6 +14,7 @@ import { IOpenDocumentMessage } from '../types';
 import { useCssVariables } from '../../common/client/useCssVariables';
 import { TextCache } from './textCache';
 import { MiddleOut } from '../../common/client/middleOutCompression';
+import { binarySearch } from '../../common/binary-search';
 
 const enum Constants {
   BoxHeight = 20,
@@ -25,7 +26,8 @@ const enum Constants {
 }
 
 interface IColumn {
-  width: number;
+  x1: number;
+  x2: number;
   rows: ((ILocation & { graphId: number }) | number)[];
 }
 
@@ -40,6 +42,7 @@ const buildColumns = (model: IProfileModel) => {
   let graphIdCounter = 0;
 
   // 1. Build initial columns
+  let timeOffset = 0;
   for (let i = 1; i < model.samples.length - 1; i++) {
     const root = model.nodes[model.samples[i]];
     const selfTime = model.timeDeltas[i - 1];
@@ -62,7 +65,12 @@ const buildColumns = (model: IProfileModel) => {
       });
     }
 
-    columns.push({ width: selfTime / model.duration, rows });
+    columns.push({
+      x1: timeOffset / model.duration,
+      x2: (selfTime + timeOffset) / model.duration,
+      rows,
+    });
+    timeOffset += selfTime;
   }
 
   // 2. Merge them
@@ -118,6 +126,8 @@ const pickColor = (location: ILocation & { graphId: number }, fade?: boolean) =>
 };
 
 interface IBox {
+  column: number;
+  row: number;
   x1: number;
   y1: number;
   x2: number;
@@ -129,10 +139,7 @@ interface IBox {
 }
 
 const buildBoxes = (columns: IColumn[]) => {
-  const width = 1 / columns.reduce((acc, c) => acc + c.width, 0);
-  const boxes: Map<string, IBox> = new Map();
-
-  let offset = 0;
+  const boxes: Map<number, IBox> = new Map();
   let maxY = 0;
   for (let x = 0; x < columns.length; x++) {
     const col = columns[x];
@@ -140,13 +147,15 @@ const buildBoxes = (columns: IColumn[]) => {
       const loc = col.rows[y];
       if (typeof loc === 'number') {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        boxes.get(`${loc}:${y}`)!.x2 = (offset + col.width) * width;
+        getBoxInRowColumn(columns, boxes, x, y)!.x2 = col.x2;
       } else {
         const y1 = Constants.BoxHeight * y + Constants.TimelineHeight;
         const y2 = y1 + Constants.BoxHeight;
-        boxes.set(`${x}:${y}`, {
-          x1: offset * width,
-          x2: (offset + col.width) * width,
+        boxes.set(loc.graphId, {
+          column: x,
+          row: y,
+          x1: col.x1,
+          x2: col.x2,
           y1,
           y2,
           level: y,
@@ -158,69 +167,12 @@ const buildBoxes = (columns: IColumn[]) => {
         maxY = Math.max(y2, maxY);
       }
     }
-
-    offset += col.width;
   }
 
   return {
-    boxes: [...boxes.values()].sort((a, b) =>
-      a.level !== b.level ? a.level - b.level : a.x1 - b.x1,
-    ),
+    boxById: boxes,
     maxY,
   };
-};
-
-const getBoxAtPosition = (x: number, y: number, boxes: ReadonlyArray<IBox>) => {
-  for (const box of boxes) {
-    if (box.y1 > y || box.y2 <= y) {
-      continue;
-    }
-
-    if (box.x1 > x || box.x2 <= x) {
-      continue;
-    }
-
-    return box;
-  }
-
-  return undefined;
-};
-
-/**
- * Gets boxes that appear inside the bounds, and with their x/y/faded values
- * adjusted for drawing in the bounds.
- */
-const getBoundedBoxes = (rawBoxes: IBox[], { minX, maxX, level }: IBounds) => {
-  const filtered: IBox[] = [];
-  let maxY = 0;
-  for (const box of rawBoxes) {
-    if (box.x1 < maxX && box.x2 > minX) {
-      filtered.push({
-        ...box,
-        color: box.level < level ? pickColor(box.loc, true) : box.color,
-        x1: Math.max(0, (box.x1 - minX) / (maxX - minX)),
-        x2: Math.min(1, (box.x2 - minX) / (maxX - minX)),
-      });
-    }
-
-    maxY = Math.max(box.y2, maxY);
-  }
-
-  return { boxes: filtered, maxY };
-};
-
-const findLast = <T extends {}>(
-  arr: ReadonlyArray<T>,
-  predicate: (value: T, index: number) => boolean,
-  startAt = arr.length - 1,
-): T | undefined => {
-  for (; startAt >= 0; startAt--) {
-    if (predicate(arr[startAt], startAt)) {
-      return arr[startAt];
-    }
-  }
-
-  return undefined;
 };
 
 interface IBounds {
@@ -260,6 +212,24 @@ const timelineFormat = new Intl.NumberFormat(undefined, {
 
 const dpr = window.devicePixelRatio || 1;
 
+const getBoxInRowColumn = (
+  columns: ReadonlyArray<IColumn>,
+  boxes: ReadonlyMap<number, IBox>,
+  column: number,
+  row: number,
+) => {
+  let candidate = columns[column]?.rows[row];
+  if (typeof candidate === 'number') {
+    candidate = columns[candidate].rows[row];
+  }
+
+  return candidate !== undefined
+    ? boxes.get((candidate as { graphId: number }).graphId)
+    : undefined;
+};
+
+const epsilon = (bounds: IBounds) => (bounds.maxX - bounds.minX) / 100_000;
+
 export const FlameGraph: FunctionComponent<{
   model: IProfileModel;
   filterFn: (input: string) => boolean;
@@ -279,12 +249,6 @@ export const FlameGraph: FunctionComponent<{
 
   const columns = useMemo(() => buildColumns(model), [model]);
   const rawBoxes = useMemo(() => buildBoxes(columns), [columns]);
-  const boxData = useMemo(() => getBoundedBoxes(rawBoxes.boxes, bounds), [
-    rawBoxes.boxes,
-    bounds.minX,
-    bounds.maxX,
-    bounds.level,
-  ]);
 
   const openBox = useCallback(
     (box: IBox, evt: { altKey: boolean }) => {
@@ -330,8 +294,17 @@ export const FlameGraph: FunctionComponent<{
       const text = box.text;
       const y1 = box.y1 - bounds.y;
       const y2 = box.y2 - bounds.y;
-      const x1 = box.x1 * canvasSize.width;
-      const x2 = box.x2 * canvasSize.width;
+      const xScale = canvasSize.width / (bounds.maxX - bounds.minX);
+      const x1 = Math.max(0, (box.x1 - bounds.minX) * xScale);
+      if (x1 > canvasSize.width) {
+        return;
+      }
+
+      const x2 = (box.x2 - bounds.minX) * xScale;
+      if (x2 < 0) {
+        return;
+      }
+
       const width = x2 - x1;
       const height = y2 - y1;
 
@@ -360,7 +333,7 @@ export const FlameGraph: FunctionComponent<{
         context.restore();
       }
     },
-    [context, highlight, focused, bounds.y, canvasSize, cssVariables],
+    [context, highlight, focused, bounds, canvasSize, cssVariables],
   );
 
   // Re-render boxes when data changes
@@ -370,10 +343,10 @@ export const FlameGraph: FunctionComponent<{
     }
 
     context.clearRect(0, Constants.TimelineHeight, context.canvas.width, context.canvas.height);
-    for (const box of boxData.boxes) {
+    for (const box of rawBoxes.boxById.values()) {
       drawBox(box, undefined, undefined, false);
     }
-  }, [context, bounds, boxData, canvasSize, cssVariables]);
+  }, [context, bounds, rawBoxes, canvasSize, cssVariables]);
 
   // Re-render the zoom indicator when bounds change
   useEffect(() => {
@@ -426,26 +399,25 @@ export const FlameGraph: FunctionComponent<{
       context.scale(dpr, dpr);
       setCanvasSize({ width, height });
     }
-  }, [windowSize, canvas]);
+  }, [windowSize, canvas.current]);
 
   // Callback that zoomes into the given box.
   const zoomToBox = useCallback(
     (box: IBox) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const original = rawBoxes.boxes.find(b => b.loc.graphId === box.loc.graphId)!;
       setBounds({
-        minX: original.x1,
-        maxX: original.x2,
+        minX: box.x1,
+        maxX: box.x2,
         y: clamp(
           0,
-          original.y1 > bounds.y + canvasSize.height ? original.y1 : bounds.y,
+          box.y1 > bounds.y + canvasSize.height ? box.y1 : bounds.y,
           rawBoxes.maxY - canvasSize.height,
         ),
         level: box.level,
       });
       setFocused(box);
     },
-    [rawBoxes, canvasSize.height, bounds],
+    [rawBoxes.maxY, canvasSize.height, bounds],
   );
 
   // Key event handler, deals with focus navigation and escape/enter
@@ -469,51 +441,56 @@ export const FlameGraph: FunctionComponent<{
         // fall through
       }
 
-      const focusIndex = boxData.boxes.findIndex(b => b.loc.graphId === focused?.loc.graphId);
-      const f = boxData.boxes[focusIndex];
-      if (!f) {
+      if (!focused) {
         return;
       }
 
       let nextFocus: IBox | false | undefined;
       switch (evt.key) {
         case 'ArrowRight':
-          const next = boxData.boxes[focusIndex + 1];
-          if (next?.y1 === f.y1) {
-            nextFocus = next;
+          for (
+            let i = focused.column + 1;
+            i < columns.length && columns[i].x1 + epsilon(bounds) < bounds.maxX;
+            i++
+          ) {
+            const box = getBoxInRowColumn(columns, rawBoxes.boxById, i, focused.row);
+            if (box && box !== focused) {
+              nextFocus = box;
+              break;
+            }
           }
           break;
         case 'ArrowLeft':
-          const prev = boxData.boxes[focusIndex - 1];
-          if (prev?.y1 === f.y1) {
-            nextFocus = prev;
+          for (
+            let i = focused.column - 1;
+            i >= 0 && columns[i].x2 - epsilon(bounds) > bounds.minX;
+            i--
+          ) {
+            const box = getBoxInRowColumn(columns, rawBoxes.boxById, i, focused.row);
+            if (box && box !== focused) {
+              nextFocus = box;
+              break;
+            }
           }
           break;
         case 'ArrowUp':
-          nextFocus = findLast(
-            boxData.boxes,
-            b => b.y1 < f.y1 && b.x1 <= f.x1 && b.x2 >= f.x2,
-            focusIndex - 1,
-          );
+          nextFocus = getBoxInRowColumn(columns, rawBoxes.boxById, focused.column, focused.row - 1);
           break;
         case 'ArrowDown':
-          nextFocus = boxData.boxes.find(
-            b => b.y1 > f.y1 && b.x1 >= f.x1 && b.x2 <= f.x2,
-            focusIndex - 1,
-          );
+          nextFocus = getBoxInRowColumn(columns, rawBoxes.boxById, focused.column, focused.row + 1);
           break;
         default:
           break;
       }
 
       if (nextFocus) {
-        drawBox(f, false, false);
+        drawBox(focused, false, false);
         drawBox(nextFocus, true, true);
         setFocused(nextFocus);
         setHighlight({ box: nextFocus, src: HighlightSource.Keyboard });
       }
     },
-    [zoomToBox, focused, boxData, drawBox],
+    [zoomToBox, focused, rawBoxes, drawBox],
   );
 
   // Keyboard events
@@ -535,9 +512,12 @@ export const FlameGraph: FunctionComponent<{
         return;
       }
 
-      return getBoxAtPosition(fromLeft / width, fromTop + bounds.y, boxData.boxes);
+      const x = (fromLeft / width) * (bounds.maxX - bounds.minX) + bounds.minX;
+      const col = Math.abs(binarySearch(columns, c => c.x2 - x)) - 1;
+      const row = Math.floor((fromTop + bounds.y - Constants.TimelineHeight) / Constants.BoxHeight);
+      return getBoxInRowColumn(columns, rawBoxes.boxById, col, row);
     },
-    [canvas, bounds.y, boxData],
+    [canvas, bounds, columns, rawBoxes],
   );
 
   // Listen for drag events on the window when it's running
@@ -601,8 +581,7 @@ export const FlameGraph: FunctionComponent<{
         return;
       } else if (highlight.box.loc.graphId !== box?.loc.graphId) {
         // a previous that wasn't ours, redraw
-        const b = boxData.boxes.find(b => b.loc.graphId === highlight.box.loc.graphId);
-        b && drawBox(b, false);
+        drawBox(highlight.box, false);
       } else {
         // a previous that's the same one, return
         return;
@@ -615,7 +594,7 @@ export const FlameGraph: FunctionComponent<{
         setHighlight(undefined);
       }
     },
-    [getBoxUnderCursor, drag, bounds, context, canvasSize, highlight, boxData],
+    [getBoxUnderCursor, drag, bounds, context, canvasSize, highlight, rawBoxes],
   );
 
   const onWheel = useCallback(
@@ -637,7 +616,7 @@ export const FlameGraph: FunctionComponent<{
 
       evt.preventDefault();
     },
-    [canvas.current, bounds],
+    [canvas.current, bounds, drawBox],
   );
 
   const onMouseDown = useCallback(
@@ -699,11 +678,17 @@ export const FlameGraph: FunctionComponent<{
   const onFocus = useCallback(() => {
     if (focused) {
       setHighlight({ box: focused, src: HighlightSource.Keyboard });
-    } else {
-      setFocused(boxData.boxes[0]);
-      setHighlight({ box: boxData.boxes[0], src: HighlightSource.Keyboard });
+      return;
     }
-  }, [boxData.boxes[0], focused]);
+
+    const firstCol = Math.abs(binarySearch(columns, c => c.x2 - bounds.minX));
+    const firstBox = getBoxInRowColumn(columns, rawBoxes.boxById, firstCol, 0);
+    if (firstBox) {
+      setFocused(firstBox);
+      setHighlight({ box: firstBox, src: HighlightSource.Keyboard });
+      drawBox(firstBox, true, true, true);
+    }
+  }, [rawBoxes, columns, bounds, focused, drawBox]);
 
   return (
     <Fragment>
@@ -729,8 +714,8 @@ export const FlameGraph: FunctionComponent<{
         <Tooltip
           canvasWidth={canvasSize.width}
           canvasHeight={canvasSize.height}
-          left={highlight.box.x1}
-          upperY={highlight.box.y1 - bounds.y}
+          left={(highlight.box.x1 - bounds.minX) / (bounds.maxX - bounds.minX)}
+          upperY={canvasSize.height - highlight.box.y1 + bounds.y}
           lowerY={highlight.box.y2 - bounds.y}
           src={highlight.src}
           location={highlight.box.loc}
@@ -816,7 +801,7 @@ const Tooltip: FunctionComponent<{
       aria-live="polite"
       aria-atomic={true}
       style={{
-        left: Math.min(canvasWidth - 400, canvasWidth * left + 10),
+        left: clamp(0, canvasWidth * left + 10, canvasWidth - 400),
         top: above ? 'initial' : lowerY + 10,
         bottom: above ? upperY + 10 : 'initial',
       }}

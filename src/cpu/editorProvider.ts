@@ -91,11 +91,11 @@ export class CpuProfileEditorProvider implements vscode.CustomEditorProvider {
       for (const path of getPossibleSourcePaths(document, src.source.path)) {
         lenses.set(
           path,
-          new vscode.Position(src.lineNumber - 1, src.columnNumber - 1),
+          new vscode.Position(Math.max(0, src.lineNumber - 1), Math.max(0, src.columnNumber - 1)),
           existing => ({
-            ticks: existing ? existing.ticks + location.ticks : location.ticks,
-            self: existing ? existing.self + location.selfTime : location.selfTime,
-            agg: existing ? existing.agg + location.aggregateTime : location.aggregateTime,
+            ticks: (existing?.ticks || 0) + location.ticks,
+            self: (existing?.self || 0) + location.selfTime,
+            agg: (existing?.agg || 0) + location.aggregateTime,
           }),
         );
       }
