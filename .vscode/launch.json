@@ -6,29 +6,14 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "Run Extension",
-			"type": "extensionHost",
+			"name": "Extension",
+			"type": "pwa-extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			"args": [
         "--enable-proposed-api=ms-vscode.vscode-js-profile-visualizer",
-				"--extensionDevelopmentPath=${workspaceFolder}"
-			],
-			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
-			],
-		},
-		{
-			"name": "Extension Tests",
-			"type": "extensionHost",
-			"request": "launch",
-			"runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
-			],
-			"outFiles": [
-				"${workspaceFolder}/out/test/**/*.js"
+				"--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-table",
+				"--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-flame"
 			],
 		}
 	]

@@ -1,0 +1,46 @@
+{
+  "name": "vscode-js-profile-flame",
+  "version": "0.0.0",
+  "description": "Flame graph visualizer for profiles taken from the JavaScript debugger",
+  "author": "Connor Peet <connor@peet.io>",
+  "homepage": "https://github.com/microsoft/vscode-js-profile-visualizer#readme",
+  "license": "MIT",
+  "main": "out/extension.js",
+  "files": [
+    "out"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/microsoft/vscode-js-profile-visualizer.git"
+  },
+  "publisher": "ms-vscode",
+  "enableProposedApi": true,
+  "sideEffects": false,
+  "engines": {
+    "vscode": "^1.43.0"
+  },
+  "activationEvents": [
+    "onCustomEditor:jsProfileVisualizer.cpuprofile.flame"
+  ],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "jsProfileVisualizer.cpuprofile.flame",
+        "displayName": "CPU Profile Flame Graph Visualizer",
+        "priority": "option",
+        "selector": [
+          {
+            "filenamePattern": "*.cpuprofile"
+          }
+        ]
+      }
+    ]
+  },
+  "bugs": {
+    "url": "https://github.com/microsoft/vscode-js-profile-visualizer/issues"
+  },
+  "dependencies": {
+    "vscode-js-profile-core": "0.0.0",
+    "vscode-codicons": "github:microsoft/vscode-codicons"
+  }
+}

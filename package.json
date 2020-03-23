@@ -1,63 +1,32 @@
 {
-  "name": "vscode-js-profile-visualizer",
-  "displayName": "vscode-js-profile-visualizer",
-  "description": "Visualizer for profiles taken from the JavaScript debugger",
-  "version": "0.0.1",
-  "publisher": "ms-vscode",
-  "enableProposedApi": true,
-  "sideEffects": false,
-  "engines": {
-    "vscode": "^1.43.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [
-    "onCustomEditor:jsProfileVisualizer.cpuprofile"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Microsoft/vscode-js-profile-visualizer.git"
-  },
-  "bugs": {
-    "url": "https://github.com/Microsoft/vscode-js-profile-visualizer/issues"
-  },
-  "main": "./out/extension.js",
-  "contributes": {
-    "customEditors": [
-      {
-        "viewType": "jsProfileVisualizer.cpuprofile",
-        "displayName": "CPU Profile Visualuzer",
-        "priority": "default",
-        "selector": [
-          {
-            "filenamePattern": "*.cpuprofile"
-          }
-        ]
-      }
-    ],
-    "commands": [
-      {
-        "command": "extension.jsProfileVisualizer.clearCodeLensese",
-        "title": "Clear Profile Code Lenses"
-      }
-    ]
-  },
+  "private": true,
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "rimraf out && concurrently \"npm:compile:*\"",
-    "compile:extension": "tsc -p ./",
-    "compile:cpu": "cross-env TARGET=cpu MODE=production webpack",
-    "watch": "rimraf out && concurrently \"npm:watch:*\"",
-    "watch:extension": "tsc -watch -p ./",
-    "watch:cpu": "cross-env TARGET=cpu webpack --watch",
-    "watch:cpu:standalone": "cross-env TARGET=cpu STANDALONE=1 VIZ_MODEL=samples/cpu-model.json webpack-dev-server",
-    "fmt": "prettier --write \"src/**/*.{ts,tsx,css}\"&& npm run test:lint -- --fix",
-    "test": "nnpm run test:lint && npm run test:fmt",
-    "test:fmt": "prettier --list-different \"src/**/*.{ts,tsx,css}\"",
-    "test:lint": "eslint  \"src/**/*.{ts,tsx}\"",
-    "test:unit": "node ./out/test/runTest.js",
-    "pretest": "npm run compile && npm run lint"
+    "compile": "concurrently \"npm:compile:core:*\" \"npm:compile:table:*\" \"npm:compile:flame:*\"",
+    "compile:core": "concurrently \"npm:compile:core:*\"",
+    "compile:core:tsc": "cd packages/vscode-js-profile-core && tsc -p tsconfig.json",
+    "compile:core:esm": "cd packages/vscode-js-profile-core && tsc -p tsconfig.browser.json",
+    "compile:core:css": "cd packages/vscode-js-profile-core && cpy --parents --cwd=src \"**/*.css\" ../out/esm",
+    "compile:table": "concurrently \"npm:compile:table:*\"",
+    "compile:table:tsc": "cd packages/vscode-js-profile-table && tsc",
+    "compile:table:webpack": "cd packages/vscode-js-profile-table && cross-env MODE=production webpack",
+    "compile:flame": "concurrently \"npm:compile:flame:*\"",
+    "compile:flame:tsc": "cd packages/vscode-js-profile-flame && tsc",
+    "compile:flame:webpack": "cd packages/vscode-js-profile-flame && cross-env MODE=production webpack",
+    "watch": "concurrently \"npm:watch:core:*\" \"npm:watch:flame:*\" \"npm:watch:table:*\"",
+    "watch:core:tsc": "cd packages/vscode-js-profile-core && tsc --watch",
+    "watch:core:esm": "cd packages/vscode-js-profile-core && tsc --watch -p tsconfig.browser.json",
+    "watch:core:css": "npm run compile:core:css && cd packages/vscode-js-profile-core && chokidar \"src/**/*.css\" -c \"cpy --parents --cwd=src '**/*.css' ../out/esm\"",
+    "watch:table": "concurrently \"npm:watch:table:*\"",
+    "watch:table:tsc": "cd packages/vscode-js-profile-table && tsc --watch",
+    "watch:table:webpack": "cd packages/vscode-js-profile-table && webpack --watch",
+    "watch:flame": "concurrently \"npm:watch:flame:*\"",
+    "watch:flame:tsc": "cd packages/vscode-js-profile-flame && tsc --watch",
+    "watch:flame:webpack": "cd packages/vscode-js-profile-flame && webpack --watch",
+    "fmt": "prettier --write \"packages/**/*.{ts,tsx,css}\" \"!**/out/**\" && npm run test:lint -- --fix",
+    "test": "concurrently \"npm:test:*\"",
+    "test:lint": "eslint  \"packages/**/*.{ts,tsx}\"",
+    "test:fmt": "prettier --list-different \"packages/**/*.{ts,tsx,css}\" \"!**/out/**\"",
+    "vscode:prepublish": "npm run compile"
   },
   "prettier": {
     "trailingComma": "all",
@@ -72,7 +41,9 @@
     "@typescript-eslint/eslint-plugin": "^2.18.0",
     "@typescript-eslint/parser": "^2.18.0",
     "autoprefixer": "^9.7.4",
+    "chokidar-cli": "^2.1.0",
     "concurrently": "^5.1.0",
+    "cpy-cli": "^3.1.0",
     "cross-env": "^7.0.2",
     "css-loader": "^3.4.2",
     "devtools-protocol": "0.0.748504",
@@ -81,6 +52,7 @@
     "eslint-plugin-react": "^7.19.0",
     "glob": "^7.1.6",
     "html-webpack-plugin": "^4.0.0",
+    "lerna": "^3.20.2",
     "mocha": "^7.0.1",
     "postcss-loader": "^3.0.0",
     "preact": "^10.3.4",
@@ -89,7 +61,6 @@
     "svg-inline-loader": "^0.8.2",
     "ts-loader": "^6.2.1",
     "typescript": "^3.7.5",
-    "vscode-codicons": "github:microsoft/vscode-codicons",
     "vscode-debugprotocol": "^1.39.0",
     "vscode-test": "^1.3.0",
     "webpack": "^4.42.0",

@@ -1,0 +1,52 @@
+{
+  "name": "vscode-js-profile-table",
+  "version": "0.0.0",
+  "description": "Text visualizer for profiles taken from the JavaScript debugger",
+  "author": "Connor Peet <connor@peet.io>",
+  "homepage": "https://github.com/microsoft/vscode-js-profile-visualizer#readme",
+  "license": "MIT",
+  "main": "out/extension.js",
+  "files": [
+    "out"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/microsoft/vscode-js-profile-visualizer.git"
+  },
+  "publisher": "ms-vscode",
+  "enableProposedApi": true,
+  "sideEffects": false,
+  "engines": {
+    "vscode": "^1.43.0"
+  },
+  "activationEvents": [
+    "onCustomEditor:jsProfileVisualizer.cpuprofile.table"
+  ],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "jsProfileVisualizer.cpuprofile.table",
+        "displayName": "CPU Profile Table Visualizer",
+        "priority": "default",
+        "selector": [
+          {
+            "filenamePattern": "*.cpuprofile"
+          }
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "extension.jsProfileVisualizer.table.clearCodeLenses",
+        "title": "Clear Profile Code Lenses"
+      }
+    ]
+  },
+  "bugs": {
+    "url": "https://github.com/microsoft/vscode-js-profile-visualizer/issues"
+  },
+  "dependencies": {
+    "vscode-js-profile-core": "0.0.0",
+    "vscode-codicons": "github:microsoft/vscode-codicons"
+  }
+}
