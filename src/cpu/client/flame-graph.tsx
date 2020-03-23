@@ -14,6 +14,7 @@ import { IOpenDocumentMessage } from '../types';
 import { useCssVariables } from '../../common/client/useCssVariables';
 import { TextCache } from './textCache';
 import { MiddleOut } from '../../common/client/middleOutCompression';
+import { setupGl } from './flamegl';
 
 const enum Constants {
   BoxHeight = 20,
@@ -117,7 +118,7 @@ const pickColor = (location: ILocation & { graphId: number }, fade?: boolean) =>
   };
 };
 
-interface IBox {
+export interface IBox {
   x1: number;
   y1: number;
   x2: number;
@@ -223,7 +224,7 @@ const findLast = <T extends {}>(
   return undefined;
 };
 
-interface IBounds {
+export interface IBounds {
   minX: number;
   maxX: number;
   y: number;
@@ -246,6 +247,11 @@ interface IDrag {
   lock: LockBound;
 }
 
+export interface ICanvasSize {
+  width: number;
+  height: number;
+}
+
 const enum HighlightSource {
   Hover,
   Keyboard,
@@ -265,9 +271,8 @@ export const FlameGraph: FunctionComponent<{
   filterFn: (input: string) => boolean;
 }> = ({ model }) => {
   const canvas = useRef<HTMLCanvasElement>();
-  const context = useMemo(() => canvas.current?.getContext('2d'), [canvas.current]);
   const windowSize = useWindowSize();
-  const [canvasSize, setCanvasSize] = useState({ width: 100, height: 100 });
+  const [canvasSize, setCanvasSize] = useState<ICanvasSize>({ width: 100, height: 100 });
   const [highlight, setHighlight] = useState<{ box: IBox; src: HighlightSource } | undefined>(
     undefined,
   );
@@ -279,6 +284,10 @@ export const FlameGraph: FunctionComponent<{
 
   const columns = useMemo(() => buildColumns(model), [model]);
   const rawBoxes = useMemo(() => buildBoxes(columns), [columns]);
+  const context = useMemo(
+    () => canvas.current && setupGl({ canvas: canvas.current, boxes: rawBoxes.boxes }),
+    [canvas.current, rawBoxes],
+  );
   const boxData = useMemo(() => getBoundedBoxes(rawBoxes.boxes, bounds), [
     rawBoxes.boxes,
     bounds.minX,
@@ -304,111 +313,104 @@ export const FlameGraph: FunctionComponent<{
     [vscode],
   );
 
-  const textCache = useMemo(() => {
-    const cache = new TextCache();
-    cache.setup(dpr, ctx => {
-      ctx.fillStyle = Constants.TextColor;
-    });
-    return cache;
-  }, [cssVariables]);
+  // const textCache = useMemo(() => {
+  //   const cache = new TextCache();
+  //   cache.setup(dpr, ctx => {
+  //     ctx.fillStyle = Constants.TextColor;
+  //   });
+  //   return cache;
+  // }, [cssVariables]);
 
-  const drawBox = useCallback(
-    (
-      box: IBox,
-      isHighlit = highlight?.box.loc.graphId === box.loc.graphId,
-      isFocused = focused?.loc.graphId === box.loc.graphId,
-      isOneOff = true,
-    ) => {
-      if (!context) {
-        return;
-      }
+  // const drawBox = useCallback(
+  //   (
+  //     box: IBox,
+  //     isHighlit = highlight?.box.loc.graphId === box.loc.graphId,
+  //     isFocused = focused?.loc.graphId === box.loc.graphId,
+  //     isOneOff = true,
+  //   ) => {
+  //     if (!context) {
+  //       return;
+  //     }
 
-      if (box.y2 < bounds.y || box.y1 > bounds.y + canvasSize.height) {
-        return;
-      }
+  //     if (box.y2 < bounds.y || box.y1 > bounds.y + canvasSize.height) {
+  //       return;
+  //     }
 
-      const text = box.text;
-      const y1 = box.y1 - bounds.y;
-      const y2 = box.y2 - bounds.y;
-      const x1 = box.x1 * canvasSize.width;
-      const x2 = box.x2 * canvasSize.width;
-      const width = x2 - x1;
-      const height = y2 - y1;
+  //     const text = box.text;
+  //     const y1 = box.y1 - bounds.y;
+  //     const y2 = box.y2 - bounds.y;
+  //     const x1 = box.x1 * canvasSize.width;
+  //     const x2 = box.x2 * canvasSize.width;
+  //     const width = x2 - x1;
+  //     const height = y2 - y1;
 
-      const needsClip = isOneOff && y1 < Constants.TimelineHeight;
-      if (needsClip) {
-        context.save();
-        context.beginPath();
-        context.rect(0, Constants.TimelineHeight, canvasSize.width, canvasSize.height);
-        context.clip();
-      }
+  //     const needsClip = isOneOff && y1 < Constants.TimelineHeight;
+  //     if (needsClip) {
+  //       context.save();
+  //       context.beginPath();
+  //       context.rect(0, Constants.TimelineHeight, canvasSize.width, canvasSize.height);
+  //       context.clip();
+  //     }
 
-      context.fillStyle = isHighlit ? box.color.dark : box.color.light;
-      context.fillRect(x1, y1, width, height - 1);
+  //     context.fillStyle = isHighlit ? box.color.dark : box.color.light;
+  //     context.fillRect(x1, y1, width, height - 1);
 
-      if (isFocused) {
-        context.strokeStyle = cssVariables.focusBorder;
-        context.lineWidth = 2;
-        context.strokeRect(x1 + 1, y1 + 1, width - 2, height - 3);
-      }
+  //     if (isFocused) {
+  //       context.strokeStyle = cssVariables.focusBorder;
+  //       context.lineWidth = 2;
+  //       context.strokeRect(x1 + 1, y1 + 1, width - 2, height - 3);
+  //     }
 
-      if (width > 10) {
-        textCache.drawText(context, text, x1 + 3, y1 + 3, width - 6, Constants.BoxHeight);
-      }
+  //     if (width > 10) {
+  //       textCache.drawText(context, text, x1 + 3, y1 + 3, width - 6, Constants.BoxHeight);
+  //     }
 
-      if (needsClip) {
-        context.restore();
-      }
-    },
-    [context, highlight, focused, bounds.y, canvasSize, cssVariables],
-  );
+  //     if (needsClip) {
+  //       context.restore();
+  //     }
+  //   },
+  //   [context, highlight, focused, bounds.y, canvasSize, cssVariables],
+  // );
 
   // Re-render boxes when data changes
   useEffect(() => {
-    if (!context) {
-      return;
-    }
-
-    context.clearRect(0, Constants.TimelineHeight, context.canvas.width, context.canvas.height);
-    for (const box of boxData.boxes) {
-      drawBox(box, undefined, undefined, false);
-    }
+    context?.setBounds(bounds, canvasSize);
   }, [context, bounds, boxData, canvasSize, cssVariables]);
 
   // Re-render the zoom indicator when bounds change
-  useEffect(() => {
-    if (!context) {
-      return;
-    }
+  // useEffect(() => {
+  //   if (!context) {
+  //     return;
+  //   }
 
-    context.clearRect(0, 0, context.canvas.width, Constants.TimelineHeight);
-    context.fillStyle = cssVariables['editor-foreground'];
-    context.font = context.textAlign = 'right';
-    context.strokeStyle = cssVariables['editorRuler-foreground'];
-    context.lineWidth = 1 / dpr;
+  //   context.clearRect(0, 0, context.canvas.width, Constants.TimelineHeight);
+  //   context.fillStyle = cssVariables['editor-foreground'];
+  //   context.font = context.textAlign = 'right';
+  //   context.strokeStyle = cssVariables['editorRuler-foreground'];
+  //   context.lineWidth = 1 / dpr;
 
-    const labels = Math.round(canvasSize.width / Constants.TimelineLabelSpacing);
-    const spacing = canvasSize.width / labels;
+  //   const labels = Math.round(canvasSize.width / Constants.TimelineLabelSpacing);
+  //   const spacing = canvasSize.width / labels;
 
-    const timeRange = model.duration * (bounds.maxX - bounds.minX);
-    const timeStart = model.duration * bounds.minX;
+  //   const timeRange = model.duration * (bounds.maxX - bounds.minX);
+  //   const timeStart = model.duration * bounds.minX;
 
-    context.beginPath();
-    for (let i = 1; i <= labels; i++) {
-      const time = (i / labels) * timeRange + timeStart;
-      const x = i * spacing;
-      context.fillText(
-        `${timelineFormat.format(time / 1000)}ms`,
-        x - 3,
-        Constants.TimelineHeight / 2,
-      );
-      context.moveTo(x, 0);
-      context.lineTo(x, Constants.TimelineHeight);
-    }
+  //   context.beginPath();
+  //   for (let i = 1; i <= labels; i++) {
+  //     const time = (i / labels) * timeRange + timeStart;
+  //     const x = i * spacing;
+  //     context.fillText(
+  //       `${timelineFormat.format(time / 1000)}ms`,
+  //       x - 3,
+  //       Constants.TimelineHeight / 2,
+  //     );
+  //     context.moveTo(x, 0);
+  //     context.lineTo(x, Constants.TimelineHeight);
+  //   }
 
-    context.stroke();
-    context.textAlign = 'left';
-  }, [context, model, canvasSize, bounds, cssVariables]);
+  //   context.stroke();
+  //   context.textAlign = 'left';
+  // }, [context, model, canvasSize, bounds, cssVariables]);
 
   // Update the canvas size when the window size changes, and on initial render
   useEffect(() => {
@@ -422,11 +424,11 @@ export const FlameGraph: FunctionComponent<{
       canvas.current.width = width * dpr;
       canvas.current.style.height = `${height}px`;
       canvas.current.height = height * dpr;
-      context.textBaseline = 'middle';
-      context.scale(dpr, dpr);
+      // context.textBaseline = 'middle';
+      // context.scale(dpr, dpr);
       setCanvasSize({ width, height });
     }
-  }, [windowSize, canvas]);
+  }, [windowSize, canvas.current, context]);
 
   // Callback that zoomes into the given box.
   const zoomToBox = useCallback(
@@ -507,13 +509,13 @@ export const FlameGraph: FunctionComponent<{
       }
 
       if (nextFocus) {
-        drawBox(f, false, false);
-        drawBox(nextFocus, true, true);
+        // drawBox(f, false, false);
+        // drawBox(nextFocus, true, true);
         setFocused(nextFocus);
         setHighlight({ box: nextFocus, src: HighlightSource.Keyboard });
       }
     },
-    [zoomToBox, focused, boxData, drawBox],
+    [zoomToBox, focused, boxData],
   );
 
   // Keyboard events
@@ -601,15 +603,15 @@ export const FlameGraph: FunctionComponent<{
         return;
       } else if (highlight.box.loc.graphId !== box?.loc.graphId) {
         // a previous that wasn't ours, redraw
-        const b = boxData.boxes.find(b => b.loc.graphId === highlight.box.loc.graphId);
-        b && drawBox(b, false);
+        // const b = boxData.boxes.find(b => b.loc.graphId === highlight.box.loc.graphId);
+        // b && drawBox(b, false);
       } else {
         // a previous that's the same one, return
         return;
       }
 
       if (box) {
-        drawBox(box, true);
+        // drawBox(box, true);
         setHighlight({ box, src: HighlightSource.Hover });
       } else {
         setHighlight(undefined);
