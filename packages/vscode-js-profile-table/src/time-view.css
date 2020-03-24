@@ -6,6 +6,7 @@
 
 .row {
   display: flex;
+  height: 23px;
 }
 
 .row > div {
@@ -31,33 +32,60 @@
 .duration {
   color: var(--vscode-terminal-ansiYellow);
   flex-shrink: 0;
-  position: relative;
   z-index: 0;
 }
 
-.file {
-  color: var(--vscode-terminal-foreground);
-  padding-left: 10px;
-  white-space: nowrap;
+.duration > span {
+  position: relative;
 }
 
-.file.virtual {
+.location {
+  color: var(--vscode-terminal-foreground);
+  padding-left: 10px;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.location.virtual {
   opacity: 0.5;
 }
 
-.file a {
+.location a {
   color: var(--vscode-terminal-foreground);
-  text-decoration: underline;
   cursor: pointer;
-}
-
-.file a:hover {
   text-decoration: none;
 }
 
-.file a:focus {
-  text-decoration: none;
+.location a:hover {
+  text-decoration: underline;
+}
+
+.location a:focus {
+  text-decoration: underline;
   outline: 1px solid var(--vscode-focusBorder);
+}
+
+.fn,
+.file {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fn {
+  max-width: 80%;
+  text-overflow: ellipsis;
+}
+
+.file {
+  font-family: var(--vscode-font-family);
+  direction: rtl;
+  flex-grow: 1;
+  margin-left: 2em;
+  font-size: 0.8em;
+  opacity: 0.8;
 }
 
 .expander {
@@ -87,11 +115,23 @@
 
 .impactBar {
   position: absolute;
-  height: 1px;
+  height: 2px;
   top: 100%;
+  left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.3);
+  margin-top: 3px;
+  background: rgba(255, 255, 255, 0.05);
   z-index: -1;
+}
+
+.impactBar > div {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  transform-origin: 100%;
+  background: rgba(255, 255, 255, 0.3);
 }
 
 :global(.vscode-light) .impactBar {

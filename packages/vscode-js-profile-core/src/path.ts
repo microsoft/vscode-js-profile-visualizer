@@ -3,6 +3,16 @@
  *--------------------------------------------------------*/
 
 import * as path from 'path';
+import { promises as fs } from 'fs';
+
+export const exists = async (file: string) => {
+  try {
+    await fs.stat(file);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 /**
  * Resolves path segments properly based on whether they appear to be c:/ -style or / style.

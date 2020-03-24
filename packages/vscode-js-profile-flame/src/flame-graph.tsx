@@ -274,9 +274,8 @@ export const FlameGraph: FunctionComponent<{
 
       vscode.postMessage<IOpenDocumentMessage>({
         type: 'openDocument',
-        path: src.source.path,
-        lineNumber: src.lineNumber,
-        columnNumber: src.columnNumber,
+        location: src,
+        callFrame: box.loc.callFrame,
         toSide: evt.altKey,
       });
     },

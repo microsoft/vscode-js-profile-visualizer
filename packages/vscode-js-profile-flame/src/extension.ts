@@ -11,7 +11,10 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider(
       'jsProfileVisualizer.cpuprofile.flame',
-      new CpuProfileEditorProvider(new ProfileCodeLensProvider(), join(__dirname, 'client.js')),
+      new CpuProfileEditorProvider(
+        new ProfileCodeLensProvider(),
+        join(__dirname, 'client.bundle.js'),
+      ),
     ),
   );
 }

@@ -26,7 +26,7 @@ module.exports = dirname => ({
   entry: `./src/client.tsx`,
   output: {
     path: path.join(dirname, 'out'),
-    filename: 'client.js',
+    filename: 'client.bundle.js',
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.json', '.svg', '.vert', '.frag'],

@@ -3,24 +3,13 @@
  *--------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { ICpuProfileRaw, Message, IOpenDocumentMessage } from './types';
+import { ICpuProfileRaw, Message } from './types';
 import { bundlePage } from '../bundlePage';
-import { promises as fs } from 'fs';
-import { properRelative } from '../pathUtils';
-import { resolve } from 'path';
-import { buildModel, IProfileModel } from './model';
-import { LensCollection } from '../lensCollection';
+import { buildModel, IProfileModel, ILocation } from './model';
+import { LensCollection } from '../lens-collection';
 import { ProfileCodeLensProvider } from '../profileCodeLensProvider';
 import { reopenWithEditor } from '../reopenWithEditor';
-
-const exists = async (file: string) => {
-  try {
-    await fs.stat(file);
-    return true;
-  } catch {
-    return false;
-  }
-};
+import { openLocation, getCandidateDiskPaths } from '../open-location';
 
 const decimalFormat = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
@@ -54,7 +43,12 @@ export class CpuProfileEditorProvider implements vscode.CustomEditorProvider {
     webviewPanel.webview.onDidReceiveMessage((message: Message) => {
       switch (message.type) {
         case 'openDocument':
-          this.openDocument(document, message);
+          openLocation({
+            rootPath: document.userData?.rootPath,
+            viewColumn: message.toSide ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active,
+            callFrame: message.callFrame,
+            location: message.location,
+          });
           return;
         case 'reopenWith':
           reopenWithEditor(document.uri, message.viewType, message.requireExtension);
@@ -71,11 +65,13 @@ export class CpuProfileEditorProvider implements vscode.CustomEditorProvider {
   }
 
   private createLensCollection(document: vscode.CustomDocument<IProfileModel>) {
-    const lenses = new LensCollection<{ self: number; agg: number; ticks: number }>(dto => {
+    type LensData = { self: number; agg: number; ticks: number };
+
+    const lenses = new LensCollection<LensData>(dto => {
       let title: string;
       if (dto.self > 10 || dto.agg > 10) {
         title =
-          `${decimalFormat.format(dto.self / 1000)}ms Self Time / ` +
+          `${decimalFormat.format(dto.self / 1000)}ms Self Time, ` +
           `${decimalFormat.format(dto.agg / 1000)}ms Total`;
       } else if (dto.ticks) {
         title = `${integerFormat.format(dto.ticks)} Ticks`;
@@ -86,71 +82,37 @@ export class CpuProfileEditorProvider implements vscode.CustomEditorProvider {
       return { command: '', title };
     });
 
+    const merge = (location: ILocation) => (existing?: LensData) => ({
+      ticks: (existing?.ticks || 0) + location.ticks,
+      self: (existing?.self || 0) + location.selfTime,
+      agg: (existing?.agg || 0) + location.aggregateTime,
+    });
+
     for (const location of document.userData?.locations || []) {
+      const mergeFn = merge(location);
+      lenses.set(
+        location.callFrame.url,
+        new vscode.Position(
+          Math.max(0, location.callFrame.lineNumber),
+          Math.max(0, location.callFrame.columnNumber),
+        ),
+        mergeFn,
+      );
+
       const src = location.src;
       if (!src || src.source.sourceReference !== 0 || !src.source.path) {
         continue;
       }
 
-      for (const path of getPossibleSourcePaths(document, src.source.path)) {
+      for (const path of getCandidateDiskPaths(document.userData?.rootPath, src.source)) {
         lenses.set(
           path,
           new vscode.Position(Math.max(0, src.lineNumber - 1), Math.max(0, src.columnNumber - 1)),
-          existing => ({
-            ticks: (existing?.ticks || 0) + location.ticks,
-            self: (existing?.self || 0) + location.selfTime,
-            agg: (existing?.agg || 0) + location.aggregateTime,
-          }),
+          mergeFn,
         );
       }
     }
 
     return lenses;
   }
-
-  private async openDocument(
-    document: vscode.CustomDocument<IProfileModel>,
-    message: IOpenDocumentMessage,
-  ) {
-    const uri = vscode.Uri.file(await this.getBestFilePath(document, message.path));
-    const doc = await vscode.workspace.openTextDocument(uri);
-    const pos = new vscode.Position(message.lineNumber - 1, message.columnNumber - 1);
-    await vscode.window.showTextDocument(doc, {
-      viewColumn: message.toSide ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active,
-      selection: new vscode.Range(pos, pos),
-    });
-  }
-
-  private async getBestFilePath(
-    document: vscode.CustomDocument<IProfileModel>,
-    originalPath: string,
-  ) {
-    const candidates = getPossibleSourcePaths(document, originalPath);
-    for (const candidate of candidates) {
-      if (await exists(candidate)) {
-        return candidate;
-      }
-    }
-
-    return candidates[0];
-  }
 }
-
-const getPossibleSourcePaths = (
-  document: vscode.CustomDocument<IProfileModel>,
-  originalPath: string,
-) => {
-  const locations = [originalPath];
-  if (document.userData?.rootPath) {
-    const folder = vscode.workspace.getWorkspaceFolder(document.uri);
-    if (folder) {
-      // compute the relative path using the original platform's logic, and
-      // then resolve it using the current platform
-      locations.push(
-        resolve(folder.uri.fsPath, properRelative(document.userData.rootPath, originalPath)),
-      );
-    }
-  }
-
-  return locations;
-};

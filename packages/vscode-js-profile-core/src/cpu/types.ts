@@ -3,16 +3,10 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
-import { DebugProtocol as Dap } from 'vscode-debugprotocol';
+import { ISourceLocation } from '../location-mapping';
 
 export const enum Constants {
   CurrentDataVersion = 1,
-}
-
-export interface ISourceLocation {
-  lineNumber: number;
-  columnNumber: number;
-  source: Dap.Source;
 }
 
 export interface IAnnotationLocation {
@@ -61,9 +55,8 @@ export interface ICpuProfileRaw extends Cdp.Profiler.Profile {
  */
 export interface IOpenDocumentMessage {
   type: 'openDocument';
-  path: string;
-  lineNumber: number;
-  columnNumber: number;
+  location?: ISourceLocation;
+  callFrame?: Cdp.Runtime.CallFrame;
   toSide: boolean;
 }
 

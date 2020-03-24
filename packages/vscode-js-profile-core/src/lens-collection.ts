@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 import { Command, CodeLens, Range, Position } from 'vscode';
-import { lowerCaseInsensitivePath } from './pathUtils';
+import { lowerCaseInsensitivePath } from './path';
 
 /**
  * A collection that creates code lenses from metadata data-transfer-objects

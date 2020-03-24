@@ -3,8 +3,9 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
-import { ICpuProfileRaw, ISourceLocation, IAnnotationLocation } from './types';
-import { properRelative, maybeFileUrlToPath } from '../pathUtils';
+import { ICpuProfileRaw, IAnnotationLocation } from './types';
+import { maybeFileUrlToPath } from '../path';
+import { ISourceLocation, addRelativeDiskPath } from '../location-mapping';
 
 /**
  * Category of call frames. Grouped into system, modules, and user code.
@@ -39,7 +40,7 @@ export interface ILocation {
   ticks: number;
   category: Category;
   callFrame: Cdp.Runtime.CallFrame;
-  src?: ISourceLocation & { relativePath?: string };
+  src?: ISourceLocation;
 }
 
 export interface IGraphNode extends ILocation {
@@ -81,19 +82,22 @@ const computeAggregateTime = (index: number, nodes: IComputedNode[]): number => 
   return (row.aggregateTime = total);
 };
 
-const getBestLocation = (profile: ICpuProfileRaw, candidates?: ReadonlyArray<ISourceLocation>) => {
-  const onDisk = candidates?.find(c => c.source.path && c.source.sourceReference === 0);
-  if (!onDisk) {
-    return candidates?.[0];
+const getBestLocation = (
+  profile: ICpuProfileRaw,
+  candidates: ReadonlyArray<ISourceLocation> = [],
+) => {
+  if (!profile.$vscode?.rootPath) {
+    return candidates[0];
   }
 
-  let relativePath: string | undefined;
-  if (profile.$vscode?.rootPath) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    relativePath = properRelative(profile.$vscode.rootPath, onDisk.source.path!);
+  for (const candidate of candidates) {
+    const mapped = addRelativeDiskPath(profile.$vscode.rootPath, candidate);
+    if (mapped.relativePath) {
+      return mapped;
+    }
   }
 
-  return { ...onDisk, relativePath };
+  return candidates[0];
 };
 
 /**

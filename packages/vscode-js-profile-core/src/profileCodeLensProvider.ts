@@ -10,8 +10,9 @@ import {
   TextDocument,
   ProviderResult,
 } from 'vscode';
-import { lowerCaseInsensitivePath } from './pathUtils';
-import { LensCollection } from './lensCollection';
+import { lowerCaseInsensitivePath } from './path';
+import { LensCollection } from './lens-collection';
+import { DownloadFileProvider } from './download-file-provider';
 
 /**
  * Shows code lens information for the currently active profile.
@@ -55,7 +56,20 @@ export class ProfileCodeLensProvider implements CodeLensProvider {
    * @inheritdoc
    */
   public provideCodeLenses(document: TextDocument): ProviderResult<CodeLens[]> {
-    return this.lenses?.[lowerCaseInsensitivePath(document.uri.fsPath)] ?? [];
+    const byPath = this.lenses?.[lowerCaseInsensitivePath(document.uri.fsPath)];
+    if (byPath) {
+      return byPath;
+    }
+
+    const byUrl =
+      document.uri.scheme === DownloadFileProvider.scheme
+        ? this.lenses?.[document.uri.query]
+        : undefined;
+    if (byUrl) {
+      return byUrl;
+    }
+
+    return [];
   }
 
   private setLenses(collection: LensCollection<void>) {

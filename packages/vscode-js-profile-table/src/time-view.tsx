@@ -84,7 +84,7 @@ export const TimeView: FunctionComponent<{
         className={styles.rows}
         data={rendered}
         renderRow={renderRow}
-        rowHeight={20}
+        rowHeight={25}
         overscanCount={10}
       />
     </Fragment>
@@ -126,12 +126,10 @@ const TimeViewRow: FunctionComponent<{
   const vscode = useContext(VsCodeApi);
   const onClick = useCallback(
     (evt: MouseEvent) =>
-      node.src?.source.path &&
       vscode.postMessage<IOpenDocumentMessage>({
         type: 'openDocument',
-        path: node.src.source.path,
-        lineNumber: node.src.lineNumber,
-        columnNumber: node.src.columnNumber,
+        callFrame: node.callFrame,
+        location: node.src,
         toSide: evt.altKey,
       }),
     [vscode, node],
@@ -163,29 +161,40 @@ const TimeViewRow: FunctionComponent<{
   return (
     <div className={styles.row} style={{ opacity: Math.max(0.7, 1 - (maxDepth - depth) * 0.1) }}>
       <div className={styles.duration}>
-        <div className={styles.impactBar} style={{ width: `${selfImpact * 100}%` }} />
-        {decimalFormat.format(node.selfTime / 1000)}ms
+        <span>
+          <ImpactBar impact={selfImpact} />
+          {decimalFormat.format(node.selfTime / 1000)}ms
+        </span>
       </div>
       <div className={styles.duration}>
-        <div className={styles.impactBar} style={{ width: `${aggImpact * 100}%` }} />
-        {decimalFormat.format(node.aggregateTime / 1000)}ms
+        <span>
+          <ImpactBar impact={aggImpact} />
+          {decimalFormat.format(node.aggregateTime / 1000)}ms
+        </span>
       </div>
       {!location ? (
-        <div className={classes(styles.file, styles.virtual)} style={{ marginLeft: depth * 15 }}>
-          {expand} {node.callFrame.functionName}
-        </div>
-      ) : !node.src ? (
-        <div className={styles.file} style={{ marginLeft: depth * 15 }}>
-          {expand} {node.callFrame.functionName} @ {location}
+        <div
+          className={classes(styles.location, styles.virtual)}
+          style={{ marginLeft: depth * 15 }}
+        >
+          {expand} <span className={styles.fn}>{node.callFrame.functionName}</span>
         </div>
       ) : (
-        <div className={styles.file} style={{ marginLeft: depth * 15 }}>
-          {expand} {node.callFrame.functionName} @{' '}
-          <a href="#" onClick={onClick}>
-            {location}
-          </a>
+        <div className={styles.location} style={{ marginLeft: depth * 15 }}>
+          {expand} <span className={styles.fn}>{node.callFrame.functionName}</span>
+          <span className={styles.file}>
+            <a href="#" onClick={onClick}>
+              {location}
+            </a>
+          </span>
         </div>
       )}
     </div>
   );
 };
+
+const ImpactBar: FunctionComponent<{ impact: number }> = ({ impact }) => (
+  <div className={styles.impactBar}>
+    <div style={{ transform: `scaleX(${impact})` }} />
+  </div>
+);
