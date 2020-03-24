@@ -15,8 +15,9 @@ import { useCssVariables } from 'vscode-js-profile-core/out/esm/client/useCssVar
 import { TextCache } from './textCache';
 import { MiddleOut } from 'vscode-js-profile-core/out/esm/client/middleOutCompression';
 import { binarySearch } from 'vscode-js-profile-core/out/esm/binary-search';
+import { setupGl } from './webgl/boxes';
 
-const enum Constants {
+export const enum Constants {
   BoxHeight = 20,
   TextColor = '#fff',
   BoxColor = '#000',
@@ -102,37 +103,23 @@ const buildColumns = (model: IProfileModel) => {
   return columns;
 };
 
-const pickColor = (location: ILocation & { graphId: number }, fade?: boolean) => {
+const pickColor = (location: ILocation & { graphId: number }): number => {
   if (location.category === Category.System) {
-    return { light: '#999', dark: '#888' };
+    return -1;
   }
 
   const hash = location.graphId * 5381; // djb2's prime, just some bogus stuff
-  let hue = 40 - (60 * (hash & 0xff)) / 0xff;
-  if (hue < 0) {
-    hue += 360;
-  }
-
-  let saturation = 80 + (((hash >>> 8) & 0xff) / 0xff) * 20;
-  if (fade) {
-    saturation -= 50;
-  }
-
-  const lum = 30 + (20 * ((hash >>> 16) & 0xff)) / 0xff;
-  return {
-    light: `hsl(${hue}, ${saturation}%, ${lum}%)`,
-    dark: `hsl(${hue}, ${saturation}%, ${lum - 7}%)`,
-  };
+  return hash & 0xff;
 };
 
-interface IBox {
+export interface IBox {
   column: number;
   row: number;
   x1: number;
   y1: number;
   x2: number;
   y2: number;
-  color: { light: string; dark: string };
+  color: number;
   level: number;
   text: string;
   loc: ILocation & { graphId: number };
@@ -175,7 +162,7 @@ const buildBoxes = (columns: IColumn[]) => {
   };
 };
 
-interface IBounds {
+export interface IBounds {
   minX: number;
   maxX: number;
   y: number;
@@ -228,17 +215,28 @@ const getBoxInRowColumn = (
     : undefined;
 };
 
+export interface ICanvasSize {
+  width: number;
+  height: number;
+}
+
+/**
+ * Gets the floating point precision threshold for calculating positions and
+ * intersections within the given set of bounds.
+ */
 const epsilon = (bounds: IBounds) => (bounds.maxX - bounds.minX) / 100_000;
 
 export const FlameGraph: FunctionComponent<{
   model: IProfileModel;
   filterFn: (input: string) => boolean;
 }> = ({ model }) => {
-  const canvas = useRef<HTMLCanvasElement>();
-  const context = useMemo(() => canvas.current?.getContext('2d'), [canvas.current]);
+  const webCanvas = useRef<HTMLCanvasElement>();
+  const webContext = useMemo(() => webCanvas.current?.getContext('2d'), [webCanvas.current]);
+  const glCanvas = useRef<HTMLCanvasElement>();
+
   const windowSize = useWindowSize();
-  const [canvasSize, setCanvasSize] = useState({ width: 100, height: 100 });
-  const [highlight, setHighlight] = useState<{ box: IBox; src: HighlightSource } | undefined>(
+  const [canvasSize, setCanvasSize] = useState<ICanvasSize>({ width: 100, height: 100 });
+  const [hovered, setHovered] = useState<{ box: IBox; src: HighlightSource } | undefined>(
     undefined,
   );
   const [bounds, setBounds] = useState<IBounds>({ minX: 0, maxX: 1, y: 0, level: 0 });
@@ -249,6 +247,23 @@ export const FlameGraph: FunctionComponent<{
 
   const columns = useMemo(() => buildColumns(model), [model]);
   const rawBoxes = useMemo(() => buildBoxes(columns), [columns]);
+
+  const gl = useMemo(
+    () =>
+      glCanvas.current &&
+      setupGl({
+        canvas: glCanvas.current,
+        focusColor: cssVariables.focusBorder,
+        boxes: [...rawBoxes.boxById.values()],
+        scale: dpr,
+      }),
+    [glCanvas.current, rawBoxes.boxById],
+  );
+  useEffect(() => gl?.setBoxes([...rawBoxes.boxById.values()]), [rawBoxes]);
+  useEffect(() => gl?.setBounds(bounds, canvasSize, dpr), [bounds, canvasSize]);
+  useEffect(() => gl?.setFocusColor(cssVariables.focusBorder), [cssVariables]);
+  useEffect(() => gl?.setFocused(focused?.loc.graphId), [focused]);
+  useEffect(() => gl?.setHovered(hovered?.box.loc.graphId), [hovered]);
 
   const openBox = useCallback(
     (box: IBox, evt: { altKey: boolean }) => {
@@ -276,89 +291,74 @@ export const FlameGraph: FunctionComponent<{
     return cache;
   }, [cssVariables]);
 
-  const drawBox = useCallback(
-    (
-      box: IBox,
-      isHighlit = highlight?.box.loc.graphId === box.loc.graphId,
-      isFocused = focused?.loc.graphId === box.loc.graphId,
-      isOneOff = true,
-    ) => {
-      if (!context) {
-        return;
+  useEffect(() => {
+    if (webContext) {
+      webContext.textBaseline = 'middle';
+      webContext.scale(dpr, dpr);
+    }
+  }, [webContext, canvasSize]);
+
+  // Re-render box labels when data changes
+  useEffect(() => {
+    if (!webContext) {
+      return;
+    }
+
+    webContext.clearRect(0, Constants.TimelineHeight, canvasSize.width, canvasSize.height);
+    webContext.save();
+    webContext.beginPath();
+    webContext.rect(0, Constants.TimelineHeight, canvasSize.width, canvasSize.height);
+
+    for (const box of rawBoxes.boxById.values()) {
+      if (box.y2 < bounds.y) {
+        continue;
       }
 
-      if (box.y2 < bounds.y || box.y1 > bounds.y + canvasSize.height) {
-        return;
+      if (box.y1 > bounds.y + canvasSize.height) {
+        continue;
       }
 
-      const text = box.text;
-      const y1 = box.y1 - bounds.y;
-      const y2 = box.y2 - bounds.y;
       const xScale = canvasSize.width / (bounds.maxX - bounds.minX);
       const x1 = Math.max(0, (box.x1 - bounds.minX) * xScale);
       if (x1 > canvasSize.width) {
-        return;
+        continue;
       }
 
       const x2 = (box.x2 - bounds.minX) * xScale;
       if (x2 < 0) {
-        return;
+        continue;
       }
 
       const width = x2 - x1;
-      const height = y2 - y1;
-
-      const needsClip = isOneOff && y1 < Constants.TimelineHeight;
-      if (needsClip) {
-        context.save();
-        context.beginPath();
-        context.rect(0, Constants.TimelineHeight, canvasSize.width, canvasSize.height);
-        context.clip();
+      if (width < 8) {
+        continue;
       }
 
-      context.fillStyle = isHighlit ? box.color.dark : box.color.light;
-      context.fillRect(x1, y1, width, height - 1);
-
-      if (isFocused) {
-        context.strokeStyle = cssVariables.focusBorder;
-        context.lineWidth = 2;
-        context.strokeRect(x1 + 1, y1 + 1, width - 2, height - 3);
-      }
-
-      if (width > 10) {
-        textCache.drawText(context, text, x1 + 3, y1 + 3, width - 6, Constants.BoxHeight);
-      }
-
-      if (needsClip) {
-        context.restore();
-      }
-    },
-    [context, highlight, focused, bounds, canvasSize, cssVariables],
-  );
-
-  // Re-render boxes when data changes
-  useEffect(() => {
-    if (!context) {
-      return;
+      textCache.drawText(
+        webContext,
+        box.text,
+        x1 + 3,
+        box.y1 - bounds.y + 3,
+        width - 6,
+        Constants.BoxHeight,
+      );
     }
 
-    context.clearRect(0, Constants.TimelineHeight, context.canvas.width, context.canvas.height);
-    for (const box of rawBoxes.boxById.values()) {
-      drawBox(box, undefined, undefined, false);
-    }
-  }, [context, bounds, rawBoxes, canvasSize, cssVariables]);
+    webContext.clip();
+    webContext.restore();
+  }, [webContext, bounds, rawBoxes, canvasSize, cssVariables]);
 
   // Re-render the zoom indicator when bounds change
   useEffect(() => {
-    if (!context) {
+    if (!webContext) {
       return;
     }
 
-    context.clearRect(0, 0, context.canvas.width, Constants.TimelineHeight);
-    context.fillStyle = cssVariables['editor-foreground'];
-    context.font = context.textAlign = 'right';
-    context.strokeStyle = cssVariables['editorRuler-foreground'];
-    context.lineWidth = 1 / dpr;
+    webContext.clearRect(0, 0, webContext.canvas.width, Constants.TimelineHeight);
+    webContext.fillStyle = cssVariables['editor-foreground'];
+    webContext.font = webContext.textAlign = 'right';
+    webContext.strokeStyle = cssVariables['editorRuler-foreground'];
+    webContext.lineWidth = 1 / dpr;
 
     const labels = Math.round(canvasSize.width / Constants.TimelineLabelSpacing);
     const spacing = canvasSize.width / labels;
@@ -366,40 +366,44 @@ export const FlameGraph: FunctionComponent<{
     const timeRange = model.duration * (bounds.maxX - bounds.minX);
     const timeStart = model.duration * bounds.minX;
 
-    context.beginPath();
+    webContext.beginPath();
     for (let i = 1; i <= labels; i++) {
       const time = (i / labels) * timeRange + timeStart;
       const x = i * spacing;
-      context.fillText(
+      webContext.fillText(
         `${timelineFormat.format(time / 1000)}ms`,
         x - 3,
         Constants.TimelineHeight / 2,
       );
-      context.moveTo(x, 0);
-      context.lineTo(x, Constants.TimelineHeight);
+      webContext.moveTo(x, 0);
+      webContext.lineTo(x, Constants.TimelineHeight);
     }
 
-    context.stroke();
-    context.textAlign = 'left';
-  }, [context, model, canvasSize, bounds, cssVariables]);
+    webContext.stroke();
+    webContext.textAlign = 'left';
+  }, [webContext, model, canvasSize, bounds, cssVariables]);
 
   // Update the canvas size when the window size changes, and on initial render
   useEffect(() => {
-    if (!canvas.current || !context) {
+    if (!webCanvas.current || !glCanvas.current) {
       return;
     }
 
-    const { width, height } = (canvas.current.parentElement as HTMLElement).getBoundingClientRect();
-    if (width !== canvasSize.width || height !== canvasSize.height) {
-      canvas.current.style.width = `${width}px`;
-      canvas.current.width = width * dpr;
-      canvas.current.style.height = `${height}px`;
-      canvas.current.height = height * dpr;
-      context.textBaseline = 'middle';
-      context.scale(dpr, dpr);
-      setCanvasSize({ width, height });
+    const { width, height } = (webCanvas.current
+      .parentElement as HTMLElement).getBoundingClientRect();
+    if (width === canvasSize.width && height === canvasSize.height) {
+      return;
     }
-  }, [windowSize, canvas.current]);
+
+    for (const canvas of [webCanvas.current, glCanvas.current]) {
+      canvas.style.width = `${width}px`;
+      canvas.width = width * dpr;
+      canvas.style.height = `${height}px`;
+      canvas.height = height * dpr;
+    }
+
+    setCanvasSize({ width, height });
+  }, [windowSize]);
 
   // Callback that zoomes into the given box.
   const zoomToBox = useCallback(
@@ -426,12 +430,12 @@ export const FlameGraph: FunctionComponent<{
       switch (evt.key) {
         case 'Escape':
           // If there's a tooltip open, close that on first escape
-          return highlight?.src === HighlightSource.Keyboard
-            ? setHighlight(undefined)
+          return hovered?.src === HighlightSource.Keyboard
+            ? setHovered(undefined)
             : setBounds({ minX: 0, maxX: 1, y: 0, level: 0 });
         case 'Enter':
-          if ((evt.metaKey || evt.ctrlKey) && highlight) {
-            return openBox(highlight.box, evt);
+          if ((evt.metaKey || evt.ctrlKey) && hovered) {
+            return openBox(hovered.box, evt);
           }
 
           return focused && zoomToBox(focused);
@@ -484,13 +488,11 @@ export const FlameGraph: FunctionComponent<{
       }
 
       if (nextFocus) {
-        drawBox(focused, false, false);
-        drawBox(nextFocus, true, true);
         setFocused(nextFocus);
-        setHighlight({ box: nextFocus, src: HighlightSource.Keyboard });
+        setHovered({ box: nextFocus, src: HighlightSource.Keyboard });
       }
     },
-    [zoomToBox, focused, rawBoxes, drawBox],
+    [zoomToBox, focused, hovered, rawBoxes],
   );
 
   // Keyboard events
@@ -501,11 +503,11 @@ export const FlameGraph: FunctionComponent<{
 
   const getBoxUnderCursor = useCallback(
     (evt: MouseEvent) => {
-      if (!canvas.current) {
+      if (!webCanvas.current) {
         return;
       }
 
-      const { top, left, width } = canvas.current.getBoundingClientRect();
+      const { top, left, width } = webCanvas.current.getBoundingClientRect();
       const fromTop = evt.pageY - top;
       const fromLeft = evt.pageX - left;
       if (fromTop < Constants.TimelineHeight) {
@@ -517,7 +519,7 @@ export const FlameGraph: FunctionComponent<{
       const row = Math.floor((fromTop + bounds.y - Constants.TimelineHeight) / Constants.BoxHeight);
       return getBoxInRowColumn(columns, rawBoxes.boxById, col, row);
     },
-    [canvas, bounds, columns, rawBoxes],
+    [webCanvas, bounds, columns, rawBoxes],
   );
 
   // Listen for drag events on the window when it's running
@@ -569,41 +571,28 @@ export const FlameGraph: FunctionComponent<{
 
   const onMouseMove = useCallback(
     (evt: MouseEvent) => {
-      if (!context || drag) {
+      if (!webContext || drag) {
         return;
       }
 
       const box = getBoxUnderCursor(evt);
-      if (!highlight) {
-        // no previous = fall through
-      } else if (!box && highlight.src === HighlightSource.Keyboard) {
+      if (!box && hovered?.src === HighlightSource.Keyboard) {
         // don't hide tooltips created by focus change on mousemove
-        return;
-      } else if (highlight.box.loc.graphId !== box?.loc.graphId) {
-        // a previous that wasn't ours, redraw
-        drawBox(highlight.box, false);
-      } else {
-        // a previous that's the same one, return
         return;
       }
 
-      if (box) {
-        drawBox(box, true);
-        setHighlight({ box, src: HighlightSource.Hover });
-      } else {
-        setHighlight(undefined);
-      }
+      setHovered(box ? { box, src: HighlightSource.Hover } : undefined);
     },
-    [getBoxUnderCursor, drag, bounds, context, canvasSize, highlight, rawBoxes],
+    [drag || getBoxUnderCursor, webContext, canvasSize, hovered, rawBoxes],
   );
 
   const onWheel = useCallback(
     (evt: WheelEvent) => {
-      if (!canvas.current) {
+      if (!webCanvas.current) {
         return;
       }
 
-      const { left, width } = canvas.current.getBoundingClientRect();
+      const { left, width } = webCanvas.current.getBoundingClientRect();
       const range = bounds.maxX - bounds.minX;
       const center = bounds.minX + (range * (evt.pageX - left)) / width;
       const scale = evt.deltaY / 400;
@@ -616,7 +605,7 @@ export const FlameGraph: FunctionComponent<{
 
       evt.preventDefault();
     },
-    [canvas.current, bounds, drawBox],
+    [webCanvas.current, drag || bounds],
   );
 
   const onMouseDown = useCallback(
@@ -631,7 +620,7 @@ export const FlameGraph: FunctionComponent<{
       });
       evt.preventDefault();
     },
-    [canvasSize, bounds],
+    [canvasSize, drag || bounds],
   );
 
   const onMouseUp = useCallback(
@@ -658,7 +647,7 @@ export const FlameGraph: FunctionComponent<{
         setBounds({ minX: 0, y: 0, maxX: 1, level: 0 });
       }
 
-      setHighlight(undefined);
+      setHovered(undefined);
       setDrag(undefined);
 
       evt.stopPropagation();
@@ -670,14 +659,14 @@ export const FlameGraph: FunctionComponent<{
   const onMouseLeave = useCallback(
     (evt: MouseEvent) => {
       onMouseUp(evt);
-      setHighlight(undefined);
+      setHovered(undefined);
     },
     [onMouseUp],
   );
 
   const onFocus = useCallback(() => {
     if (focused) {
-      setHighlight({ box: focused, src: HighlightSource.Keyboard });
+      setHovered({ box: focused, src: HighlightSource.Keyboard });
       return;
     }
 
@@ -685,10 +674,9 @@ export const FlameGraph: FunctionComponent<{
     const firstBox = getBoxInRowColumn(columns, rawBoxes.boxById, firstCol, 0);
     if (firstBox) {
       setFocused(firstBox);
-      setHighlight({ box: firstBox, src: HighlightSource.Keyboard });
-      drawBox(firstBox, true, true, true);
+      setHovered({ box: firstBox, src: HighlightSource.Keyboard });
     }
-  }, [rawBoxes, columns, bounds, focused, drawBox]);
+  }, [rawBoxes, columns, drag || bounds, focused]);
 
   return (
     <Fragment>
@@ -699,8 +687,8 @@ export const FlameGraph: FunctionComponent<{
         startDrag={setDrag}
       />
       <canvas
-        ref={canvas}
-        style={{ cursor: highlight ? 'pointer' : 'default' }}
+        ref={webCanvas}
+        style={{ cursor: hovered ? 'pointer' : 'default' }}
         role="application"
         tabIndex={0}
         onFocus={onFocus}
@@ -710,15 +698,27 @@ export const FlameGraph: FunctionComponent<{
         onMouseMove={onMouseMove}
         onWheel={onWheel}
       />
-      {highlight && (
+      <canvas
+        ref={glCanvas}
+        style={{
+          position: 'absolute',
+          top: Constants.TimelineHeight,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          pointerEvents: 'none',
+          zIndex: -1,
+        }}
+      />
+      {hovered && (
         <Tooltip
           canvasWidth={canvasSize.width}
           canvasHeight={canvasSize.height}
-          left={(highlight.box.x1 - bounds.minX) / (bounds.maxX - bounds.minX)}
-          upperY={canvasSize.height - highlight.box.y1 + bounds.y}
-          lowerY={highlight.box.y2 - bounds.y}
-          src={highlight.src}
-          location={highlight.box.loc}
+          left={(hovered.box.x1 - bounds.minX) / (bounds.maxX - bounds.minX)}
+          upperY={canvasSize.height - hovered.box.y1 + bounds.y}
+          lowerY={hovered.box.y2 - bounds.y}
+          src={hovered.src}
+          location={hovered.box.loc}
         />
       )}
     </Fragment>
@@ -825,11 +825,9 @@ const Tooltip: FunctionComponent<{
         <dt className={styles.time}>Aggregate Time</dt>
         <dd className={styles.time}>{decimalFormat.format(location.aggregateTime / 1000)}ms</dd>
       </dl>
-      {location.src && (
-        <div className={styles.hint}>
-          Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to file
-        </div>
-      )}
+      <div className={styles.hint}>
+        Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to file
+      </div>
     </div>
   );
 };

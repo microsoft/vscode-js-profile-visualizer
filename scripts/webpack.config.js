@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const { join } = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 const standalone = process.env.STANDALONE === '1';
@@ -62,6 +63,6 @@ module.exports = dirname => ({
     ],
   },
   plugins: standalone
-    ? [new HtmlWebpackPlugin({ template: 'samples/index.ejs', templateParameters: { constants } })]
+    ? [new HtmlWebpackPlugin({ template: join(__dirname, '..', 'samples/index.ejs'), templateParameters: { constants } })]
     : [],
 });
