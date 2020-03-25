@@ -14,7 +14,7 @@ import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/cpu/types';
 import { useCssVariables } from 'vscode-js-profile-core/out/esm/client/useCssVariables';
 import { TextCache } from './textCache';
 import { MiddleOut } from 'vscode-js-profile-core/out/esm/client/middleOutCompression';
-import { binarySearch } from 'vscode-js-profile-core/out/esm/binary-search';
+import { binarySearch } from 'vscode-js-profile-core/out/esm/array';
 import { setupGl } from './webgl/boxes';
 
 export const enum Constants {
