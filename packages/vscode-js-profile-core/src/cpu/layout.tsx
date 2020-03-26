@@ -3,41 +3,47 @@
  *--------------------------------------------------------*/
 import { h, FunctionComponent, Fragment, ComponentType } from 'preact';
 import { useState, useMemo } from 'preact/hooks';
-import { IRichFilter, RichFilter, compileFilter } from '../client/rich-filter';
+import { richFilter, RichFilterComponent } from '../client/rich-filter';
 import styles from './layout.css';
-import { IProfileModel } from './model';
+import { IDataSource } from '../ql';
 
-declare const MODEL: IProfileModel;
-
-export interface IBodyProps {
-  filter: IRichFilter;
-  filterFn: (input: string) => boolean;
-  model: IProfileModel;
+export interface IBodyProps<T> {
+  data: ReadonlyArray<T>;
 }
+
+type CpuProfileLayoutComponent<T> = FunctionComponent<{
+  data: IDataSource<T>;
+  getDefaultFilterText: (value: T) => ReadonlyArray<string>;
+  body: ComponentType<IBodyProps<T>>;
+  filterFooter?: ComponentType<{}>;
+}>;
 
 /**
  * Base layout component to display CPU-profile related info.
  */
-export const CpuProfileLayout: FunctionComponent<{
-  body: ComponentType<IBodyProps>;
-  filterFooter?: ComponentType<{}>;
-}> = ({ body: RowBody, filterFooter: FilterFooter }) => {
-  const [filter, setFilter] = useState<IRichFilter>({ text: '' });
-  const filterFn = useMemo(() => compileFilter(filter), [filter]);
+export const cpuProfileLayoutFactory = <T extends {}>(): CpuProfileLayoutComponent<T> => ({
+  data,
+  getDefaultFilterText,
+  body: RowBody,
+  filterFooter: FilterFooter,
+}) => {
+  const RichFilter = useMemo<RichFilterComponent<T>>(richFilter, []);
+  const [filteredData, setFilteredData] = useState<ReadonlyArray<T>>(data.data);
   const footer = useMemo(() => (FilterFooter ? <FilterFooter /> : undefined), [FilterFooter]);
 
   return (
     <Fragment>
       <div className={styles.filter}>
         <RichFilter
-          value={filter}
-          onChange={setFilter}
-          placeholder="Filter functions or files"
+          data={data}
+          getDefaultFilterText={getDefaultFilterText}
+          onChange={setFilteredData}
+          placeholder="Filter functions or files, or start a query()"
           foot={footer}
         />
       </div>
       <div className={styles.rows}>
-        <RowBody filter={filter} filterFn={filterFn} model={MODEL} />
+        <RowBody data={filteredData} />
       </div>
     </Fragment>
   );

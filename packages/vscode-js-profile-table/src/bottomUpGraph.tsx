@@ -10,7 +10,24 @@ import {
   Category,
 } from 'vscode-js-profile-core/out/esm/cpu/model';
 
-class BottomUpNode implements IGraphNode {
+export class BottomUpNode implements IGraphNode {
+  public static root() {
+    return new BottomUpNode({
+      id: -1,
+      category: Category.System,
+      selfTime: 0,
+      aggregateTime: 0,
+      ticks: 0,
+      callFrame: {
+        functionName: '(root)',
+        lineNumber: -1,
+        columnNumber: -1,
+        scriptId: '0',
+        url: '',
+      },
+    });
+  }
+
   public children = new Map<number, BottomUpNode>();
   public aggregateTime = 0;
   public selfTime = 0;
@@ -64,14 +81,7 @@ export const createBottomUpGraph = (model: IProfileModel) => {
     byLocation[node.locationId].push(node);
   }
 
-  const root = new BottomUpNode({
-    id: -1,
-    category: Category.System,
-    selfTime: 0,
-    aggregateTime: 0,
-    ticks: 0,
-    callFrame: { functionName: '(root)', lineNumber: -1, columnNumber: -1, scriptId: '0', url: '' },
-  });
+  const root = BottomUpNode.root();
 
   for (const node of model.nodes) {
     if (node.children.length === 0) {

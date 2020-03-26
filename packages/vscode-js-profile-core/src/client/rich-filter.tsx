@@ -9,6 +9,7 @@ import { ToggleButton } from './toggle-button';
 import * as CaseSensitive from 'vscode-codicons/src/icons/case-sensitive.svg';
 import * as Regex from 'vscode-codicons/src/icons/regex.svg';
 import styles from './rich-filter.css';
+import { evaluate, IDataSource } from '../ql';
 
 /**
  * Filter that the RichFilter returns,
@@ -36,18 +37,44 @@ export const compileFilter = (fn: IRichFilter): ((input: string) => boolean) => 
   return input => input.includes(fn.text);
 };
 
-export const RichFilter: FunctionComponent<{
+export type RichFilterComponent<T> = FunctionComponent<{
+  data: IDataSource<T>;
   placeholder: string;
-  value: IRichFilter;
-  onChange: (value: IRichFilter) => void;
+  getDefaultFilterText: (value: T) => ReadonlyArray<string>;
+  onChange: (data: ReadonlyArray<T>) => void;
   foot?: ComponentChild;
-}> = ({ placeholder, value, onChange, foot }) => {
-  const [regex, setRegex] = useState(!!value.regex);
-  const [caseSensitive, setCaseSensitive] = useState(!!value.caseSensitive);
-  const [text, setText] = useState(value.text);
+}>;
+
+export const richFilter = <T extends {}>(): RichFilterComponent<T> => ({
+  placeholder,
+  data,
+  getDefaultFilterText,
+  onChange,
+  foot,
+}) => {
+  const [regex, setRegex] = useState(false);
+  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [text, setText] = useState('');
+  const [error, setError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    onChange({ regex, caseSensitive, text });
+    if (!text.includes('query()')) {
+      const filter = compileFilter({ text, caseSensitive, regex });
+      onChange(data.data.filter(d => getDefaultFilterText(d).some(filter)));
+      return;
+    }
+
+    try {
+      onChange(
+        evaluate({
+          expression: text,
+          dataSources: { query: data },
+        }),
+      );
+      setError(undefined);
+    } catch (e) {
+      setError(e.message);
+    }
   }, [regex, caseSensitive, text]);
 
   return (
@@ -73,6 +100,7 @@ export const RichFilter: FunctionComponent<{
           </Fragment>
         }
       />
+      {error && <div className={styles.error}>{error}</div>}
       {foot}
     </div>
   );

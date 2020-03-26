@@ -10,6 +10,7 @@ import { LensCollection } from '../lens-collection';
 import { ProfileCodeLensProvider } from '../profileCodeLensProvider';
 import { reopenWithEditor } from '../reopenWithEditor';
 import { openLocation, getCandidateDiskPaths } from '../open-location';
+import { ReadonlyCustomDocument } from '../readonly-custom-document';
 
 const decimalFormat = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
@@ -21,23 +22,28 @@ const integerFormat = new Intl.NumberFormat(undefined, {
 });
 
 export class CpuProfileEditorProvider implements vscode.CustomEditorProvider {
-  constructor(private readonly lens: ProfileCodeLensProvider, private readonly bundle: string) {}
+  constructor(
+    private readonly lens: ProfileCodeLensProvider,
+    private readonly bundle: string,
+    private readonly documentType: string,
+  ) {}
 
   /**
    * @inheritdoc
    */
-  async resolveCustomDocument(document: vscode.CustomDocument<IProfileModel>): Promise<void> {
-    const content = await vscode.workspace.fs.readFile(document.uri);
+  async openCustomDocument(uri: vscode.Uri) {
+    const content = await vscode.workspace.fs.readFile(uri);
     const raw: ICpuProfileRaw = JSON.parse(content.toString());
-    document.userData = buildModel(raw);
+    const document = new ReadonlyCustomDocument(this.documentType, uri, buildModel(raw));
     this.lens.registerLenses(this.createLensCollection(document));
+    return document;
   }
 
   /**
    * @inheritdoc
    */
   public async resolveCustomEditor(
-    document: vscode.CustomDocument<IProfileModel>,
+    document: ReadonlyCustomDocument<IProfileModel>,
     webviewPanel: vscode.WebviewPanel,
   ): Promise<void> {
     webviewPanel.webview.onDidReceiveMessage((message: Message) => {
@@ -64,7 +70,7 @@ export class CpuProfileEditorProvider implements vscode.CustomEditorProvider {
     });
   }
 
-  private createLensCollection(document: vscode.CustomDocument<IProfileModel>) {
+  private createLensCollection(document: ReadonlyCustomDocument<IProfileModel>) {
     type LensData = { self: number; agg: number; ticks: number };
 
     const lenses = new LensCollection<LensData>(dto => {

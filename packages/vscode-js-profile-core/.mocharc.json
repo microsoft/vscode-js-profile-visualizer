@@ -1,0 +1,5 @@
+{
+  "spec": ["out/**/*.test.js"],
+  "ignore": ["out/esm/**"],
+  "require": "source-map-support/register"
+}

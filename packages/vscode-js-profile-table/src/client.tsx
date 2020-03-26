@@ -1,32 +1,25 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
-import { h, render, FunctionComponent, Fragment } from 'preact';
-import { useState, useMemo, useCallback, useContext } from 'preact/hooks';
-import {
-  IRichFilter,
-  RichFilter,
-  compileFilter,
-} from 'vscode-js-profile-core/out/esm/client/rich-filter';
-import { TimeView } from './time-view';
+import { h, render, FunctionComponent } from 'preact';
+import { useCallback, useContext } from 'preact/hooks';
 import styles from './client.css';
-import { IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
-import { createBottomUpGraph } from './bottomUpGraph';
 import * as Flame from 'vscode-codicons/src/icons/flame.svg';
 import { ToggleButton } from 'vscode-js-profile-core/out/esm/client/toggle-button';
 import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
 import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/cpu/types';
+import { cpuProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/cpu/layout';
+import { IProfileModel, IGraphNode } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { TimeView } from './time-view';
+import { createBottomUpGraph } from './bottomUpGraph';
 
 declare const MODEL: IProfileModel;
 
-const bottomUp = createBottomUpGraph(MODEL);
+const graph = createBottomUpGraph(MODEL);
 
-const App: FunctionComponent = () => {
-  const [filter, setFilter] = useState<IRichFilter>({ text: '' });
-  const filterFn = useMemo(() => compileFilter(filter), [filter]);
-
+const OpenGraphButton: FunctionComponent = () => {
   const vscode = useContext(VsCodeApi);
-  const openFlameGraph = useCallback(
+  const closeFlameGraph = useCallback(
     () =>
       vscode.postMessage<IReopenWithEditor>({
         type: 'reopenWith',
@@ -37,30 +30,37 @@ const App: FunctionComponent = () => {
   );
 
   return (
-    <Fragment>
-      <div className={styles.filter}>
-        <RichFilter
-          value={filter}
-          onChange={setFilter}
-          placeholder="Filter functions or files"
-          foot={
-            <ToggleButton
-              icon={Flame}
-              label="Show flame graph"
-              checked={false}
-              onClick={openFlameGraph}
-            />
-          }
-        />
-      </div>
-      <div className={styles.rows}>
-        <TimeView graph={bottomUp} filterFn={filterFn} />
-      </div>
-    </Fragment>
+    <ToggleButton icon={Flame} label="Show flame graph" checked={false} onClick={closeFlameGraph} />
   );
 };
+
+const CpuProfileLayout = cpuProfileLayoutFactory<IGraphNode>();
 
 const container = document.createElement('div');
 container.classList.add(styles.wrapper);
 document.body.appendChild(container);
-render(<App />, container);
+render(
+  <CpuProfileLayout
+    data={{
+      data: [...graph.children.values()],
+      properties: {
+        function: 'node.callFrame.functionName',
+        url: 'node.callFrame.url',
+        line: '(node.src ? node.src.lineNumber : node.callFrame.lineNumber)',
+        path: '(node.src ? node.src.relativePath : node.callFrame.url)',
+        selfTime: 'node.selfTime',
+        totalTime: 'node.aggregateTime',
+        id: 'node.id',
+      },
+      getChildren: 'return [...node.children.values()]',
+    }}
+    getDefaultFilterText={node => [
+      node.callFrame.functionName,
+      node.callFrame.url,
+      node.src?.source.path ?? '',
+    ]}
+    body={TimeView}
+    filterFooter={OpenGraphButton}
+  />,
+  container,
+);

@@ -41,22 +41,30 @@ const getGlobalUniqueId = (node: IGraphNode) => {
 };
 
 export const TimeView: FunctionComponent<{
-  graph: IGraphNode;
-  filterFn: (input: string) => boolean;
-}> = ({ filterFn, graph }) => {
+  data: ReadonlyArray<IGraphNode>;
+}> = ({ data }) => {
   const listRef = useRef<{ base: HTMLElement }>();
-  const [sortFn, setSort] = useState(() => selfTime);
+  const [sortFn, setSort] = useState<SortFn | undefined>(() => selfTime);
   const [focused, setFocused] = useState<undefined | IGraphNode>(undefined);
   const [expanded, setExpanded] = useState<ReadonlySet<IGraphNode>>(new Set<IGraphNode>());
 
-  const getSortedChildren = (node: IGraphNode) =>
-    [...node.children.values()].sort((a, b) => sortFn(b) - sortFn(a));
+  const getSortedChildren = (node: IGraphNode) => {
+    const children = [...node.children.values()];
+    if (sortFn) {
+      children.sort((a, b) => sortFn(b) - sortFn(a));
+    }
+
+    return children;
+  };
 
   // 1. Top level sorted items
-  const sorted = useMemo(() => getSortedChildren(graph), [graph, sortFn]);
+  const sorted = useMemo(
+    () => (sortFn ? data.slice().sort((a, b) => sortFn(b) - sortFn(a)) : data),
+    [data, sortFn],
+  );
 
   // 2. Expand nested child nodes
-  const unfiltered = useMemo(() => {
+  const rendered = useMemo(() => {
     const output: NodeAtDepth[] = sorted.map(node => ({ node, position: 1, depth: 0 }));
     for (let i = 0; i < output.length; i++) {
       const { node, depth } = output[i];
@@ -73,18 +81,6 @@ export const TimeView: FunctionComponent<{
 
     return output;
   }, [sorted, expanded, sortFn]);
-
-  // 3. Filter based on query text
-  const rendered = useMemo(
-    () =>
-      unfiltered.filter(
-        ({ node: n }) =>
-          filterFn(n.callFrame.functionName) ||
-          filterFn(n.callFrame.url) ||
-          filterFn(n.src?.source.path || ''),
-      ),
-    [unfiltered, filterFn],
-  );
 
   const onKeyDown = useCallback(
     (evt: KeyboardEvent, node: IGraphNode) => {
@@ -193,15 +189,17 @@ export const TimeView: FunctionComponent<{
 };
 
 const TimeViewHeader: FunctionComponent<{
-  sortFn: SortFn;
-  onChangeSort: (newFn: () => SortFn) => void;
+  sortFn: SortFn | undefined;
+  onChangeSort: (newFn: () => SortFn | undefined) => void;
 }> = ({ sortFn, onChangeSort }) => (
   <div className={styles.row}>
     <div
       id="self-time-header"
       className={classes(styles.heading, styles.timing)}
       aria-sort={sortFn === selfTime ? 'descending' : undefined}
-      onClick={useCallback(() => onChangeSort(() => selfTime), [useCallback])}
+      onClick={useCallback(() => onChangeSort(() => (sortFn === selfTime ? undefined : selfTime)), [
+        sortFn,
+      ])}
     >
       {sortFn === selfTime && <Icon i={ChevronDown} />}
       Self Time
@@ -210,7 +208,9 @@ const TimeViewHeader: FunctionComponent<{
       id="total-time-header"
       className={classes(styles.heading, styles.timing)}
       aria-sort={sortFn === aggTime ? 'descending' : undefined}
-      onClick={useCallback(() => onChangeSort(() => aggTime), [useCallback])}
+      onClick={useCallback(() => onChangeSort(() => (sortFn === aggTime ? undefined : aggTime)), [
+        sortFn,
+      ])}
     >
       {sortFn === aggTime && <Icon i={ChevronDown} />}
       Total Time

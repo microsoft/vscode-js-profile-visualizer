@@ -18,7 +18,6 @@ export const bundlePage = async (bundleFile: string, constants: { [key: string]:
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Custom Editor: ${bundleFile}</title>
-      <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'">
     </head>
     <body>
       <script type="text/javascript" nonce="${nonce}">(() => {
