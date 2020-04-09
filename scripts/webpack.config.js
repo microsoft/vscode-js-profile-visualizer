@@ -20,13 +20,14 @@ if (standalone) {
   }
 }
 
-module.exports = dirname => ({
+module.exports = (dirname, file = 'client') => ({
   mode: production ? 'production' : 'development',
   devtool: production ? false : 'inline-source-map',
-  entry: `./src/client.tsx`,
+  entry: `./src/${file}.tsx`,
   output: {
+    jsonpFunction: path.dirname(dirname).replace(/[^a-z]/gi, ''),
     path: path.join(dirname, 'out'),
-    filename: 'client.bundle.js',
+    filename: `${file}.bundle.js`,
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.json', '.svg', '.vert', '.frag'],
@@ -63,6 +64,11 @@ module.exports = dirname => ({
     ],
   },
   plugins: standalone
-    ? [new HtmlWebpackPlugin({ template: join(__dirname, '..', 'samples/index.ejs'), templateParameters: { constants } })]
+    ? [
+        new HtmlWebpackPlugin({
+          template: join(__dirname, '..', 'samples/index.ejs'),
+          templateParameters: { constants },
+        }),
+      ]
     : [],
 });

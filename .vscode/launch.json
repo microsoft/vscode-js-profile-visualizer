@@ -11,7 +11,7 @@
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			"args": [
-        "--enable-proposed-api=ms-vscode.vscode-js-profile-visualizer",
+				// "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-notebook",
 				"--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-table",
 				"--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-flame"
 			],

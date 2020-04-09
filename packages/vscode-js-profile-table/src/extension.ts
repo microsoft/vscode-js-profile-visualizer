@@ -17,7 +17,6 @@ export function activate(context: vscode.ExtensionContext) {
       new CpuProfileEditorProvider(
         lenses,
         join(__dirname, 'client.bundle.js'),
-        'jsProfileVisualizer.cpuprofile.table',
       ),
     ),
     vscode.workspace.registerTextDocumentContentProvider(
