@@ -12,13 +12,9 @@ export function activate(context: vscode.ExtensionContext) {
   const lenses = new ProfileCodeLensProvider();
 
   context.subscriptions.push(
-    vscode.window.registerCustomEditorProvider(
+    vscode.window.registerCustomEditorProvider2(
       'jsProfileVisualizer.cpuprofile.table',
-      new CpuProfileEditorProvider(
-        lenses,
-        join(__dirname, 'client.bundle.js'),
-        'jsProfileVisualizer.cpuprofile.table',
-      ),
+      new CpuProfileEditorProvider(lenses, join(__dirname, 'client.bundle.js')),
     ),
     vscode.workspace.registerTextDocumentContentProvider(
       'js-viz-download',

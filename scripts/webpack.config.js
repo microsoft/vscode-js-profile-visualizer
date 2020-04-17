@@ -23,7 +23,7 @@ if (standalone) {
 module.exports = dirname => ({
   mode: production ? 'production' : 'development',
   devtool: production ? false : 'inline-source-map',
-  entry: `./src/client.tsx`,
+  entry: `./src/client/client.tsx`,
   output: {
     path: path.join(dirname, 'out'),
     filename: 'client.bundle.js',

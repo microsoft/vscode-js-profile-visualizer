@@ -21,12 +21,9 @@ const integerFormat = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 0,
 });
 
-export class CpuProfileEditorProvider implements vscode.CustomEditorProvider {
-  constructor(
-    private readonly lens: ProfileCodeLensProvider,
-    private readonly bundle: string,
-    private readonly documentType: string,
-  ) {}
+export class CpuProfileEditorProvider
+  implements vscode.CustomEditorProvider<ReadonlyCustomDocument<IProfileModel>> {
+  constructor(private readonly lens: ProfileCodeLensProvider, private readonly bundle: string) {}
 
   /**
    * @inheritdoc
@@ -34,7 +31,7 @@ export class CpuProfileEditorProvider implements vscode.CustomEditorProvider {
   async openCustomDocument(uri: vscode.Uri) {
     const content = await vscode.workspace.fs.readFile(uri);
     const raw: ICpuProfileRaw = JSON.parse(content.toString());
-    const document = new ReadonlyCustomDocument(this.documentType, uri, buildModel(raw));
+    const document = new ReadonlyCustomDocument(uri, buildModel(raw));
     this.lens.registerLenses(this.createLensCollection(document));
     return document;
   }

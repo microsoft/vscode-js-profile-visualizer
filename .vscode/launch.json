@@ -13,7 +13,8 @@
 			"args": [
         "--enable-proposed-api=ms-vscode.vscode-js-profile-visualizer",
 				"--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-table",
-				"--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-flame"
+				"--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-flame",
+				"--extensionDevelopmentPath=${workspaceFolder}/../vscode-js-debug/out",
 			],
 		}
 	]

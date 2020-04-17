@@ -121,7 +121,6 @@ export const setupGl = ({
       positions[k++] = box.loc.category;
     }
 
-    gl.useProgram(boxProgram);
     gl.bindBuffer(gl.ARRAY_BUFFER, boxesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
     gl.bindVertexArray(boxBuffer);

@@ -16,6 +16,7 @@ import { TextCache } from './textCache';
 import { MiddleOut } from 'vscode-js-profile-core/out/esm/client/middleOutCompression';
 import { binarySearch } from 'vscode-js-profile-core/out/esm/array';
 import { setupGl } from './webgl/boxes';
+import { IColumn } from './stacks';
 
 export const enum Constants {
   BoxHeight = 20,
@@ -25,83 +26,6 @@ export const enum Constants {
   TimelineLabelSpacing = 200,
   MinWindow = 0.005,
 }
-
-interface IColumn {
-  x1: number;
-  x2: number;
-  rows: ((ILocation & { graphId: number }) | number)[];
-}
-
-/**
- * Builds a 2D array of flame graph entries. Returns the columns with nested
- * 'rows'. Each column includes a percentage width (0-1) of the screen space.
- * A number, instead of a node in a column, means it should be merged with
- * the node at the column at the given index.
- */
-const buildColumns = (model: IProfileModel) => {
-  const columns: IColumn[] = [];
-  let graphIdCounter = 0;
-
-  // 1. Build initial columns
-  let timeOffset = 0;
-  for (let i = 1; i < model.samples.length - 1; i++) {
-    const root = model.nodes[model.samples[i]];
-    const selfTime = model.timeDeltas[i - 1];
-    const rows = [
-      {
-        ...model.locations[root.locationId],
-        graphId: graphIdCounter++,
-        selfTime,
-        aggregateTime: 0,
-      },
-    ];
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    for (let id = root.parent; id; id = model.nodes[id!].parent) {
-      rows.unshift({
-        ...model.locations[model.nodes[id].locationId],
-        graphId: graphIdCounter++,
-        selfTime: 0,
-        aggregateTime: selfTime,
-      });
-    }
-
-    columns.push({
-      x1: timeOffset / model.duration,
-      x2: (selfTime + timeOffset) / model.duration,
-      rows,
-    });
-    timeOffset += selfTime;
-  }
-
-  // 2. Merge them
-  for (let x = 1; x < columns.length; x++) {
-    const col = columns[x];
-    for (let y = 0; y < col.rows.length; y++) {
-      const current = col.rows[y] as ILocation;
-      const prevOrNumber = columns[x - 1]?.rows[y];
-      if (typeof prevOrNumber === 'number') {
-        if (current.id !== (columns[prevOrNumber].rows[y] as ILocation).id) {
-          break;
-        }
-        col.rows[y] = prevOrNumber;
-      } else if (prevOrNumber?.id === current.id) {
-        col.rows[y] = x - 1;
-      } else {
-        break;
-      }
-
-      const prev =
-        typeof prevOrNumber === 'number'
-          ? (columns[prevOrNumber].rows[y] as ILocation)
-          : prevOrNumber;
-      prev.selfTime += current.selfTime;
-      prev.aggregateTime += current.aggregateTime;
-    }
-  }
-
-  return columns;
-};
 
 const pickColor = (location: ILocation & { graphId: number }): number => {
   if (location.category === Category.System) {
@@ -125,7 +49,7 @@ export interface IBox {
   loc: ILocation & { graphId: number };
 }
 
-const buildBoxes = (columns: IColumn[]) => {
+const buildBoxes = (columns: ReadonlyArray<IColumn>) => {
   const boxes: Map<number, IBox> = new Map();
   let maxY = 0;
   for (let x = 0; x < columns.length; x++) {
@@ -227,9 +151,9 @@ export interface ICanvasSize {
 const epsilon = (bounds: IBounds) => (bounds.maxX - bounds.minX) / 100_000;
 
 export const FlameGraph: FunctionComponent<{
+  columns: ReadonlyArray<IColumn>;
   model: IProfileModel;
-  filterFn: (input: string) => boolean;
-}> = ({ model }) => {
+}> = ({ columns, model }) => {
   const webCanvas = useRef<HTMLCanvasElement>();
   const webContext = useMemo(() => webCanvas.current?.getContext('2d'), [webCanvas.current]);
   const glCanvas = useRef<HTMLCanvasElement>();
@@ -239,13 +163,16 @@ export const FlameGraph: FunctionComponent<{
   const [hovered, setHovered] = useState<{ box: IBox; src: HighlightSource } | undefined>(
     undefined,
   );
-  const [bounds, setBounds] = useState<IBounds>({ minX: 0, maxX: 1, y: 0, level: 0 });
+  const clampBounds = useMemo(
+    () => ({ minX: columns[0]?.x1 ?? 0, maxX: columns[columns.length - 1]?.x2 ?? 0 }),
+    [columns],
+  );
+  const [bounds, setBounds] = useState<IBounds>({ ...clampBounds, y: 0, level: 0 });
   const [focused, setFocused] = useState<IBox | undefined>(undefined);
   const [drag, setDrag] = useState<IDrag | undefined>(undefined);
   const cssVariables = useCssVariables();
   const vscode = useContext(VsCodeApi);
 
-  const columns = useMemo(() => buildColumns(model), [model]);
   const rawBoxes = useMemo(() => buildBoxes(columns), [columns]);
 
   const gl = useMemo(
@@ -257,7 +184,7 @@ export const FlameGraph: FunctionComponent<{
         boxes: [...rawBoxes.boxById.values()],
         scale: dpr,
       }),
-    [glCanvas.current, rawBoxes.boxById],
+    [glCanvas.current],
   );
   useEffect(() => gl?.setBoxes([...rawBoxes.boxById.values()]), [rawBoxes]);
   useEffect(() => gl?.setBounds(bounds, canvasSize, dpr), [bounds, canvasSize]);
@@ -282,13 +209,17 @@ export const FlameGraph: FunctionComponent<{
     [vscode],
   );
 
-  const textCache = useMemo(() => {
-    const cache = new TextCache();
-    cache.setup(dpr, ctx => {
-      ctx.fillStyle = Constants.TextColor;
-    });
-    return cache;
-  }, [cssVariables]);
+  const textCache = useMemo(
+    () =>
+      new TextCache(
+        `${Constants.BoxHeight / 1.9}px ${cssVariables['editor-font-family']}`,
+        Constants.TextColor,
+        dpr,
+      ),
+    [cssVariables],
+  );
+
+  useEffect(() => setBounds({ ...bounds, ...clampBounds }), [clampBounds]);
 
   useEffect(() => {
     if (webContext) {
@@ -329,7 +260,7 @@ export const FlameGraph: FunctionComponent<{
       }
 
       const width = x2 - x1;
-      if (width < 8) {
+      if (width < 10) {
         continue;
       }
 
@@ -431,7 +362,7 @@ export const FlameGraph: FunctionComponent<{
           // If there's a tooltip open, close that on first escape
           return hovered?.src === HighlightSource.Keyboard
             ? setHovered(undefined)
-            : setBounds({ minX: 0, maxX: 1, y: 0, level: 0 });
+            : setBounds({ ...clampBounds, y: 0, level: 0 });
         case 'Enter':
           if ((evt.metaKey || evt.ctrlKey) && hovered) {
             return openBox(hovered.box, evt);
@@ -452,11 +383,11 @@ export const FlameGraph: FunctionComponent<{
       switch (evt.key) {
         case 'ArrowRight':
           for (
-            let i = focused.column + 1;
-            i < columns.length && columns[i].x1 + epsilon(bounds) < bounds.maxX;
-            i++
+            let x = focused.column + 1;
+            x < columns.length && columns[x].x1 + epsilon(bounds) < bounds.maxX;
+            x++
           ) {
-            const box = getBoxInRowColumn(columns, rawBoxes.boxById, i, focused.row);
+            const box = getBoxInRowColumn(columns, rawBoxes.boxById, x, focused.row);
             if (box && box !== focused) {
               nextFocus = box;
               break;
@@ -465,11 +396,11 @@ export const FlameGraph: FunctionComponent<{
           break;
         case 'ArrowLeft':
           for (
-            let i = focused.column - 1;
-            i >= 0 && columns[i].x2 - epsilon(bounds) > bounds.minX;
-            i--
+            let x = focused.column - 1;
+            x >= 0 && columns[x].x2 - epsilon(bounds) > bounds.minX;
+            x--
           ) {
-            const box = getBoxInRowColumn(columns, rawBoxes.boxById, i, focused.row);
+            const box = getBoxInRowColumn(columns, rawBoxes.boxById, x, focused.row);
             if (box && box !== focused) {
               nextFocus = box;
               break;
@@ -480,7 +411,12 @@ export const FlameGraph: FunctionComponent<{
           nextFocus = getBoxInRowColumn(columns, rawBoxes.boxById, focused.column, focused.row - 1);
           break;
         case 'ArrowDown':
-          nextFocus = getBoxInRowColumn(columns, rawBoxes.boxById, focused.column, focused.row + 1);
+          {
+            let x = focused.column;
+            do {
+              nextFocus = getBoxInRowColumn(columns, rawBoxes.boxById, x, focused.row + 1);
+            } while (!nextFocus && columns[++x]?.rows[focused.row] === focused.column);
+          }
           break;
         default:
           break;
@@ -491,7 +427,7 @@ export const FlameGraph: FunctionComponent<{
         setHovered({ box: nextFocus, src: HighlightSource.Keyboard });
       }
     },
-    [zoomToBox, focused, hovered, rawBoxes],
+    [zoomToBox, focused, hovered, rawBoxes, clampBounds],
   );
 
   // Keyboard events
@@ -515,6 +451,10 @@ export const FlameGraph: FunctionComponent<{
 
       const x = (fromLeft / width) * (bounds.maxX - bounds.minX) + bounds.minX;
       const col = Math.abs(binarySearch(columns, c => c.x2 - x)) - 1;
+      if (columns[col].x1 > x) {
+        return;
+      }
+
       const row = Math.floor((fromTop + bounds.y - Constants.TimelineHeight) / Constants.BoxHeight);
       return getBoxInRowColumn(columns, rawBoxes.boxById, col, row);
     },
@@ -534,14 +474,18 @@ export const FlameGraph: FunctionComponent<{
       let maxX: number;
       if (!(lock & LockBound.MinX)) {
         const upper = lock & LockBound.MaxX ? bounds.maxX - Constants.MinWindow : 1 - range;
-        minX = clamp(0, original.minX - (evt.pageX - pageXOrigin) * xPerPixel, upper);
+        minX = clamp(
+          clampBounds.minX,
+          original.minX - (evt.pageX - pageXOrigin) * xPerPixel,
+          upper,
+        );
         maxX = lock & LockBound.MaxX ? original.maxX : Math.min(1, minX + range);
       } else {
         minX = original.minX;
         maxX = clamp(
           minX + Constants.MinWindow,
           original.maxX - (evt.pageX - pageXOrigin) * xPerPixel,
-          1,
+          clampBounds.maxX,
         );
       }
 
@@ -566,7 +510,7 @@ export const FlameGraph: FunctionComponent<{
       document.removeEventListener('mouseleave', onUp);
       document.removeEventListener('mouseup', onUp);
     };
-  }, [drag]);
+  }, [clampBounds, drag]);
 
   const onMouseMove = useCallback(
     (evt: MouseEvent) => {
@@ -596,15 +540,15 @@ export const FlameGraph: FunctionComponent<{
       const center = bounds.minX + (range * (evt.pageX - left)) / width;
       const scale = evt.deltaY / 400;
       setBounds({
-        minX: Math.max(0, bounds.minX + scale * (center - bounds.minX)),
-        maxX: Math.min(1, bounds.maxX - scale * (bounds.maxX - center)),
+        minX: Math.max(clampBounds.minX, bounds.minX + scale * (center - bounds.minX)),
+        maxX: Math.min(clampBounds.maxX, bounds.maxX - scale * (bounds.maxX - center)),
         y: bounds.y,
         level: bounds.level,
       });
 
       evt.preventDefault();
     },
-    [webCanvas.current, drag || bounds],
+    [clampBounds, webCanvas.current, drag || bounds],
   );
 
   const onMouseDown = useCallback(
@@ -643,7 +587,7 @@ export const FlameGraph: FunctionComponent<{
       } else if (box) {
         zoomToBox(box);
       } else {
-        setBounds({ minX: 0, y: 0, maxX: 1, level: 0 });
+        setBounds({ ...clampBounds, y: 0, level: 0 });
       }
 
       setHovered(undefined);
@@ -652,7 +596,7 @@ export const FlameGraph: FunctionComponent<{
       evt.stopPropagation();
       evt.preventDefault();
     },
-    [drag, getBoxUnderCursor, openBox, zoomToBox],
+    [drag, getBoxUnderCursor, openBox, zoomToBox, clampBounds],
   );
 
   const onMouseLeave = useCallback(
