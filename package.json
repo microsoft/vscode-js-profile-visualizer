@@ -1,4 +1,5 @@
 {
+  "name": "js-profile-visualizer",
   "private": true,
   "scripts": {
     "postinstall": "lerna bootstrap --force-local",

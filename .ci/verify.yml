@@ -6,7 +6,7 @@ trigger:
 
 jobs:
 - job: run_tests
-  displayName: Run TEsts
+  displayName: Run Tests
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
