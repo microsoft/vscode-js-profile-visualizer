@@ -5,8 +5,8 @@ trigger:
     - '*'
 
 jobs:
-- job: nightly_release
-  displayName: Nightly Release
+- job: run_tests
+  displayName: Run TEsts
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
