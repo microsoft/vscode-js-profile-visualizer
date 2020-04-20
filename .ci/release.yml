@@ -1,0 +1,35 @@
+# Run whenever there's a release available
+trigger:
+  tags:
+    include:
+    - '*'
+
+pr: none
+
+jobs:
+- job: nightly_release
+  displayName: Nightly Release
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '12.x'
+    displayName: 'Install Node.js'
+
+  - script: npm i -g vsce
+    displayName: 'install vsce'
+
+  - script: npm ci
+    displayName: 'npm ci'
+
+  - script: npm run compile
+    displayName: 'npm run compile'
+
+  - script: vsce publish --yarn --noVerify -p $(vsce.token)
+    displayName: 'flame: vsce publish'
+    workingDirectory: packages/vscode-js-profile-flame
+
+  - script: vsce publish --yarn --noVerify -p $(vsce.token)
+    displayName: 'table: vsce publish'
+    workingDirectory: packages/vscode-js-profile-table

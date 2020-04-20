@@ -473,13 +473,14 @@ export const FlameGraph: FunctionComponent<{
       let minX: number;
       let maxX: number;
       if (!(lock & LockBound.MinX)) {
-        const upper = lock & LockBound.MaxX ? bounds.maxX - Constants.MinWindow : 1 - range;
+        const upper =
+          lock & LockBound.MaxX ? bounds.maxX - Constants.MinWindow : clampBounds.maxX - range;
         minX = clamp(
           clampBounds.minX,
           original.minX - (evt.pageX - pageXOrigin) * xPerPixel,
           upper,
         );
-        maxX = lock & LockBound.MaxX ? original.maxX : Math.min(1, minX + range);
+        maxX = lock & LockBound.MaxX ? original.maxX : Math.min(clampBounds.maxX, minX + range);
       } else {
         minX = original.minX;
         maxX = clamp(
