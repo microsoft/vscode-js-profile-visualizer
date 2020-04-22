@@ -8,7 +8,7 @@ import {
   IComputedNode,
   IGraphNode,
   Category,
-} from 'vscode-js-profile-core/out/cpu/model';
+} from './model';
 
 export class BottomUpNode implements IGraphNode {
   public static root() {

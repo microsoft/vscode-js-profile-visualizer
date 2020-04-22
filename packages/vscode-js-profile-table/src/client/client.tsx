@@ -10,8 +10,8 @@ import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
 import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/cpu/types';
 import { cpuProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/cpu/layout';
 import { IProfileModel, IGraphNode } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { createBottomUpGraph } from 'vscode-js-profile-core/out/esm/cpu/bottomUpGraph';
 import { TimeView } from './time-view';
-import { createBottomUpGraph } from './bottomUpGraph';
 
 declare const MODEL: IProfileModel;
 

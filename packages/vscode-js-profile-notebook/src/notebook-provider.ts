@@ -5,9 +5,12 @@
 import * as vscode from 'vscode';
 import { ICpuProfileRaw } from 'vscode-js-profile-core/out/cpu/types';
 import { Constants } from './types';
-import { IGraphNode, buildModel } from 'vscode-js-profile-core/out/cpu/model';
+import { IGraphNode, buildModel, IProfileModel } from 'vscode-js-profile-core/out/cpu/model';
 import { evaluate } from 'vscode-js-profile-core/out/ql/index';
-import { createBottomUpGraph } from './bottom-up-graph';
+import {
+  createBottomUpGraph,
+  BottomUpNode,
+} from 'vscode-js-profile-core/out/cpu/bottomUpGraph';
 
 type RawCpuCell = { markdown: string } | { query: string };
 
@@ -34,7 +37,7 @@ const errorOutput = (message: string): vscode.CellOutput => ({
 export class NotebookProvider implements vscode.NotebookProvider {
   private readonly models = new WeakMap<
     vscode.NotebookDocument,
-    { raw: ICpuProfileWithNotebook; graph: IGraphNode }
+    { raw: ICpuProfileWithNotebook; model: IProfileModel; bottomUp: BottomUpNode }
   >();
 
   /**
@@ -43,8 +46,8 @@ export class NotebookProvider implements vscode.NotebookProvider {
   public async resolveNotebook(editor: vscode.NotebookEditor): Promise<void> {
     const content = await vscode.workspace.fs.readFile(editor.document.uri);
     const raw: ICpuProfileWithNotebook = JSON.parse(content.toString());
-    const graph = createBottomUpGraph(buildModel(raw));
-    this.models.set(editor.document, { raw, graph });
+    const model = buildModel(raw);
+    this.models.set(editor.document, { raw, model, bottomUp: createBottomUpGraph(model) });
 
     await editor.edit(edit => {
       if (!raw.$cells?.length) {
@@ -81,7 +84,7 @@ export class NotebookProvider implements vscode.NotebookProvider {
         expression: cell.source,
         dataSources: {
           query: {
-            data: Object.values(model.graph.children),
+            data: Object.values(model.bottomUp.children),
             properties: {
               function: 'node.callFrame.functionName',
               url: 'node.callFrame.url',

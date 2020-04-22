@@ -28,6 +28,7 @@ module.exports = (dirname, file = 'client') => ({
     jsonpFunction: path.dirname(dirname).replace(/[^a-z]/gi, ''),
     path: path.join(dirname, 'out'),
     filename: `${file}.bundle.js`,
+    publicPath: 'http://localhost:8116/'
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.json', '.svg', '.vert', '.frag'],
@@ -62,6 +63,12 @@ module.exports = (dirname, file = 'client') => ({
         loader: 'raw-loader',
       },
     ],
+  },
+  devServer: {
+    allowedHosts: ['null'],
+    headers: {
+      'Access-Control-Allow-Origin': '*'
+  }
   },
   plugins: standalone
     ? [
