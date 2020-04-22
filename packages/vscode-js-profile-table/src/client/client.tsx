@@ -42,7 +42,7 @@ document.body.appendChild(container);
 render(
   <CpuProfileLayout
     data={{
-      data: [...graph.children.values()],
+      data: Object.values(graph.children),
       properties: {
         function: 'node.callFrame.functionName',
         url: 'node.callFrame.url',
@@ -52,7 +52,7 @@ render(
         totalTime: 'node.aggregateTime',
         id: 'node.id',
       },
-      getChildren: 'return [...node.children.values()]',
+      getChildren: 'return Object.values(node.children)',
     }}
     getDefaultFilterText={node => [
       node.callFrame.functionName,

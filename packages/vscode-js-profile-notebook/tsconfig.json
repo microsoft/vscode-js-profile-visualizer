@@ -1,0 +1,7 @@
+{
+  "extends": "../../scripts/tsconfig.json",
+  "include": ["src", "../vscode-js-profile-core/src/types"],
+  "compilerOptions": {
+    "outDir": "out",
+  }
+}

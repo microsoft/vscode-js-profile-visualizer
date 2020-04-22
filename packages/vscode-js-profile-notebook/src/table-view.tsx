@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 import { h, FunctionComponent, Fragment } from 'preact';
-import styles from './time-view.css';
+import styles from './table-view.css';
 import {
   useMemo,
   useCallback,

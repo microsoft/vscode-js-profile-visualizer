@@ -44,7 +44,8 @@ export interface ILocation {
 }
 
 export interface IGraphNode extends ILocation {
-  children: ReadonlyMap<number, IGraphNode>;
+  children: { [id: number]: IGraphNode };
+  childrenSize: number;
   parent?: IGraphNode;
 }
 
