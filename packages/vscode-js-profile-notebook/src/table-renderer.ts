@@ -11,7 +11,7 @@ export class TableRenderer implements vscode.NotebookOutputRenderer {
 
   constructor(public extensionPath: string) {
     // this.preloads.push(vscode.Uri.file(join(extensionPath, 'out', 'client.bundle.js')));
-    // this.preloads.push(vscode.Uri.parse('http://localhost:8116/out/client.bundle.js'));
+    this.preloads.push(vscode.Uri.parse('http://localhost:8116/out/client.bundle.js'));
   }
 
   render(_document: vscode.NotebookDocument, output: vscode.CellOutput): string {

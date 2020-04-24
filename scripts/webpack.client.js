@@ -4,7 +4,7 @@ const { join } = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 const standalone = process.env.STANDALONE === '1';
-const production = process.env.MODE === 'production';
+const production = process.argv.includes('production');
 
 const constants = {};
 if (standalone) {
@@ -28,7 +28,7 @@ module.exports = (dirname, file = 'client') => ({
     jsonpFunction: path.dirname(dirname).replace(/[^a-z]/gi, ''),
     path: path.join(dirname, 'out'),
     filename: `${file}.bundle.js`,
-    publicPath: 'http://localhost:8116/'
+    publicPath: 'http://localhost:8116/',
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.json', '.svg', '.vert', '.frag'],
@@ -67,8 +67,8 @@ module.exports = (dirname, file = 'client') => ({
   devServer: {
     allowedHosts: ['null'],
     headers: {
-      'Access-Control-Allow-Origin': '*'
-  }
+      'Access-Control-Allow-Origin': '*',
+    },
   },
   plugins: standalone
     ? [

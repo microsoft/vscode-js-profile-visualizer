@@ -2,9 +2,9 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { h, render } from 'preact'
-import { Constants } from "../types";
-import { IGraphNode } from "vscode-js-profile-core/out/cpu/model";
+import { h, render } from 'preact';
+import { Constants } from '../types';
+import { IGraphNode } from 'vscode-js-profile-core/out/cpu/model';
 import { TimeView } from './table-view';
 
 export const renderTableTag = (tag: HTMLScriptElement) => {
@@ -26,4 +26,4 @@ export const renderAllTables = () => {
   for (let i = 0; i < nodeList.length; i++) {
     renderTableTag(nodeList[i] as HTMLScriptElement);
   }
-}
+};

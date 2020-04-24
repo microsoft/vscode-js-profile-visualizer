@@ -7,10 +7,7 @@ import { ICpuProfileRaw } from 'vscode-js-profile-core/out/cpu/types';
 import { Constants } from './types';
 import { IGraphNode, buildModel, IProfileModel } from 'vscode-js-profile-core/out/cpu/model';
 import { evaluate } from 'vscode-js-profile-core/out/ql/index';
-import {
-  createBottomUpGraph,
-  BottomUpNode,
-} from 'vscode-js-profile-core/out/cpu/bottomUpGraph';
+import { createBottomUpGraph, BottomUpNode } from 'vscode-js-profile-core/out/cpu/bottomUpGraph';
 
 type RawCpuCell = { markdown: string } | { query: string };
 
@@ -48,6 +45,7 @@ export class NotebookProvider implements vscode.NotebookProvider {
     const raw: ICpuProfileWithNotebook = JSON.parse(content.toString());
     const model = buildModel(raw);
     this.models.set(editor.document, { raw, model, bottomUp: createBottomUpGraph(model) });
+    editor.document.languages = ['cpuprofile'];
 
     await editor.edit(edit => {
       if (!raw.$cells?.length) {

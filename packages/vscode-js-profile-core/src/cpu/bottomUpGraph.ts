@@ -2,13 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import {
-  ILocation,
-  IProfileModel,
-  IComputedNode,
-  IGraphNode,
-  Category,
-} from './model';
+import { ILocation, IProfileModel, IComputedNode, IGraphNode, Category } from './model';
 
 export class BottomUpNode implements IGraphNode {
   public static root() {
@@ -68,7 +62,7 @@ export class BottomUpNode implements IGraphNode {
       id: this.id,
       category: this.category,
       callFrame: this.callFrame,
-    }
+    };
   }
 }
 

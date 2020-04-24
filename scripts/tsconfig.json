@@ -7,7 +7,7 @@
 			"es6",
 			"dom"
 		],
-		"declaration": true,
+		"declaration": false,
 		"sourceMap": true,
 		"strict": true,
     "jsx": "react",
