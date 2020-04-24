@@ -1,6 +1,6 @@
 {
   "name": "vscode-js-profile-notebook",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Notebook for profiles taken from the JavaScript debugger",
   "author": "Connor Peet <connor@peet.io>",
   "homepage": "https://github.com/microsoft/vscode-js-profile-notebook#readme",
@@ -23,23 +23,23 @@
     "*"
   ],
   "contributes": {
-		"notebookProvider": [
-			{
-				"viewType": "js-cpuprofile",
-				"displayName": "CPU Profile Notebook",
-				"selector": [
-					{
-						"filenamePattern": "*.cpuprofile"
-					}
-				]
-			}
-		]
+    "notebookProvider": [
+      {
+        "viewType": "js-cpuprofile",
+        "displayName": "CPU Profile Notebook",
+        "selector": [
+          {
+            "filenamePattern": "*.cpuprofile"
+          }
+        ]
+      }
+    ]
   },
   "bugs": {
     "url": "https://github.com/microsoft/vscode-js-profile-visualizer/issues"
   },
   "dependencies": {
-    "vscode-js-profile-core": "0.0.0",
-    "vscode-codicons": "github:microsoft/vscode-codicons"
+    "vscode-codicons": "github:microsoft/vscode-codicons",
+    "vscode-js-profile-core": "^0.0.1"
   }
 }
