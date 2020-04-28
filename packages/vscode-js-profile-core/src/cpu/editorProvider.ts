@@ -29,7 +29,6 @@ export class CpuProfileEditorProvider
    * @inheritdoc
    */
   async openCustomDocument(uri: vscode.Uri) {
-    debugger;
     const content = await vscode.workspace.fs.readFile(uri);
     const raw: ICpuProfileRaw = JSON.parse(content.toString());
     const document = new ReadonlyCustomDocument(uri, buildModel(raw));
@@ -62,7 +61,6 @@ export class CpuProfileEditorProvider
       }
     });
 
-    debugger;
     webviewPanel.webview.options = { enableScripts: true };
     webviewPanel.webview.html = await bundlePage(this.bundle, {
       MODEL: document.userData,
