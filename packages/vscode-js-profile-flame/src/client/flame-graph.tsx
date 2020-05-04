@@ -16,7 +16,7 @@ import { TextCache } from './textCache';
 import { MiddleOut } from 'vscode-js-profile-core/out/esm/client/middleOutCompression';
 import { binarySearch } from 'vscode-js-profile-core/out/esm/array';
 import { setupGl } from './webgl/boxes';
-import { IColumn } from './stacks';
+import { IColumn, IColumnLocation } from './stacks';
 
 export const enum Constants {
   BoxHeight = 20,
@@ -27,7 +27,7 @@ export const enum Constants {
   MinWindow = 0.005,
 }
 
-const pickColor = (location: ILocation & { graphId: number }): number => {
+const pickColor = (location: IColumnLocation): number => {
   if (location.category === Category.System) {
     return -1;
   }
@@ -46,7 +46,7 @@ export interface IBox {
   color: number;
   level: number;
   text: string;
-  loc: ILocation & { graphId: number };
+  loc: IColumnLocation;
 }
 
 const buildBoxes = (columns: ReadonlyArray<IColumn>) => {

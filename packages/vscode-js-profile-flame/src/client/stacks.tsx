@@ -6,10 +6,18 @@ import { IProfileModel, ILocation, Category } from 'vscode-js-profile-core/out/e
 import { ISourceLocation } from 'vscode-js-profile-core/out/esm/location-mapping';
 import { Protocol as Cdp } from 'devtools-protocol';
 
+const enum Constants {
+  GcFunction = '(garbage collector)',
+}
+
+export interface IColumnLocation extends ILocation {
+  graphId: number; //. unique ID of the location in the graph
+}
+
 export interface IColumn {
   x1: number;
   x2: number;
-  rows: ((ILocation & { graphId: number }) | number)[];
+  rows: (IColumnLocation | number)[];
 }
 
 /**
@@ -165,11 +173,21 @@ export const buildColumns = (model: IProfileModel) => {
   // 2. Merge them
   for (let x = 1; x < columns.length; x++) {
     const col = columns[x];
+    const root = col.rows[0] as IColumnLocation;
+
+    // GC has no stack and can interrupt execution. To avoid breaking up flames,
+    // show GC on top of the previous frame. Matches what chrome devtools do.
+    if (col.rows.length === 1 && x > 0 && root.callFrame.functionName === Constants.GcFunction) {
+      col.rows = columns[x - 1].rows.map(row => (typeof row === 'number' ? row : x - 1));
+      col.rows.push(root);
+      continue;
+    }
+
     for (let y = 0; y < col.rows.length; y++) {
-      const current = col.rows[y] as ILocation;
+      const current = col.rows[y] as IColumnLocation;
       const prevOrNumber = columns[x - 1]?.rows[y];
       if (typeof prevOrNumber === 'number') {
-        if (current.id !== (columns[prevOrNumber].rows[y] as ILocation).id) {
+        if (current.id !== (columns[prevOrNumber].rows[y] as IColumnLocation).id) {
           break;
         }
         col.rows[y] = prevOrNumber;
