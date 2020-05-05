@@ -218,6 +218,17 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
     };
   });
 
+  const idMap = new Map<number /* id in profile */, number /* incrementing ID */>();
+  const mapId = (nodeId: number) => {
+    let id = idMap.get(nodeId);
+    if (id === undefined) {
+      id = idMap.size;
+      idMap.set(nodeId, id);
+    }
+
+    return id;
+  }
+
   // 1. Created a sorted list of nodes. It seems that the profile always has
   // incrementing IDs, although they are just not initially sorted.
   const nodes = new Array<IComputedNode>(profile.nodes.length);
@@ -225,12 +236,13 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
     const node = profile.nodes[i];
 
     // make them 0-based:
-    nodes[node.id - 1] = {
-      id: node.id - 1,
+    const id = mapId(node.id);
+    nodes[id] = {
+      id,
       selfTime: 0,
       aggregateTime: 0,
       locationId: node.locationId as number,
-      children: node.children?.map(n => n - 1) || [],
+      children: node.children?.map(mapId) || [],
     };
 
     for (const child of node.positionTicks || []) {
@@ -263,7 +275,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
   return {
     nodes,
     locations,
-    samples: profile.samples.map(id => id - 1),
+    samples: profile.samples.map(mapId),
     timeDeltas: profile.timeDeltas || [],
     rootPath: profile.$vscode?.rootPath,
     duration: profile.endTime - profile.startTime,
