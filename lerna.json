@@ -1,6 +1,6 @@
 {
   "packages": [
-    "packages/vscode-js-profile-*"
+    "packages/*"
   ],
   "version": "0.0.3"
 }

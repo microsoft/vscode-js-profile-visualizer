@@ -5,7 +5,6 @@
 import { FunctionComponent, h } from 'preact';
 import { useCallback } from 'preact/hooks';
 import styles from './toggle-button.css';
-import { formatCodicon } from './icons';
 
 export const ToggleButton: FunctionComponent<{
   icon: string;
@@ -27,7 +26,7 @@ export const ToggleButton: FunctionComponent<{
       alt={label}
       aria-label={label}
       aria-checked={checked ? 'true' : 'false'}
-      dangerouslySetInnerHTML={{ __html: formatCodicon(icon) }}
+      dangerouslySetInnerHTML={{ __html: icon }}
       onClick={toggle}
     />
   );

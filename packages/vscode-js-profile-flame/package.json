@@ -40,6 +40,7 @@
     "url": "https://github.com/microsoft/vscode-js-profile-visualizer/issues"
   },
   "dependencies": {
+    "vscode-codicons": "github:microsoft/vscode-codicons#8a871e35e2abd42847ca1d58b118c9cfc53b87a0",
     "vscode-js-profile-core": "^0.0.3"
   }
 }

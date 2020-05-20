@@ -18,8 +18,8 @@ import { ILocation, IGraphNode } from 'vscode-js-profile-core/out/esm/cpu/model'
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
 import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/cpu/types';
 import { addToSet, removeFromSet, toggleInSet } from 'vscode-js-profile-core/out/esm/array';
-import * as ChevronDown from 'vscode-icons/icons/dark/chevron-down.svg';
-import * as ChevronRight from 'vscode-icons/icons/dark/chevron-right.svg';
+import * as ChevronDown from 'vscode-codicons/src/icons/chevron-down.svg';
+import * as ChevronRight from 'vscode-codicons/src/icons/chevron-right.svg';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
 import VirtualList from 'preact-virtual-list';
 import { getLocationText, decimalFormat } from 'vscode-js-profile-core/out/esm/cpu/display';

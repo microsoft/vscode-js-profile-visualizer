@@ -1,3 +1,0 @@
-[submodule "packages/vscode-icons"]
-	path = packages/vscode-icons
-	url = https://github.com/microsoft/vscode-icons.git
