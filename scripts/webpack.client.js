@@ -32,6 +32,9 @@ module.exports = (dirname, file = 'client') => ({
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.json', '.svg', '.vert', '.frag'],
+    alias: {
+      'vscode-icons': path.resolve(__dirname, '..', 'packages', 'vscode-icons'),
+    },
   },
   module: {
     rules: [

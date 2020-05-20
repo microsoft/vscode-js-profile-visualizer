@@ -6,8 +6,8 @@ import { h, FunctionComponent, Fragment, ComponentChild } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
 import { Filter } from './filter';
 import { ToggleButton } from './toggle-button';
-import * as CaseSensitive from 'vscode-codicons/src/icons/case-sensitive.svg';
-import * as Regex from 'vscode-codicons/src/icons/regex.svg';
+import * as CaseSensitive from 'vscode-icons/icons/dark/case-sensitive.svg';
+import * as Regex from 'vscode-icons/icons/dark/regex.svg';
 import styles from './rich-filter.css';
 import { evaluate, IDataSource } from '../ql';
 

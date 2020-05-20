@@ -10,6 +10,7 @@
   margin-right: 3px;
   padding: 3px;
   cursor: pointer;
+  color: var(--vscode-icon-foreground);
 }
 
 .button + .button {

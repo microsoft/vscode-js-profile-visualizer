@@ -4,7 +4,7 @@
 import { h, render, FunctionComponent } from 'preact';
 import { useCallback, useContext, useMemo } from 'preact/hooks';
 import styles from './client.css';
-import * as Flame from 'vscode-codicons/src/icons/flame.svg';
+import * as Flame from 'vscode-icons/icons/dark/flame.svg';
 import { ToggleButton } from 'vscode-js-profile-core/out/esm/client/toggle-button';
 import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
 import { cpuProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/cpu/layout';

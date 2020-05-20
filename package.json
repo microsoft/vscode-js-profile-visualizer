@@ -2,6 +2,7 @@
   "name": "js-profile-visualizer",
   "private": true,
   "scripts": {
+    "preinstall": "git submodule update --init",
     "postinstall": "lerna bootstrap --force-local",
     "clean": "rimraf \"packages/*/out\"",
     "compile": "npm run clean && concurrently \"npm:compile:core:*\" && concurrently \"npm:compile:table\" \"npm:compile:flame\"",

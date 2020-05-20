@@ -227,7 +227,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
     }
 
     return id;
-  }
+  };
 
   // 1. Created a sorted list of nodes. It seems that the profile always has
   // incrementing IDs, although they are just not initially sorted.
