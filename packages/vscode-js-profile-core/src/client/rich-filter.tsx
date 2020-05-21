@@ -3,13 +3,15 @@
  *--------------------------------------------------------*/
 
 import { h, FunctionComponent, Fragment, ComponentChild } from 'preact';
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useContext } from 'preact/hooks';
 import { Filter } from './filter';
 import { ToggleButton } from './toggle-button';
 import * as CaseSensitive from 'vscode-codicons/src/icons/case-sensitive.svg';
 import * as Regex from 'vscode-codicons/src/icons/regex.svg';
 import styles from './rich-filter.css';
 import { evaluate, IDataSource } from '../ql';
+import { VsCodeApi, IVscodeApi } from './vscodeApi';
+import { useLazyEffect } from './useLazyEffect';
 
 /**
  * Filter that the RichFilter returns,
@@ -52,10 +54,15 @@ export const richFilter = <T extends {}>(): RichFilterComponent<T> => ({
   onChange,
   foot,
 }) => {
+  const vscode = useContext(VsCodeApi) as IVscodeApi<{ filterText: string }>;
   const [regex, setRegex] = useState(false);
   const [caseSensitive, setCaseSensitive] = useState(false);
-  const [text, setText] = useState('');
+  const [text, setText] = useState(vscode.getState()?.filterText ?? '');
   const [error, setError] = useState<string | undefined>(undefined);
+
+  useLazyEffect(() => {
+    vscode.setState({ ...vscode.getState(), filterText: text });
+  }, [text]);
 
   useEffect(() => {
     if (!text.includes('query()')) {

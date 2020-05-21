@@ -28,7 +28,7 @@ export const cpuProfileLayoutFactory = <T extends {}>(): CpuProfileLayoutCompone
   filterFooter: FilterFooter,
 }) => {
   const RichFilter = useMemo<RichFilterComponent<T>>(richFilter, []);
-  const [filteredData, setFilteredData] = useState<ReadonlyArray<T>>(data.data);
+  const [filteredData, setFilteredData] = useState<ReadonlyArray<T> | undefined>(undefined);
   const footer = useMemo(() => (FilterFooter ? <FilterFooter /> : undefined), [FilterFooter]);
 
   return (
@@ -42,9 +42,7 @@ export const cpuProfileLayoutFactory = <T extends {}>(): CpuProfileLayoutCompone
           foot={footer}
         />
       </div>
-      <div className={styles.rows}>
-        <RowBody data={filteredData} />
-      </div>
+      <div className={styles.rows}>{filteredData && <RowBody data={filteredData} />}</div>
     </Fragment>
   );
 };

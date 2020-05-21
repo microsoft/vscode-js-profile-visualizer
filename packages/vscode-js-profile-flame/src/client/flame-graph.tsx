@@ -9,9 +9,10 @@ import { useWindowSize } from 'vscode-js-profile-core/out/esm/client/useWindowSi
 import styles from './flame-graph.css';
 import { getLocationText, decimalFormat } from 'vscode-js-profile-core/out/esm/cpu/display';
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
-import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
+import { VsCodeApi, IVscodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
 import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/cpu/types';
 import { useCssVariables } from 'vscode-js-profile-core/out/esm/client/useCssVariables';
+import { useLazyEffect } from 'vscode-js-profile-core/out/esm/client/useLazyEffect';
 import { TextCache } from './textCache';
 import { MiddleOut } from 'vscode-js-profile-core/out/esm/client/middleOutCompression';
 import { binarySearch } from 'vscode-js-profile-core/out/esm/array';
@@ -140,6 +141,11 @@ const getBoxInRowColumn = (
     : undefined;
 };
 
+interface ISerializedState {
+  focusedId?: number;
+  bounds?: IBounds;
+}
+
 export interface ICanvasSize {
   width: number;
   height: number;
@@ -155,6 +161,9 @@ export const FlameGraph: FunctionComponent<{
   columns: ReadonlyArray<IColumn>;
   model: IProfileModel;
 }> = ({ columns, model }) => {
+  const vscode = useContext(VsCodeApi) as IVscodeApi<ISerializedState>;
+  const prevState = vscode.getState();
+
   const webCanvas = useRef<HTMLCanvasElement>();
   const webContext = useMemo(() => webCanvas.current?.getContext('2d'), [webCanvas.current]);
   const glCanvas = useRef<HTMLCanvasElement>();
@@ -164,21 +173,22 @@ export const FlameGraph: FunctionComponent<{
   const [hovered, setHovered] = useState<{ box: IBox; src: HighlightSource } | undefined>(
     undefined,
   );
-  const [focused, setFocused] = useState<IBox | undefined>(undefined);
   const [drag, setDrag] = useState<IDrag | undefined>(undefined);
   const cssVariables = useCssVariables();
-  const vscode = useContext(VsCodeApi);
 
   const rawBoxes = useMemo(() => buildBoxes(columns), [columns]);
-  const clampBounds = useMemo(
+  const clampX = useMemo(
     () => ({
       minX: columns[0]?.x1 ?? 0,
       maxX: columns[columns.length - 1]?.x2 ?? 0,
-      maxY: Math.max(0, rawBoxes.maxY - canvasSize.height + Constants.ExtraYBuffer),
     }),
-    [columns, rawBoxes, canvasSize.height],
+    [columns],
   );
-  const [bounds, setBounds] = useState<IBounds>({ ...clampBounds, y: 0, level: 0 });
+  const clampY = Math.max(0, rawBoxes.maxY - canvasSize.height + Constants.ExtraYBuffer);
+  const [focused, setFocused] = useState<IBox | undefined>(
+    rawBoxes.boxById.get(prevState?.focusedId ?? -1),
+  );
+  const [bounds, setBounds] = useState<IBounds>(prevState?.bounds ?? { ...clampX, y: 0, level: 0 });
 
   const gl = useMemo(
     () =>
@@ -224,7 +234,15 @@ export const FlameGraph: FunctionComponent<{
     [cssVariables],
   );
 
-  useEffect(() => setBounds({ ...bounds, ...clampBounds }), [clampBounds]);
+  useLazyEffect(() => setBounds({ ...bounds, ...clampX }), [clampX]);
+
+  useLazyEffect(() => {
+    vscode.setState({ ...vscode.getState(), bounds });
+  }, [bounds]);
+
+  useLazyEffect(() => {
+    vscode.setState({ ...vscode.getState(), focusedId: focused?.loc.graphId });
+  }, [focused]);
 
   useEffect(() => {
     if (webContext) {
@@ -347,12 +365,12 @@ export const FlameGraph: FunctionComponent<{
       setBounds({
         minX: box.x1,
         maxX: box.x2,
-        y: clamp(0, box.y1 > bounds.y + canvasSize.height ? box.y1 : bounds.y, clampBounds.maxY),
+        y: clamp(0, box.y1 > bounds.y + canvasSize.height ? box.y1 : bounds.y, clampY),
         level: box.level,
       });
       setFocused(box);
     },
-    [clampBounds, canvasSize.height, bounds],
+    [clampX, clampY, canvasSize.height, bounds],
   );
 
   // Key event handler, deals with focus navigation and escape/enter
@@ -363,7 +381,7 @@ export const FlameGraph: FunctionComponent<{
           // If there's a tooltip open, close that on first escape
           return hovered?.src === HighlightSource.Keyboard
             ? setHovered(undefined)
-            : setBounds({ ...clampBounds, y: 0, level: 0 });
+            : setBounds({ ...clampX, y: 0, level: 0 });
         case 'Enter':
           if ((evt.metaKey || evt.ctrlKey) && hovered) {
             return openBox(hovered.box, evt);
@@ -428,7 +446,7 @@ export const FlameGraph: FunctionComponent<{
         setHovered({ box: nextFocus, src: HighlightSource.Keyboard });
       }
     },
-    [zoomToBox, focused, hovered, rawBoxes, clampBounds],
+    [zoomToBox, focused, hovered, rawBoxes, clampX],
   );
 
   // Keyboard events
@@ -452,7 +470,7 @@ export const FlameGraph: FunctionComponent<{
 
       const x = (fromLeft / width) * (bounds.maxX - bounds.minX) + bounds.minX;
       const col = Math.abs(binarySearch(columns, c => c.x2 - x)) - 1;
-      if (columns[col].x1 > x) {
+      if (!columns[col] || columns[col].x1 > x) {
         return;
       }
 
@@ -475,26 +493,20 @@ export const FlameGraph: FunctionComponent<{
       let maxX: number;
       if (!(lock & LockBound.MinX)) {
         const upper =
-          lock & LockBound.MaxX ? bounds.maxX - Constants.MinWindow : clampBounds.maxX - range;
-        minX = clamp(
-          clampBounds.minX,
-          original.minX - (evt.pageX - pageXOrigin) * xPerPixel,
-          upper,
-        );
-        maxX = lock & LockBound.MaxX ? original.maxX : Math.min(clampBounds.maxX, minX + range);
+          lock & LockBound.MaxX ? bounds.maxX - Constants.MinWindow : clampX.maxX - range;
+        minX = clamp(clampX.minX, original.minX - (evt.pageX - pageXOrigin) * xPerPixel, upper);
+        maxX = lock & LockBound.MaxX ? original.maxX : Math.min(clampX.maxX, minX + range);
       } else {
         minX = original.minX;
         maxX = clamp(
           minX + Constants.MinWindow,
           original.maxX - (evt.pageX - pageXOrigin) * xPerPixel,
-          clampBounds.maxX,
+          clampX.maxX,
         );
       }
 
       const y =
-        lock & LockBound.Y
-          ? bounds.y
-          : clamp(0, original.y - (evt.pageY - pageYOrigin), clampBounds.maxY);
+        lock & LockBound.Y ? bounds.y : clamp(0, original.y - (evt.pageY - pageYOrigin), clampY);
       setBounds({ minX, maxX, y, level: bounds.level });
     };
 
@@ -512,7 +524,7 @@ export const FlameGraph: FunctionComponent<{
       document.removeEventListener('mouseleave', onUp);
       document.removeEventListener('mouseup', onUp);
     };
-  }, [clampBounds, drag]);
+  }, [clampX, clampY, drag]);
 
   const onMouseMove = useCallback(
     (evt: MouseEvent) => {
@@ -538,16 +550,16 @@ export const FlameGraph: FunctionComponent<{
       }
 
       if (evt.altKey) {
-        setBounds({ ...bounds, y: clamp(0, bounds.y + evt.deltaY, clampBounds.maxY) });
+        setBounds({ ...bounds, y: clamp(0, bounds.y + evt.deltaY, clampY) });
         return;
       }
 
       const { left, width } = webCanvas.current.getBoundingClientRect();
       if (evt.shiftKey) {
         const deltaX = clamp(
-          clampBounds.minX - bounds.minX,
+          clampX.minX - bounds.minX,
           (evt.deltaY / width) * (bounds.maxX - bounds.minX),
-          clampBounds.maxX - bounds.maxX,
+          clampX.maxX - bounds.maxX,
         );
         setBounds({ ...bounds, minX: bounds.minX + deltaX, maxX: bounds.maxX + deltaX });
         return;
@@ -557,15 +569,15 @@ export const FlameGraph: FunctionComponent<{
       const center = bounds.minX + (range * (evt.pageX - left)) / width;
       const scale = evt.deltaY / -400;
       setBounds({
-        minX: Math.max(clampBounds.minX, bounds.minX + scale * (center - bounds.minX)),
-        maxX: Math.min(clampBounds.maxX, bounds.maxX - scale * (bounds.maxX - center)),
+        minX: Math.max(clampX.minX, bounds.minX + scale * (center - bounds.minX)),
+        maxX: Math.min(clampX.maxX, bounds.maxX - scale * (bounds.maxX - center)),
         y: bounds.y,
         level: bounds.level,
       });
 
       evt.preventDefault();
     },
-    [clampBounds, webCanvas.current, drag || bounds],
+    [clampX, clampY, webCanvas.current, drag || bounds],
   );
 
   const onMouseDown = useCallback(
@@ -604,7 +616,7 @@ export const FlameGraph: FunctionComponent<{
       } else if (box) {
         zoomToBox(box);
       } else {
-        setBounds({ ...clampBounds, y: 0, level: 0 });
+        setBounds({ ...clampX, y: 0, level: 0 });
       }
 
       setHovered(undefined);
@@ -613,7 +625,7 @@ export const FlameGraph: FunctionComponent<{
       evt.stopPropagation();
       evt.preventDefault();
     },
-    [drag, getBoxUnderCursor, openBox, zoomToBox, clampBounds],
+    [drag, getBoxUnderCursor, openBox, zoomToBox, clampX],
   );
 
   const onMouseLeave = useCallback(
