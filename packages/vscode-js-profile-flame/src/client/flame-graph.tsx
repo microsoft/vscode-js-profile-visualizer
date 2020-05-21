@@ -539,7 +539,7 @@ export const FlameGraph: FunctionComponent<{
       const { left, width } = webCanvas.current.getBoundingClientRect();
       const range = bounds.maxX - bounds.minX;
       const center = bounds.minX + (range * (evt.pageX - left)) / width;
-      const scale = evt.deltaY / 400;
+      const scale = evt.deltaY / -400;
       setBounds({
         minX: Math.max(clampBounds.minX, bounds.minX + scale * (center - bounds.minX)),
         maxX: Math.min(clampBounds.maxX, bounds.maxX - scale * (bounds.maxX - center)),
