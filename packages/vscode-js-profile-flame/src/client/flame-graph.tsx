@@ -163,17 +163,21 @@ export const FlameGraph: FunctionComponent<{
   const [hovered, setHovered] = useState<{ box: IBox; src: HighlightSource } | undefined>(
     undefined,
   );
-  const clampBounds = useMemo(
-    () => ({ minX: columns[0]?.x1 ?? 0, maxX: columns[columns.length - 1]?.x2 ?? 0 }),
-    [columns],
-  );
-  const [bounds, setBounds] = useState<IBounds>({ ...clampBounds, y: 0, level: 0 });
   const [focused, setFocused] = useState<IBox | undefined>(undefined);
   const [drag, setDrag] = useState<IDrag | undefined>(undefined);
   const cssVariables = useCssVariables();
   const vscode = useContext(VsCodeApi);
 
   const rawBoxes = useMemo(() => buildBoxes(columns), [columns]);
+  const clampBounds = useMemo(
+    () => ({
+      minX: columns[0]?.x1 ?? 0,
+      maxX: columns[columns.length - 1]?.x2 ?? 0,
+      maxY: Math.max(0, rawBoxes.maxY - canvasSize.height),
+    }),
+    [columns, rawBoxes, canvasSize.height],
+  );
+  const [bounds, setBounds] = useState<IBounds>({ ...clampBounds, y: 0, level: 0 });
 
   const gl = useMemo(
     () =>
@@ -342,16 +346,12 @@ export const FlameGraph: FunctionComponent<{
       setBounds({
         minX: box.x1,
         maxX: box.x2,
-        y: clamp(
-          0,
-          box.y1 > bounds.y + canvasSize.height ? box.y1 : bounds.y,
-          rawBoxes.maxY - canvasSize.height,
-        ),
+        y: clamp(0, box.y1 > bounds.y + canvasSize.height ? box.y1 : bounds.y, clampBounds.maxY),
         level: box.level,
       });
       setFocused(box);
     },
-    [rawBoxes.maxY, canvasSize.height, bounds],
+    [clampBounds, canvasSize.height, bounds],
   );
 
   // Key event handler, deals with focus navigation and escape/enter
@@ -493,7 +493,7 @@ export const FlameGraph: FunctionComponent<{
       const y =
         lock & LockBound.Y
           ? bounds.y
-          : clamp(0, original.y - (evt.pageY - pageYOrigin), rawBoxes.maxY - canvasSize.height);
+          : clamp(0, original.y - (evt.pageY - pageYOrigin), clampBounds.maxY);
       setBounds({ minX, maxX, y, level: bounds.level });
     };
 
@@ -536,7 +536,22 @@ export const FlameGraph: FunctionComponent<{
         return;
       }
 
+      if (evt.altKey) {
+        setBounds({ ...bounds, y: clamp(0, bounds.y + evt.deltaY, clampBounds.maxY) });
+        return;
+      }
+
       const { left, width } = webCanvas.current.getBoundingClientRect();
+      if (evt.shiftKey) {
+        const deltaX = clamp(
+          clampBounds.minX - bounds.minX,
+          (evt.deltaY / width) * (bounds.maxX - bounds.minX),
+          clampBounds.maxX - bounds.maxX,
+        );
+        setBounds({ ...bounds, minX: bounds.minX + deltaX, maxX: bounds.maxX + deltaX });
+        return;
+      }
+
       const range = bounds.maxX - bounds.minX;
       const center = bounds.minX + (range * (evt.pageX - left)) / width;
       const scale = evt.deltaY / -400;
