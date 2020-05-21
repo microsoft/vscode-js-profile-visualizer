@@ -25,6 +25,7 @@ export const enum Constants {
   TimelineHeight = 22,
   TimelineLabelSpacing = 200,
   MinWindow = 0.005,
+  ExtraYBuffer = 30,
 }
 
 const pickColor = (location: IColumnLocation): number => {
@@ -173,7 +174,7 @@ export const FlameGraph: FunctionComponent<{
     () => ({
       minX: columns[0]?.x1 ?? 0,
       maxX: columns[columns.length - 1]?.x2 ?? 0,
-      maxY: Math.max(0, rawBoxes.maxY - canvasSize.height),
+      maxY: Math.max(0, rawBoxes.maxY - canvasSize.height + Constants.ExtraYBuffer),
     }),
     [columns, rawBoxes, canvasSize.height],
   );
