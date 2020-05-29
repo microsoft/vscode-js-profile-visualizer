@@ -1,11 +1,11 @@
-# `vscode-js-profile-table`
+# `vscode-js-profile-flame`
 
 > TODO: description
 
 ## Usage
 
 ```
-const vscodeJsProfileTable = require('vscode-js-profile-table');
+const vscodeJsProfileFlame = require('vscode-js-profile-flame');
 
 // TODO: DEMONSTRATE API
 ```
