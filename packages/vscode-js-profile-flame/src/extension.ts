@@ -9,7 +9,7 @@ import { join } from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
-    vscode.window.registerCustomEditorProvider2(
+    vscode.window.registerCustomEditorProvider(
       'jsProfileVisualizer.cpuprofile.flame',
       new CpuProfileEditorProvider(
         new ProfileCodeLensProvider(),

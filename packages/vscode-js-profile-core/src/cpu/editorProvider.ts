@@ -23,6 +23,8 @@ const integerFormat = new Intl.NumberFormat(undefined, {
 
 export class CpuProfileEditorProvider
   implements vscode.CustomEditorProvider<ReadonlyCustomDocument<IProfileModel>> {
+  public readonly onDidChangeCustomDocument = new vscode.EventEmitter<never>().event;
+
   constructor(private readonly lens: ProfileCodeLensProvider, private readonly bundle: string) {}
 
   /**
@@ -65,6 +67,37 @@ export class CpuProfileEditorProvider
     webviewPanel.webview.html = await bundlePage(this.bundle, {
       MODEL: document.userData,
     });
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public async saveCustomDocument() {
+    // no-op
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public async revertCustomDocument() {
+    // no-op
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public async backupCustomDocument() {
+    return { id: '', delete: () => undefined };
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public saveCustomDocumentAs(
+    document: ReadonlyCustomDocument<IProfileModel>,
+    destination: vscode.Uri,
+  ) {
+    return vscode.workspace.fs.copy(document.uri, destination, { overwrite: true });
   }
 
   private createLensCollection(document: ReadonlyCustomDocument<IProfileModel>) {
