@@ -11,15 +11,15 @@ import {
   ProviderResult,
 } from 'vscode';
 import { lowerCaseInsensitivePath } from './path';
-import { LensCollection } from './lens-collection';
 import { DownloadFileProvider } from './download-file-provider';
+import { ProfileAnnotations } from './profileAnnotations';
 
 /**
  * Shows code lens information for the currently active profile.
  */
 export class ProfileCodeLensProvider implements CodeLensProvider {
   private readonly changeEmitter = new EventEmitter<void>();
-  private lenses?: { [file: string]: CodeLens[] };
+  private lenses?: ProfileAnnotations;
 
   /**
    * @inheritdoc
@@ -30,13 +30,12 @@ export class ProfileCodeLensProvider implements CodeLensProvider {
    * Updates the set of lenses currently being displayed.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public registerLenses(lenses: LensCollection<any>): Disposable {
-    this.setLenses(lenses);
-    const current = this.lenses;
+  public registerLenses(lenses: ProfileAnnotations): Disposable {
+    this.lenses = lenses;
 
     return {
       dispose: () => {
-        if (this.lenses === current) {
+        if (this.lenses === lenses) {
           this.lenses = undefined;
           this.changeEmitter.fire();
         }
@@ -56,40 +55,19 @@ export class ProfileCodeLensProvider implements CodeLensProvider {
    * @inheritdoc
    */
   public provideCodeLenses(document: TextDocument): ProviderResult<CodeLens[]> {
-    const byPath = this.lenses?.[lowerCaseInsensitivePath(document.uri.fsPath)];
+    const byPath = this.lenses?.getLensesForFile(lowerCaseInsensitivePath(document.uri.fsPath));
     if (byPath) {
       return byPath;
     }
 
     const byUrl =
       document.uri.scheme === DownloadFileProvider.scheme
-        ? this.lenses?.[document.uri.query]
+        ? this.lenses?.getLensesForFile(document.uri.query)
         : undefined;
     if (byUrl) {
       return byUrl;
     }
 
     return [];
-  }
-
-  private setLenses(collection: LensCollection<void>) {
-    this.lenses = {};
-
-    for (const file of collection.files()) {
-      const lenses: CodeLens[] = [];
-      for (const lens of collection.getLensesForFile(file)) {
-        lenses.push(
-          lens,
-          new CodeLens(lens.range, {
-            title: 'Clear',
-            command: 'extension.jsProfileVisualizer.table.clearCodeLenses',
-          }),
-        );
-      }
-
-      this.lenses[file] = lenses;
-    }
-
-    this.changeEmitter.fire();
   }
 }

@@ -57,3 +57,19 @@ export const toggleInSet = <T>(set: ReadonlySet<T>, value: T) => {
 
   return next;
 };
+
+const unset = Symbol('unset');
+
+/**
+ * Caches the results of the first function call.
+ */
+export const once = <T>(fn: () => T) => {
+  let value: T | typeof unset = unset;
+  return () => {
+    if (value === unset) {
+      value = fn();
+    }
+
+    return value;
+  };
+};
