@@ -203,6 +203,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
     };
   }
 
+  const { samples, timeDeltas } = profile;
   const sourceLocations = ensureSourceLocations(profile);
   const locations: ILocation[] = sourceLocations.map((l, id) => {
     const src = getBestLocation(profile, l.locations);
@@ -260,8 +261,8 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 
   // 2. The profile samples are the 'bottom-most' node, the currently running
   // code. Sum of these in the self time.
-  for (let i = 1; i < profile.timeDeltas.length; i++) {
-    nodes[profile.samples[i] - 1].selfTime += profile.timeDeltas[i - 1];
+  for (let i = 1; i < timeDeltas.length; i++) {
+    nodes[mapId(samples[i])].selfTime += timeDeltas[i - 1];
   }
 
   // 3. Add the aggregate times for all node children and locations
@@ -275,8 +276,8 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
   return {
     nodes,
     locations,
-    samples: profile.samples.map(mapId),
-    timeDeltas: profile.timeDeltas || [],
+    samples: samples.map(mapId),
+    timeDeltas,
     rootPath: profile.$vscode?.rootPath,
     duration: profile.endTime - profile.startTime,
   };

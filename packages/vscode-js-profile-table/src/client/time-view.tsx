@@ -182,7 +182,7 @@ export const TimeView: FunctionComponent<{
         data={rendered}
         renderRow={renderRow}
         rowHeight={25}
-        overscanCount={10}
+        overscanCount={100}
       />
     </Fragment>
   );

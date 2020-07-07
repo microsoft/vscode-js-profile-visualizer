@@ -49,7 +49,6 @@ export class BottomUpNode implements IGraphNode {
   public addNode(node: IComputedNode) {
     this.selfTime += node.selfTime;
     this.aggregateTime += node.aggregateTime;
-    this.parent?.addNode(node);
   }
 
   public toJSON(): IGraphNode {
@@ -66,7 +65,12 @@ export class BottomUpNode implements IGraphNode {
   }
 }
 
-const processNode = (aggregate: BottomUpNode, node: IComputedNode, model: IProfileModel) => {
+const processNode = (
+  aggregate: BottomUpNode,
+  node: IComputedNode,
+  model: IProfileModel,
+  initialNode = node,
+) => {
   let child = aggregate.children[node.locationId];
   if (!child) {
     child = new BottomUpNode(model.locations[node.locationId], aggregate);
@@ -74,10 +78,10 @@ const processNode = (aggregate: BottomUpNode, node: IComputedNode, model: IProfi
     aggregate.children[node.locationId] = child;
   }
 
-  child.addNode(node);
+  child.addNode(initialNode);
 
   if (node.parent) {
-    processNode(child, model.nodes[node.parent], model);
+    processNode(child, model.nodes[node.parent], model, initialNode);
   }
 };
 
@@ -85,17 +89,11 @@ const processNode = (aggregate: BottomUpNode, node: IComputedNode, model: IProfi
  * Creates a bottom-up graph of the process information
  */
 export const createBottomUpGraph = (model: IProfileModel) => {
-  const byLocation: IComputedNode[][] = new Array(model.locations.length).fill([]);
-  for (const node of model.nodes) {
-    byLocation[node.locationId].push(node);
-  }
-
   const root = BottomUpNode.root();
 
   for (const node of model.nodes) {
-    if (node.children.length === 0) {
-      processNode(root, node, model);
-    }
+    processNode(root, node, model);
+    root.addNode(node);
   }
 
   return root;

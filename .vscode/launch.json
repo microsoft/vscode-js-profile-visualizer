@@ -10,6 +10,9 @@
 			"type": "pwa-extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
+			"debugWebviews": {
+				"webRoot": "${workspaceFolder}/packages/vscode-js-profile-table"
+			},
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-table",
 				"--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-flame",
