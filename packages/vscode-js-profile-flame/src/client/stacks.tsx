@@ -171,6 +171,7 @@ export const buildColumns = (model: IProfileModel) => {
   }
 
   // 2. Merge them
+  let lastFrameWasGc = false;
   for (let x = 1; x < columns.length; x++) {
     const col = columns[x];
     const root = col.rows[0] as IColumnLocation;
@@ -179,10 +180,14 @@ export const buildColumns = (model: IProfileModel) => {
     // show GC on top of the previous frame. Matches what chrome devtools do.
     if (col.rows.length === 1 && x > 0 && root.callFrame.functionName === Constants.GcFunction) {
       col.rows = columns[x - 1].rows.map(row => (typeof row === 'number' ? row : x - 1));
-      col.rows.push(root);
+      if (!lastFrameWasGc) {
+        col.rows.push(root);
+        lastFrameWasGc = true;
+      }
       continue;
     }
 
+    lastFrameWasGc = false;
     for (let y = 0; y < col.rows.length; y++) {
       const current = col.rows[y] as IColumnLocation;
       const prevOrNumber = columns[x - 1]?.rows[y];
