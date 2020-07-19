@@ -2,9 +2,9 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { IProfileModel, ILocation, Category } from 'vscode-js-profile-core/out/esm/cpu/model';
-import { ISourceLocation } from 'vscode-js-profile-core/out/esm/location-mapping';
 import { Protocol as Cdp } from 'devtools-protocol';
+import { Category, ILocation, IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { ISourceLocation } from 'vscode-js-profile-core/out/esm/location-mapping';
 
 const enum Constants {
   GcFunction = '(garbage collector)',
@@ -42,10 +42,11 @@ export class LocationAccessor implements ILocation {
     // Scan through all columns the cell at this accessor spans. Add their
     // children to the ones we'll return.
     do {
-      if (this.model[dx].rows[this.y + 1]) {
+      const rs = this.model[dx].rows[this.y + 1];
+      if (rs && typeof rs !== 'number') {
         children.push(new LocationAccessor(this.model, dx, this.y + 1));
       }
-    } while (this.model[++dx].rows[this.y] === this.x);
+    } while (++dx < this.model.length && this.model[dx].rows[this.y] === this.x);
 
     return children;
   }
@@ -65,47 +66,19 @@ export class LocationAccessor implements ILocation {
   }
 
   /**
-   * Gets the columns from the list that are in the included accessors.
+   * Gets a mapping of the maximum Y values of each column which
+   * should be highlighted.
    */
   public static getFilteredColumns(
     columns: ReadonlyArray<IColumn>,
-    accessors: ReadonlyArray<LocationAccessor>,
+    accessors: ReadonlySet<LocationAccessor>,
   ) {
-    const validX = new Array<true | undefined>(columns.length);
+    const mapping = new Array(columns.length);
     for (const accessor of accessors) {
-      validX[accessor.x] = true;
-      for (
-        let x = accessor.x + 1;
-        x < columns.length && columns[x].rows[accessor.y] === accessor.x;
-        x++
-      ) {
-        validX[x] = true;
-      }
+      mapping[accessor.x] = Math.max(mapping[accessor.x] || 0, accessor.y);
     }
 
-    // We remove columns, so we need to do that and then adjust the column
-    // references of those that remain.
-    let offsetX = 0;
-    const adjusted: IColumn[] = [];
-    for (let x = 0; x < columns.length; x++) {
-      if (!validX[x]) {
-        offsetX++;
-        continue;
-      }
-
-      const column = columns[x];
-      adjusted.push(
-        offsetX
-          ? {
-              x1: column.x1,
-              x2: column.x2,
-              rows: column.rows.map(r => (typeof r === 'number' ? r - offsetX : r)),
-            }
-          : column,
-      );
-    }
-
-    return adjusted;
+    return mapping;
   }
 
   constructor(

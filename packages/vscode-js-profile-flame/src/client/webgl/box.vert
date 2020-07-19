@@ -42,12 +42,16 @@ void main() {
   mediump int graph_id = int(boxes[2]);
   mediump int color_hash = hash(graph_id); // djb2's prime, just some bogus stuff
   lowp int categorization = int(boxes[3]);
+
+
   if (focused == graph_id) {
     v_color = focus_color;
-  } else if (categorization == 0) {
+  } else if (categorization == 0 /* system */) {
     v_color = vec4(0.6, 0.6, 0.6, 1);
+  } else if (categorization == 3 /* deemphasize */) {
+    v_color = vec4(0.6, 0.6, 0.6, 1) * 0.4;
   } else {
-    v_color = vec4(0.9, float(color_hash & 255) / 512.0, float((color_hash >> 8) & 255) / 600.0, 1);
+    v_color = vec4(0.9, float(color_hash & 255) / 512.0, float((color_hash >> 8) & 255) / 600.0, 1.0);
   }
 
   if (hovered == graph_id) {

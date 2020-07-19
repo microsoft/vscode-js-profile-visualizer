@@ -2,16 +2,16 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { h, FunctionComponent, Fragment, ComponentChild } from 'preact';
-import { useState, useEffect, useContext } from 'preact/hooks';
-import { Filter } from './filter';
-import { ToggleButton } from './toggle-button';
+import { ComponentChild, Fragment, FunctionComponent, h } from 'preact';
+import { useContext, useEffect, useState } from 'preact/hooks';
 import * as CaseSensitive from 'vscode-codicons/src/icons/case-sensitive.svg';
 import * as Regex from 'vscode-codicons/src/icons/regex.svg';
+import { evaluate, IDataSource, IQueryResults } from '../ql';
+import { Filter } from './filter';
 import styles from './rich-filter.css';
-import { evaluate, IDataSource } from '../ql';
-import { VsCodeApi, IVscodeApi } from './vscodeApi';
+import { ToggleButton } from './toggle-button';
 import { useLazyEffect } from './useLazyEffect';
+import { IVscodeApi, VsCodeApi } from './vscodeApi';
 
 /**
  * Filter that the RichFilter returns,
@@ -42,15 +42,13 @@ export const compileFilter = (fn: IRichFilter): ((input: string) => boolean) => 
 export type RichFilterComponent<T> = FunctionComponent<{
   data: IDataSource<T>;
   placeholder: string;
-  getDefaultFilterText: (value: T) => ReadonlyArray<string>;
-  onChange: (data: ReadonlyArray<T>) => void;
+  onChange: (data: IQueryResults<T>) => void;
   foot?: ComponentChild;
 }>;
 
 export const richFilter = <T extends {}>(): RichFilterComponent<T> => ({
   placeholder,
   data,
-  getDefaultFilterText,
   onChange,
   foot,
 }) => {
@@ -65,17 +63,13 @@ export const richFilter = <T extends {}>(): RichFilterComponent<T> => ({
   }, [text]);
 
   useEffect(() => {
-    if (!text.includes('query()')) {
-      const filter = compileFilter({ text, caseSensitive, regex });
-      onChange(data.data.filter(d => getDefaultFilterText(d).some(filter)));
-      return;
-    }
-
     try {
       onChange(
         evaluate({
-          expression: text,
-          dataSources: { query: data },
+          input: text,
+          regex,
+          caseSensitive,
+          datasource: data,
         }),
       );
       setError(undefined);

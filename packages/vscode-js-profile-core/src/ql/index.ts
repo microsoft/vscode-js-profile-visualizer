@@ -2,35 +2,26 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { ICompilation, IStatement } from './operators';
-import { expressionFactories, statementFactories } from './operators/all';
-import { createColumnProvider } from './column';
-import { QueryError } from './query-error';
-import { CodeEmitter } from './emitter';
+import { compile, lex } from './parser';
 
-/**
- * Type that allows chaining operators, and records the list of operators
- * chained onto it.
- */
-type Builder = { [key: string]: (...args: unknown[]) => Builder };
+export const enum PropertyType {
+  String,
+  Number,
+}
 
-/**
- * Creates a new builder.
- */
-const createBuilder = () => {
-  const builtOps: IStatement[] = [];
-  const builder: Partial<Builder> = {};
+export interface IPropertyToPrimitiveType {
+  [PropertyType.Number]: number;
+  [PropertyType.String]: string;
+}
 
-  for (const factory of statementFactories) {
-    builder[factory.name] = (...args: unknown[]) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      builtOps.push(factory.invoke(...args));
-      return builder as Builder;
-    };
-  }
+export interface IBasePropertyDefinition<TNode, TProp extends PropertyType> {
+  type: TProp;
+  accessor: (node: TNode) => IPropertyToPrimitiveType[TProp];
+}
 
-  return { builder: builder as Builder, builtOps };
-};
+export type StringPropertyDefinition<T> = IBasePropertyDefinition<T, PropertyType.String>;
+export type NumberPropertyDefinition<T> = IBasePropertyDefinition<T, PropertyType.Number>;
+export type Property<T> = StringPropertyDefinition<T> | NumberPropertyDefinition<T>;
 
 /**
  * Data source that provides a stream of items, and includes the list of
@@ -39,109 +30,52 @@ const createBuilder = () => {
  */
 export interface IDataSource<T> {
   data: ReadonlyArray<T>;
-  properties: { [key: string]: string };
-  getChildren: string;
+  properties: { [key: string]: Property<T> };
+  genericMatchStr: (node: T) => string;
+  getChildren: (node: T) => ReadonlyArray<T>;
 }
 
-/**
- * Options passed into evaluate().
- */
-export interface IEvaluateOptions<T> {
-  expression: string;
-  dataSources: { [key: string]: IDataSource<T> };
+export interface IQuery<T> {
+  datasource: IDataSource<T>;
+  input: string;
+  regex: boolean;
+  caseSensitive: boolean;
 }
 
-const opsToString = (dataSource: IDataSource<unknown>, ops: IStatement[]) => {
-  const global = new CodeEmitter();
-  const filter = new CodeEmitter();
-  const sort = new CodeEmitter();
+export interface IQueryResults<T> {
+  selected: Set<T>;
+  selectedAndParents: Set<T>;
+}
 
-  const compilation: ICompilation = { global, filter, sort, properties: dataSource.properties };
-
-  global.emit('function getChildren(node) {', dataSource.getChildren, '}');
-  for (const op of ops) {
-    op.compile(compilation);
+export const evaluate = <T>(q: IQuery<T>): IQueryResults<T> => {
+  const filter = compile(lex(q.input), q);
+  const results: IQueryResults<T> = { selected: new Set(), selectedAndParents: new Set() };
+  for (const model of q.datasource.data) {
+    filterDeep(q.datasource, filter, model, results);
   }
 
-  return `
-    ${global.toString()}
-    function test(node) {
-      ${filter.toString()}
-      return true;
-    }
-
-    function breadthFirstSearch(node, callback) {
-      let queue = [node];
-      while (queue.length) {
-        const child = queue.shift();
-        const result = callback(child);
-        if (result !== undefined) {
-          return result;
-        }
-
-        queue.push(...getChildren(child));
-      }
-    }
-
-    let result = [];
-    for (const node of nodes) {
-      if (test(node)) {
-        result.push(node);
-      }
-    }
-
-    nodes = result;
-
-    ${sort.toString()}
-
-    return nodes;
-  `;
+  return results;
 };
 
-export const compile = <T>(options: IEvaluateOptions<T>) => {
-  const globals: { [key: string]: unknown } = {};
-  const columns = createColumnProvider();
-  globals.v = columns.provider;
-  let built: { ds: IDataSource<T>; builtOps: IStatement[] } | undefined;
-
-  for (const key of Object.keys(options.dataSources)) {
-    globals[key] = () => {
-      const { builder, builtOps } = createBuilder();
-      built = { ds: options.dataSources[key], builtOps };
-      return builder;
-    };
+const filterDeep = <T>(
+  s: IDataSource<T>,
+  filter: (model: T) => boolean,
+  model: T,
+  results: IQueryResults<T>,
+) => {
+  let anyChild = false;
+  if (filter(model)) {
+    results.selected.add(model);
+    results.selectedAndParents.add(model);
+    anyChild = true;
   }
 
-  for (const factory of expressionFactories) {
-    globals[factory.name] = factory.invoke.bind(factory);
-  }
-
-  const globalKeys = Object.keys(globals);
-  const globalValues = globalKeys.map(k => globals[k]);
-  globalKeys.push(options.expression);
-  try {
-    new Function(...globalKeys)(...globalValues);
-  } catch (e) {
-    if (!(e instanceof QueryError)) {
-      throw new QueryError(e.message);
+  for (const child of s.getChildren(model)) {
+    if (filterDeep(s, filter, child, results)) {
+      results.selectedAndParents.add(model);
+      anyChild = true;
     }
-
-    throw e;
   }
 
-  if (!built) {
-    return undefined;
-  }
-
-  const filter = opsToString(built.ds, built.builtOps);
-  return { code: filter, dataSource: built.ds };
-};
-
-export const evaluate = <T>(options: IEvaluateOptions<T>): T[] => {
-  const compiled = compile(options);
-  if (!compiled) {
-    return [];
-  }
-
-  return new Function('nodes', compiled.code)(compiled.dataSource.data);
+  return anyChild;
 };

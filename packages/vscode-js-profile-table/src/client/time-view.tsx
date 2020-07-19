@@ -2,27 +2,28 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { h, FunctionComponent, Fragment } from 'preact';
-import styles from './time-view.css';
+import { Fragment, FunctionComponent, h } from 'preact';
+import VirtualList from 'preact-virtual-list';
 import {
-  useMemo,
   useCallback,
   useContext,
-  useState,
-  useLayoutEffect,
-  useRef,
   useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
 } from 'preact/hooks';
-import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
-import { ILocation, IGraphNode } from 'vscode-js-profile-core/out/esm/cpu/model';
-import { classes } from 'vscode-js-profile-core/out/esm/client/util';
-import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/cpu/types';
-import { addToSet, removeFromSet, toggleInSet } from 'vscode-js-profile-core/out/esm/array';
 import * as ChevronDown from 'vscode-codicons/src/icons/chevron-down.svg';
 import * as ChevronRight from 'vscode-codicons/src/icons/chevron-right.svg';
+import { addToSet, removeFromSet, toggleInSet } from 'vscode-js-profile-core/out/esm/array';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
-import VirtualList from 'preact-virtual-list';
-import { getLocationText, decimalFormat } from 'vscode-js-profile-core/out/esm/cpu/display';
+import { classes } from 'vscode-js-profile-core/out/esm/client/util';
+import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
+import { decimalFormat, getLocationText } from 'vscode-js-profile-core/out/esm/cpu/display';
+import { IGraphNode, ILocation } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/cpu/types';
+import { IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
+import styles from './time-view.css';
 
 type SortFn = (node: ILocation) => number;
 
@@ -41,12 +42,13 @@ const getGlobalUniqueId = (node: IGraphNode) => {
 };
 
 export const TimeView: FunctionComponent<{
-  data: ReadonlyArray<IGraphNode>;
-}> = ({ data }) => {
+  query: IQueryResults<IGraphNode>;
+  data: IGraphNode[];
+}> = ({ data, query }) => {
   const listRef = useRef<{ base: HTMLElement }>();
   const [sortFn, setSort] = useState<SortFn | undefined>(() => selfTime);
   const [focused, setFocused] = useState<undefined | IGraphNode>(undefined);
-  const [expanded, setExpanded] = useState<ReadonlySet<IGraphNode>>(new Set<IGraphNode>());
+  const [expanded, setExpanded] = useState<ReadonlySet<IGraphNode>>(new Set());
 
   const getSortedChildren = (node: IGraphNode) => {
     const children = Object.values(node.children);
@@ -65,7 +67,10 @@ export const TimeView: FunctionComponent<{
 
   // 2. Expand nested child nodes
   const rendered = useMemo(() => {
-    const output: NodeAtDepth[] = sorted.map(node => ({ node, position: 1, depth: 0 }));
+    const output: NodeAtDepth[] = sorted
+      .filter(node => query.selectedAndParents.has(node))
+      .map(node => ({ node, position: 1, depth: 0 }));
+
     for (let i = 0; i < output.length; i++) {
       const { node, depth } = output[i];
       if (expanded.has(node)) {
@@ -80,7 +85,7 @@ export const TimeView: FunctionComponent<{
     }
 
     return output;
-  }, [sorted, expanded, sortFn]);
+  }, [sorted, expanded, sortFn, query]);
 
   const onKeyDown = useCallback(
     (evt: KeyboardEvent, node: IGraphNode) => {

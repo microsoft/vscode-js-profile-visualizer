@@ -2,9 +2,9 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { IBox, IBounds, ICanvasSize, Constants } from '../flame-graph';
-import vertexShaderSource from './box.vert';
+import { Constants, IBounds, IBox, ICanvasSize } from '../flame-graph';
 import fragmentShaderSource from './box.frag';
+import vertexShaderSource from './box.vert';
 
 const createShader = (gl: WebGL2RenderingContext, type: GLenum, source: string) => {
   const shader = gl.createShader(type);
@@ -88,37 +88,37 @@ export const setupGl = ({
       positions[k++] = box.x1;
       positions[k++] = box.y1 - Constants.BoxHeight;
       positions[k++] = box.loc.graphId;
-      positions[k++] = box.loc.category;
+      positions[k++] = box.category;
 
       // top right:
       positions[k++] = box.x2;
       positions[k++] = box.y1 - Constants.BoxHeight;
       positions[k++] = box.loc.graphId;
-      positions[k++] = box.loc.category;
+      positions[k++] = box.category;
 
       // bottom left:
       positions[k++] = box.x1;
       positions[k++] = box.y2 - 1 - Constants.BoxHeight;
       positions[k++] = box.loc.graphId;
-      positions[k++] = box.loc.category;
+      positions[k++] = box.category;
 
       // bottom left (triangle 2):
       positions[k++] = box.x1;
       positions[k++] = box.y2 - 1 - Constants.BoxHeight;
       positions[k++] = box.loc.graphId;
-      positions[k++] = box.loc.category;
+      positions[k++] = box.category;
 
       // top right (triangle 2):
       positions[k++] = box.x2;
       positions[k++] = box.y1 - Constants.BoxHeight;
       positions[k++] = box.loc.graphId;
-      positions[k++] = box.loc.category;
+      positions[k++] = box.category;
 
       // bottom right:
       positions[k++] = box.x2;
       positions[k++] = box.y2 - 1 - Constants.BoxHeight;
       positions[k++] = box.loc.graphId;
-      positions[k++] = box.loc.category;
+      positions[k++] = box.category;
     }
 
     gl.bindBuffer(gl.ARRAY_BUFFER, boxesBuffer);
@@ -150,11 +150,24 @@ export const setupGl = ({
   };
 
   const setFocusColor = (color: string) => {
-    const inner = /rgba?\((.*)+\)/.exec(color);
-    if (inner) {
-      const [r, g, b, a = 255] = inner[1]
+    debugger;
+    const rgba = /rgba?\((.*)+\)/.exec(color);
+    if (rgba) {
+      const [r, g, b, a = 255] = rgba[1]
         .split(',')
         .map((v, i) => Number(v.trim()) / (i < 3 ? 255 : 1));
+      gl.uniform4f(focusColorLocation, r, g, b, a);
+    }
+
+    const hex =
+      /^#([a-z0-9])([a-z0-9])([a-z0-9])$/i.exec(color) ||
+      /^#([a-z0-9]{2})([a-z0-9]{2})([a-z0-9]{2})([a-z0-9]{2})?$/i.exec(color);
+    if (hex) {
+      const [r, g, b, a = 255] = hex
+        .slice(1)
+        .map(n => (n === undefined ? 'FF' : n))
+        .map(n => parseInt(n.length === 1 ? n.repeat(2) : n, 16))
+        .map(n => n / 0xff);
       gl.uniform4f(focusColorLocation, r, g, b, a);
     }
   };
