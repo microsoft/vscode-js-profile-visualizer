@@ -3,31 +3,32 @@
 // Hover to view descriptions of existing attributes.
 // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
 {
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"name": "Extension",
-			"type": "pwa-extensionHost",
-			"request": "launch",
-			"runtimeExecutable": "${execPath}",
-			"debugWebviews": {
-				"webRoot": "${workspaceFolder}/packages/vscode-js-profile-table"
-			},
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-table",
-				"--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-flame",
-				"--extensionDevelopmentPath=${workspaceFolder}/../vscode-js-debug/out",
-			],
-		},
-		{
-			"name": "Notebook",
-			"type": "pwa-extensionHost",
-			"request": "launch",
-			"runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-notebook",
-				"--extensionDevelopmentPath=${workspaceFolder}/../vscode-js-debug/out",
-			],
-		}
-	]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Extension",
+      "type": "pwa-extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "debugWebviews": true,
+      "rendererDebugOptions": {
+        "webRoot": "${workspaceFolder}/packages/vscode-js-profile-table"
+      },
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-table",
+        "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-flame",
+        "--extensionDevelopmentPath=${workspaceFolder}/../vscode-js-debug/out"
+      ]
+    },
+    {
+      "name": "Notebook",
+      "type": "pwa-extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-notebook",
+        "--extensionDevelopmentPath=${workspaceFolder}/../vscode-js-debug/out"
+      ]
+    }
+  ]
 }

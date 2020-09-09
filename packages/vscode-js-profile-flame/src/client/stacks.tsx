@@ -101,6 +101,103 @@ export class LocationAccessor implements ILocation {
   }
 }
 
+interface ITopDownGraphNode {
+  location: ILocation;
+  aggregateTime: number;
+  selfTime: number;
+  children: Map<number, ITopDownGraphNode>;
+}
+
+const createTopDownGraph = (model: IProfileModel) => {
+  const graph: ITopDownGraphNode = {
+    children: new Map(),
+    location: (null as unknown) as ILocation,
+    aggregateTime: 0,
+    selfTime: 0,
+  };
+
+  for (let i = 1; i < model.samples.length - 1; i++) {
+    const root = model.nodes[model.samples[i]];
+    const selfTime = model.timeDeltas[i - 1];
+    const locations = [root.locationId];
+    for (let id = root.parent; id; id = model.nodes[id].parent) {
+      locations.unshift(model.nodes[id].locationId);
+    }
+
+    let node = graph;
+    for (const location of locations) {
+      node.aggregateTime += selfTime;
+
+      let next = node.children.get(location);
+      if (!next) {
+        next = {
+          children: new Map(),
+          aggregateTime: 0,
+          selfTime: 0,
+          location: model.locations[location],
+        };
+        node.children.set(location, next);
+      }
+
+      node = next;
+    }
+
+    node.selfTime += selfTime;
+  }
+
+  return graph.children;
+};
+
+export const buildLeftHeavyColumns = (model: IProfileModel): IColumn[] => {
+  const graph = createTopDownGraph(model);
+
+  const columns: IColumn[] = [];
+
+  let x = 0;
+  let graphIdCounter = 0;
+  const addSelf = (node: ITopDownGraphNode, rows: ILocation[]) => {
+    const x1 = x;
+    x += node.selfTime / model.duration;
+    columns.push({
+      x1,
+      x2: x,
+      rows: [
+        ...rows.map(row => ({
+          ...row,
+          graphId: graphIdCounter++,
+          aggregateTime: node.selfTime,
+          selfTime: 0,
+        })),
+        { ...node.location, graphId: graphIdCounter++, selfTime: node.selfTime, aggregateTime: 0 },
+      ],
+    });
+  };
+
+  const build = (node: ITopDownGraphNode, rows: ILocation[]) => {
+    let addedSelf = node.selfTime === 0; // add the self time if it's > 0
+    const children = [...node.children.values()].sort((a, b) => b.aggregateTime - a.aggregateTime);
+    for (const child of children) {
+      if (!addedSelf && node.selfTime > child.aggregateTime + child.selfTime) {
+        addSelf(node, rows);
+        addedSelf = true;
+      }
+
+      build(child, [...rows, node.location]);
+    }
+
+    if (!addedSelf) {
+      addSelf(node, rows);
+    }
+  };
+
+  for (const child of [...graph.values()].sort((a, b) => b.aggregateTime - a.aggregateTime)) {
+    build(child, []);
+  }
+
+  mergeColumns(columns);
+  return columns;
+};
+
 /**
  * Builds a 2D array of flame graph entries. Returns the columns with nested
  * 'rows'. Each column includes a percentage width (0-1) of the screen space.
@@ -143,7 +240,11 @@ export const buildColumns = (model: IProfileModel) => {
     timeOffset += selfTime;
   }
 
-  // 2. Merge them
+  mergeColumns(columns);
+  return columns;
+};
+
+const mergeColumns = (columns: IColumn[]) => {
   let lastFrameWasGc = false;
   for (let x = 1; x < columns.length; x++) {
     const col = columns[x];
@@ -183,6 +284,4 @@ export const buildColumns = (model: IProfileModel) => {
       prev.aggregateTime += current.aggregateTime;
     }
   }
-
-  return columns;
 };

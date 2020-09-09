@@ -1,11 +1,11 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
-import { h, FunctionComponent, Fragment, ComponentType } from 'preact';
-import { useState, useMemo } from 'preact/hooks';
+import { ComponentType, Fragment, FunctionComponent, h } from 'preact';
+import { useMemo, useState } from 'preact/hooks';
 import { richFilter, RichFilterComponent } from '../client/rich-filter';
-import styles from './layout.css';
 import { IDataSource, IQueryResults } from '../ql';
+import styles from './layout.css';
 
 export interface IBodyProps<T> {
   data: IQueryResults<T>;

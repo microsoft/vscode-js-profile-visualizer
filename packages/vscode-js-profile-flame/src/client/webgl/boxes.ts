@@ -150,7 +150,6 @@ export const setupGl = ({
   };
 
   const setFocusColor = (color: string) => {
-    debugger;
     const rgba = /rgba?\((.*)+\)/.exec(color);
     if (rgba) {
       const [r, g, b, a = 255] = rgba[1]

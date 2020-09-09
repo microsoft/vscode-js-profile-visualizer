@@ -76,7 +76,7 @@ export const richFilter = <T extends {}>(): RichFilterComponent<T> => ({
     } catch (e) {
       setError(e.message);
     }
-  }, [regex, caseSensitive, text]);
+  }, [regex, caseSensitive, text, data]);
 
   return (
     <div className={styles.f}>
