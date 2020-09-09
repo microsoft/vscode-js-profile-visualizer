@@ -3,15 +3,14 @@
  *--------------------------------------------------------*/
 
 import { ComponentChild, Fragment, FunctionComponent, h } from 'preact';
-import { useContext, useEffect, useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import * as CaseSensitive from 'vscode-codicons/src/icons/case-sensitive.svg';
 import * as Regex from 'vscode-codicons/src/icons/regex.svg';
 import { evaluate, IDataSource, IQueryResults } from '../ql';
 import { Filter } from './filter';
 import styles from './rich-filter.css';
 import { ToggleButton } from './toggle-button';
-import { useLazyEffect } from './useLazyEffect';
-import { IVscodeApi, VsCodeApi } from './vscodeApi';
+import { usePersistedState } from './usePersistedState';
 
 /**
  * Filter that the RichFilter returns,
@@ -52,15 +51,10 @@ export const richFilter = <T extends {}>(): RichFilterComponent<T> => ({
   onChange,
   foot,
 }) => {
-  const vscode = useContext(VsCodeApi) as IVscodeApi<{ filterText: string }>;
   const [regex, setRegex] = useState(false);
   const [caseSensitive, setCaseSensitive] = useState(false);
-  const [text, setText] = useState(vscode.getState()?.filterText ?? '');
+  const [text, setText] = usePersistedState('filterText', '');
   const [error, setError] = useState<string | undefined>(undefined);
-
-  useLazyEffect(() => {
-    vscode.setState({ ...vscode.getState(), filterText: text });
-  }, [text]);
 
   useEffect(() => {
     try {

@@ -54,6 +54,30 @@ interface IOptions {
   boxes: ReadonlyArray<IBox>;
 }
 
+const parseColor = (color: string): [number, number, number, number] | undefined => {
+  const rgba = /rgba?\((.*)+\)/.exec(color);
+  if (rgba) {
+    const [r, g, b, a = 255] = rgba[1]
+      .split(',')
+      .map((v, i) => Number(v.trim()) / (i < 3 ? 255 : 1));
+    return [r, g, b, a];
+  }
+
+  const hex =
+    /^#([a-z0-9])([a-z0-9])([a-z0-9])$/i.exec(color) ||
+    /^#([a-z0-9]{2})([a-z0-9]{2})([a-z0-9]{2})([a-z0-9]{2})?$/i.exec(color);
+  if (hex) {
+    const [r, g, b, a = 255] = hex
+      .slice(1)
+      .map(n => (n === undefined ? 'FF' : n))
+      .map(n => parseInt(n.length === 1 ? n.repeat(2) : n, 16))
+      .map(n => n / 0xff);
+    return [r, g, b, a];
+  }
+
+  return undefined;
+};
+
 export const setupGl = ({
   scale: initialScale,
   canvas,
@@ -136,6 +160,15 @@ export const setupGl = ({
     gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
   };
 
+  let timeout: number;
+  const debounceRedraw = () => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+
+    timeout = (setTimeout(redraw, 2) as unknown) as number;
+  };
+
   const boundsLocation = gl.getUniformLocation(boxProgram, 'bounds');
   const hoveredLocation = gl.getUniformLocation(boxProgram, 'hovered');
   const focusedLocation = gl.getUniformLocation(boxProgram, 'focused');
@@ -150,24 +183,9 @@ export const setupGl = ({
   };
 
   const setFocusColor = (color: string) => {
-    const rgba = /rgba?\((.*)+\)/.exec(color);
+    const rgba = parseColor(color);
     if (rgba) {
-      const [r, g, b, a = 255] = rgba[1]
-        .split(',')
-        .map((v, i) => Number(v.trim()) / (i < 3 ? 255 : 1));
-      gl.uniform4f(focusColorLocation, r, g, b, a);
-    }
-
-    const hex =
-      /^#([a-z0-9])([a-z0-9])([a-z0-9])$/i.exec(color) ||
-      /^#([a-z0-9]{2})([a-z0-9]{2})([a-z0-9]{2})([a-z0-9]{2})?$/i.exec(color);
-    if (hex) {
-      const [r, g, b, a = 255] = hex
-        .slice(1)
-        .map(n => (n === undefined ? 'FF' : n))
-        .map(n => parseInt(n.length === 1 ? n.repeat(2) : n, 16))
-        .map(n => n / 0xff);
-      gl.uniform4f(focusColorLocation, r, g, b, a);
+      gl.uniform4f(focusColorLocation, ...rgba);
     }
   };
 
@@ -183,23 +201,23 @@ export const setupGl = ({
     redraw,
     setHovered: (graphId = -1) => {
       gl.uniform1i(hoveredLocation, graphId);
-      redraw();
+      debounceRedraw();
     },
     setFocused: (graphId = -1) => {
       gl.uniform1i(focusedLocation, graphId);
-      redraw();
+      debounceRedraw();
     },
     setFocusColor: (color: string) => {
       setFocusColor(color);
-      redraw();
+      debounceRedraw();
     },
     setBounds: (bounds: IBounds, size: ICanvasSize, scale: number) => {
       setBounds(bounds, size, scale);
-      redraw();
+      debounceRedraw();
     },
     setBoxes: (boxes: ReadonlyArray<IBox>) => {
       setBoxes(boxes);
-      redraw();
+      debounceRedraw();
     },
   };
 };

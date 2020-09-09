@@ -5,7 +5,7 @@
   "private": true,
   "dependencies": {
     "node-fetch": "^2.6.0",
-    "vscode-codicons": "github:microsoft/vscode-codicons#8a871e35e2abd42847ca1d58b118c9cfc53b87a0"
+    "vscode-codicons": "github:microsoft/vscode-codicons#dd1edb245d2217efcfb931c293b77b78e634e59a"
   },
   "devDependencies": {
     "@types/node-fetch": "^2.5.5"

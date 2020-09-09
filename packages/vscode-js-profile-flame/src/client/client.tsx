@@ -2,10 +2,11 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 import { Fragment, FunctionComponent, h, render } from 'preact';
-import { useCallback, useContext, useMemo, useState } from 'preact/hooks';
-import * as LeftHeavyIcon from 'vscode-codicons/src/icons/debug-breakpoint-data.svg';
+import { useCallback, useContext, useMemo } from 'preact/hooks';
+import * as LeftHeavyIcon from 'vscode-codicons/src/icons/graph-left.svg';
 import * as Flame from 'vscode-codicons/src/icons/flame.svg';
 import { ToggleButton } from 'vscode-js-profile-core/out/esm/client/toggle-button';
+import { usePersistedState } from 'vscode-js-profile-core/out/esm/client/usePersistedState';
 import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
 import { cpuProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/cpu/layout';
 import { IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
@@ -55,7 +56,7 @@ const CloseButton: FunctionComponent = () => {
 const CpuProfileLayout = cpuProfileLayoutFactory<LocationAccessor>();
 
 const Root: FunctionComponent = () => {
-  const [leftHeavy, setLeftHeavy] = useState(false);
+  const [leftHeavy, setLeftHeavy] = usePersistedState('leftHeavy', false);
 
   const FilterFooter: FunctionComponent = useCallback(
     () => (

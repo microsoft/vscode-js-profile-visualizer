@@ -3,20 +3,24 @@
  *--------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { ICpuProfileRaw, Message } from './types';
 import { bundlePage } from '../bundlePage';
-import { buildModel, IProfileModel } from './model';
-import { ProfileCodeLensProvider } from '../profileCodeLensProvider';
-import { reopenWithEditor } from '../reopenWithEditor';
 import { openLocation } from '../open-location';
-import { ReadonlyCustomDocument } from '../readonly-custom-document';
 import { ProfileAnnotations } from '../profileAnnotations';
+import { ProfileCodeLensProvider } from '../profileCodeLensProvider';
+import { ReadonlyCustomDocument } from '../readonly-custom-document';
+import { reopenWithEditor } from '../reopenWithEditor';
+import { buildModel, IProfileModel } from './model';
+import { ICpuProfileRaw, Message } from './types';
 
 export class CpuProfileEditorProvider
   implements vscode.CustomEditorProvider<ReadonlyCustomDocument<IProfileModel>> {
   public readonly onDidChangeCustomDocument = new vscode.EventEmitter<never>().event;
 
-  constructor(private readonly lens: ProfileCodeLensProvider, private readonly bundle: string) {}
+  constructor(
+    private readonly lens: ProfileCodeLensProvider,
+    private readonly bundle: string,
+    private readonly extraConsts: Record<string, unknown> = {},
+  ) {}
 
   /**
    * @inheritdoc
@@ -64,6 +68,7 @@ export class CpuProfileEditorProvider
     webviewPanel.webview.options = { enableScripts: true };
     webviewPanel.webview.html = await bundlePage(this.bundle, {
       MODEL: document.userData,
+      ...this.extraConsts,
     });
   }
 

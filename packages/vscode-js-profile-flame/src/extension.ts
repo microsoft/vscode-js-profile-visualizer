@@ -2,10 +2,10 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
+import { join } from 'path';
 import * as vscode from 'vscode';
 import { CpuProfileEditorProvider } from 'vscode-js-profile-core/out/cpu/editorProvider';
 import { ProfileCodeLensProvider } from 'vscode-js-profile-core/out/profileCodeLensProvider';
-import { join } from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(

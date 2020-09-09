@@ -7,7 +7,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'p
 import { binarySearch } from 'vscode-js-profile-core/out/esm/array';
 import { MiddleOut } from 'vscode-js-profile-core/out/esm/client/middleOutCompression';
 import { useCssVariables } from 'vscode-js-profile-core/out/esm/client/useCssVariables';
-import { useLazyEffect } from 'vscode-js-profile-core/out/esm/client/useLazyEffect';
+import { usePersistedState } from 'vscode-js-profile-core/out/esm/client/usePersistedState';
 import { useWindowSize } from 'vscode-js-profile-core/out/esm/client/useWindowSize';
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
 import { IVscodeApi, VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
@@ -166,7 +166,6 @@ export const FlameGraph: FunctionComponent<{
   model: IProfileModel;
 }> = ({ columns, model, filtered }) => {
   const vscode = useContext(VsCodeApi) as IVscodeApi<ISerializedState>;
-  const prevState = vscode.getState();
 
   const webCanvas = useRef<HTMLCanvasElement>();
   const webContext = useMemo(() => webCanvas.current?.getContext('2d'), [webCanvas.current]);
@@ -182,12 +181,13 @@ export const FlameGraph: FunctionComponent<{
 
   const rawBoxes = useMemo(() => buildBoxes(columns, filtered), [columns, filtered]);
   const clampY = Math.max(0, rawBoxes.maxY - canvasSize.height + Constants.ExtraYBuffer);
-  const [focused, setFocused] = useState<IBox | undefined>(
-    rawBoxes.boxById.get(prevState?.focusedId ?? -1),
-  );
-  const [bounds, setBounds] = useState<IBounds>(
-    prevState?.bounds ?? { minX: 0, maxX: 1, y: 0, level: 0 },
-  );
+  const [focused, setFocused] = useState<IBox | undefined>(undefined);
+  const [bounds, setBounds] = usePersistedState<IBounds>('bounds', {
+    minX: 0,
+    maxX: 1,
+    y: 0,
+    level: 0,
+  });
 
   const gl = useMemo(
     () =>
@@ -232,14 +232,6 @@ export const FlameGraph: FunctionComponent<{
       ),
     [cssVariables],
   );
-
-  useLazyEffect(() => {
-    vscode.setState({ ...vscode.getState(), bounds });
-  }, [bounds]);
-
-  useLazyEffect(() => {
-    vscode.setState({ ...vscode.getState(), focusedId: focused?.loc.graphId });
-  }, [focused]);
 
   useEffect(() => {
     if (webContext) {
