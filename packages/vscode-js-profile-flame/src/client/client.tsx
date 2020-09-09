@@ -29,7 +29,7 @@ function getTimelineCols() {
 let leftHeavyCols: IColumn[];
 function getLeftHeavyCols() {
   if (!leftHeavyCols) {
-    return buildLeftHeavyColumns(MODEL);
+    leftHeavyCols = buildLeftHeavyColumns(MODEL);
   }
 
   return leftHeavyCols;
