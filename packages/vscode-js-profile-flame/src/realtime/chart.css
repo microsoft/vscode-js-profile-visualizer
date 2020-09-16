@@ -1,0 +1,96 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 600px) {
+  .configOpen.container {
+    flex-direction: row;
+    align-items: stretch;
+  }
+}
+
+.labelList {
+  font-size: 11px;
+  font-family: var(--font-family);
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.labelList > span {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  color: var(--sideBar-foreground, var(--vscode-foreground));
+}
+
+.labelList > span::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  display: inline-block;
+  border-radius: 100%;
+  background: var(--metric-color);
+}
+
+.maxContainer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: linear-gradient(to bottom, var(--vscode-sideBar-background), transparent);
+}
+
+.max {
+  color: var(--metric-color);
+  display: inline;
+  padding: 0 3px;
+}
+
+.timeLeft,
+.timeRight {
+  position: absolute;
+  font-size: 11px;
+  bottom: 2px;
+}
+
+.timeLeft {
+  left: 0;
+}
+
+.timeRight {
+  right: 0;
+}
+
+.toggle {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  background: 0;
+  border: 0;
+  padding: 3px;
+  cursor: pointer;
+  color: inherit;
+  line-height: 0;
+}
+
+.toggle:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+  background: none;
+}
+
+.configOpen .toggle {
+  background: var(--vscode-inputOption-activeBackground);
+  line-height: 0;
+}
+
+.toggle svg {
+  width: 15px;
+}

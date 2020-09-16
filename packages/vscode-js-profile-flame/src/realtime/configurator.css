@@ -1,0 +1,46 @@
+.configurator {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  margin-top: 4px;
+}
+
+.metric {
+  display: none;
+  min-height: 1.2em;
+  max-height: 2.2em;
+  flex-grow: 1;
+  align-items: center;
+  padding: 0 7px;
+  position: relative;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.metric::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  border-radius: 100%;
+  background: transparent;
+  color: var(--vscode-debugIcon-breakpointUnverifiedForeground);
+  border: 2px solid var(--vscode-debugIcon-breakpointUnverifiedForeground);
+}
+
+.metric.available {
+  display: flex;
+}
+
+.metric.enabled {
+  color: inherit;
+}
+
+.metric.enabled::before {
+  background: var(--metric-color);
+  border-color: var(--metric-color);
+}
+
+.label {
+  flex-grow: 1;
+}

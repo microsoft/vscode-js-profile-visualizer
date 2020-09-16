@@ -20,6 +20,7 @@
     "vscode": "^1.43.0"
   },
   "activationEvents": [
+		"onView:vscode-js-profile-flame.realtime",
     "onCustomEditor:jsProfileVisualizer.cpuprofile.flame"
   ],
   "contributes": {
@@ -34,13 +35,50 @@
           }
         ]
       }
+    ],
+    "views": {
+      "debug": [
+        {
+          "type": "webview",
+          "id": "vscode-js-profile-flame.realtime",
+          "name": "Realtime Performance"
+        }
+      ]
+    },
+    "configuration":[
+      {
+        "title": "Flamegraph Visaulizer",
+        "properties": {
+          "debug.flameGraph.realtimePollInterval": {
+            "type": "integer",
+            "minimum": 500,
+            "default": 1000,
+            "description": "How often (in milliseconds) to refresh statistics from the runtime"
+          },
+          "debug.flameGraph.realtimeViewDuration": {
+            "type": "integer",
+            "minimum": 500,
+            "default": 30000,
+            "description": "How much time (in milliseconds) should be kept in the graph"
+          },
+          "debug.flameGraph.realtimeEasing": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether easing is enable on the realtime graph."
+          }
+        }
+      }
     ]
   },
   "bugs": {
     "url": "https://github.com/microsoft/vscode-js-profile-visualizer/issues"
   },
+  "devDependencies": {
+    "@types/resize-observer-browser": "^0.1.3"
+  },
   "dependencies": {
     "vscode-codicons": "github:microsoft/vscode-codicons#dd1edb245d2217efcfb931c293b77b78e634e59a",
+    "vscode-webview-tools": "^0.1.0",
     "vscode-js-profile-core": "^0.0.8"
   }
 }

@@ -2,5 +2,6 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "module": "esnext",
+    "types": ["node", "resize-observer-browser"]
   }
 }
