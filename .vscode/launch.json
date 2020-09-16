@@ -13,7 +13,7 @@
       "debugWebviews": true,
       "cwd": "${workspaceFolder}/packages/vscode-js-profile-flame",
       "rendererDebugOptions": {
-        "webRoot": "${workspaceFolder}/packages/vscode-js-profile-table"
+        "webRoot": "${workspaceFolder}/packages/vscode-js-profile-flame"
       },
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-table",

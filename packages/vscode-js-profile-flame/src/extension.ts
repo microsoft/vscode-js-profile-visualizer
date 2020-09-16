@@ -34,7 +34,6 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.workspace.onDidChangeConfiguration(evt => {
       if (allConfig.some(c => evt.affectsConfiguration(c))) {
-        realtime.updateSettings();
         realtimeTracker.updateSettings();
       }
     }),

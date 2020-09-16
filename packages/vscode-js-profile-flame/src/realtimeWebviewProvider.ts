@@ -4,8 +4,8 @@
 
 import { randomBytes } from 'crypto';
 import * as vscode from 'vscode';
-import { FromWebViewMessage, MessageType, ToWebViewMessage } from './realtime/protocol';
-import { readRealtimeSettings, RealtimeSessionTracker } from './realtimeSessionTracker';
+import { FromWebViewMessage, MessageType } from './realtime/protocol';
+import { RealtimeSessionTracker } from './realtimeSessionTracker';
 
 const enabledMetricsKey = 'enabledMetrics';
 
@@ -19,16 +19,6 @@ export class RealtimeWebviewProvider implements vscode.WebviewViewProvider {
   ) {}
 
   /**
-   * Pushes a settings up to all active webviews.
-   */
-  public updateSettings() {
-    const message = this.getSettingsUpdate();
-    for (const view of this.tracker.visibleWebviews) {
-      view.webview.postMessage(message);
-    }
-  }
-
-  /**
    * @inheritdoc
    */
   public resolveWebviewView(webviewView: vscode.WebviewView) {
@@ -39,14 +29,6 @@ export class RealtimeWebviewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
     this.tracker.trackWebview(webviewView);
 
-    webviewView.onDidChangeVisibility(() => {
-      if (webviewView.visible) {
-        webviewView.webview.postMessage(this.getSettingsUpdate());
-      }
-    });
-
-    webviewView.webview.postMessage(this.getSettingsUpdate());
-
     webviewView.webview.onDidReceiveMessage((evt: FromWebViewMessage) => {
       switch (evt.type) {
         case MessageType.SetEnabledMetrics:
@@ -56,12 +38,6 @@ export class RealtimeWebviewProvider implements vscode.WebviewViewProvider {
         // ignored
       }
     });
-  }
-
-  private getSettingsUpdate() {
-    const settings = readRealtimeSettings();
-    const message: ToWebViewMessage = { type: MessageType.UpdateSettings, settings };
-    return message;
   }
 
   private getHtmlForWebview(webview: vscode.Webview) {

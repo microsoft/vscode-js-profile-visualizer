@@ -42,7 +42,6 @@ export class RealtimeSessionTracker {
   private webviews = new Set<vscode.WebviewView>();
   private sessionData = new Map<vscode.DebugSession, ISessionData>();
   private displayedSession?: vscode.DebugSession;
-  private hasVisibleSession = false;
 
   /**
    * Returns any realtime metric webviews that are currently visible.
@@ -56,16 +55,18 @@ export class RealtimeSessionTracker {
    */
   public trackWebview(webview: vscode.WebviewView) {
     this.webviews.add(webview);
+
     webview.onDidChangeVisibility(() => {
-      this.recalcVisibility();
+      if (webview.visible) {
+        this.hydrate(webview.webview);
+      }
     });
 
     webview.onDidDispose(() => {
       this.webviews.delete(webview);
-      this.recalcVisibility();
     });
 
-    this.recalcVisibility();
+    this.hydrate(webview.webview);
   }
 
   /**
@@ -98,7 +99,7 @@ export class RealtimeSessionTracker {
     }
 
     this.displayedSession = session;
-    this.postMessage({ type: MessageType.ApplyData, data: data.metrics.map(m => m.metrics) });
+    this.broadcast({ type: MessageType.ApplyData, data: data.metrics.map(m => m.metrics) });
   }
 
   /**
@@ -129,6 +130,8 @@ export class RealtimeSessionTracker {
         metric.reset(steps + 3); // no-ops if the steps are already the same
       }
     }
+
+    this.broadcast({ type: MessageType.UpdateSettings, settings: this.settings });
   }
 
   private collectFromSession(data: ISessionData) {
@@ -163,26 +166,34 @@ export class RealtimeSessionTracker {
     }
 
     if (session === this.displayedSession) {
-      this.postMessage({ type: MessageType.AddData, data: v });
+      this.broadcast({ type: MessageType.AddData, data: v });
     }
   }
 
-  private postMessage(message: ToWebViewMessage) {
+  private broadcast(message: ToWebViewMessage) {
     for (const webview of this.visibleWebviews) {
       webview.webview.postMessage(message);
     }
   }
 
-  private recalcVisibility() {
-    const wasVisible = this.hasVisibleSession;
-    const visible = [...this.webviews].some(w => w.visible);
-    this.hasVisibleSession = visible;
-    if (visible && !wasVisible) {
-      this.onDidChangeActiveSession(vscode.debug.activeDebugSession);
-    } else if (!visible) {
-      for (const session of this.sessionData.keys()) {
-        this.onSessionDidEnd(session);
-      }
+  private hydrate(webview: vscode.Webview) {
+    webview.postMessage(this.getSettingsUpdate());
+
+    const data = this.displayedSession && this.sessionData.get(this.displayedSession);
+    if (!data) {
+      return;
     }
+
+    const metrics: ToWebViewMessage = {
+      type: MessageType.ApplyData,
+      data: data.metrics.map(m => m.metrics),
+    };
+    webview.postMessage(metrics);
+  }
+
+  private getSettingsUpdate() {
+    const settings = readRealtimeSettings();
+    const message: ToWebViewMessage = { type: MessageType.UpdateSettings, settings };
+    return message;
   }
 }
