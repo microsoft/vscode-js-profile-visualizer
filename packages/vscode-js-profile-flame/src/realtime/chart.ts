@@ -7,7 +7,6 @@ import { Metric } from './baseMetric';
 import styles from './chart.css';
 import { Configurator } from './configurator';
 import { FrameCanvas, Sizing } from './frameCanvas';
-import { GraphCanvas } from './graphCanvas';
 import { Settings } from './settings';
 
 const naturalAspectRatio = 16 / 9;
@@ -23,13 +22,8 @@ export class Chart {
   private configHadManualToggle = false;
 
   private readonly frameCanvas = new FrameCanvas(this.width, this.height, this.settings);
-  private readonly graphCanvas = new GraphCanvas(this.width, this.height, this.settings);
   private readonly elements = this.createElements();
-  private readonly settingListener = this.settings.onChange(() => {
-    this.applySettings();
-    this.graphCanvas.updateMetrics();
-    this.frameCanvas.updateMetrics(this.graphCanvas, false);
-  });
+  private readonly settingListener = this.settings.onChange(() => this.applySettings());
   private readonly configurator = new Configurator(this.settings);
 
   public get elem() {
@@ -44,7 +38,6 @@ export class Chart {
   public dispose() {
     this.settingListener();
     this.frameCanvas.dispose();
-    this.graphCanvas.dispose();
   }
 
   /**
@@ -77,16 +70,13 @@ export class Chart {
     }
 
     this.frameCanvas.updateSize(graphWidth, graphHeight);
-    this.graphCanvas.updateSize(graphWidth, graphHeight);
-    this.frameCanvas.updateMetrics(this.graphCanvas, false);
   }
 
   /**
    * Update the chart metrics
    */
   public updateMetrics() {
-    this.graphCanvas.updateMetrics();
-    this.frameCanvas.updateMetrics(this.graphCanvas);
+    this.frameCanvas.updateMetrics();
 
     if (this.configOpen) {
       this.configurator.updateMetrics();

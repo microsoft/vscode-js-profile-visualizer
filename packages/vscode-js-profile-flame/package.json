@@ -41,7 +41,8 @@
         {
           "type": "webview",
           "id": "vscode-js-profile-flame.realtime",
-          "name": "Realtime Performance"
+          "name": "Realtime Performance",
+          "when": "debugConfigurationType =~ /^pwa-/"
         }
       ]
     },
