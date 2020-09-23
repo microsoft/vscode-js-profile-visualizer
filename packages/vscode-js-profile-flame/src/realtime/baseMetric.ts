@@ -10,10 +10,20 @@ export abstract class Metric {
   private maxMetric = 1;
 
   /**
-   * Gets the max value of all the metrics.
+   * Gets the max y value that the chart should be scaled to. Defaults to
+   * get the max-higher power of 2.
    */
-  public get max() {
-    return this.maxMetric;
+  public get maxY() {
+    let maxY = 10 ** Math.ceil(Math.log10(this.maxMetric));
+    if (maxY > this.maxMetric * 2) {
+      maxY /= 2;
+    }
+
+    if (maxY > this.maxMetric * 2) {
+      maxY /= 2;
+    }
+
+    return maxY;
   }
 
   /**

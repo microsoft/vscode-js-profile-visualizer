@@ -9,6 +9,27 @@
   flex-direction: column;
 }
 
+.container.noData > * {
+  display: none;
+}
+
+.noDataText {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  opacity: 0.8;
+}
+
+.container.noData .noDataText {
+  display: flex;
+}
+
 @media (min-width: 600px) {
   .configOpen.container {
     flex-direction: row;
@@ -16,18 +37,27 @@
   }
 }
 
+.configOpen canvas {
+  cursor: pointer;
+}
+
 .labelList {
   font-size: 11px;
+  cursor: pointer;
   font-family: var(--font-family);
   display: flex;
   align-items: center;
   white-space: nowrap;
 }
 
+.labelList > span > span {
+  padding-left: 0.25em;
+}
+
 .labelList > span {
   display: inline-flex;
   align-items: center;
-  margin-left: 4px;
+  margin: 0 4px;
   color: var(--sideBar-foreground, var(--vscode-foreground));
 }
 
@@ -44,14 +74,17 @@
 .maxContainer {
   position: absolute;
   top: 0;
-  right: 0;
+  left: 0;
   background: linear-gradient(to bottom, var(--vscode-sideBar-background), transparent);
+  font-size: 0.8em;
 }
 
 .max {
-  color: var(--metric-color);
   display: inline;
-  padding: 0 3px;
+}
+
+.max + .max::before {
+  content: ' / ';
 }
 
 .timeLeft,
@@ -67,30 +100,4 @@
 
 .timeRight {
   right: 0;
-}
-
-.toggle {
-  position: absolute;
-  left: 4px;
-  top: 4px;
-  background: 0;
-  border: 0;
-  padding: 3px;
-  cursor: pointer;
-  color: inherit;
-  line-height: 0;
-}
-
-.toggle:focus {
-  outline: 1px solid var(--vscode-focusBorder);
-  background: none;
-}
-
-.configOpen .toggle {
-  background: var(--vscode-inputOption-activeBackground);
-  line-height: 0;
-}
-
-.toggle svg {
-  width: 15px;
 }

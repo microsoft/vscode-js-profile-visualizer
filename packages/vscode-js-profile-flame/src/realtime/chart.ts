@@ -2,7 +2,6 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import * as Gear from 'vscode-codicons/src/icons/gear.svg';
 import { Metric } from './baseMetric';
 import styles from './chart.css';
 import { Configurator } from './configurator';
@@ -17,9 +16,10 @@ const openToSideWidth = 250;
 const openToSideMinSpace = 600;
 
 export class Chart {
-  private valElements: [Metric, HTMLElement][] = [];
+  private valElements: [Metric, { max: HTMLElement; val: HTMLElement }][] = [];
   private configOpen = false;
   private configHadManualToggle = false;
+  private hasAnyData = false;
 
   private readonly frameCanvas = new FrameCanvas(this.width, this.height, this.settings);
   private readonly elements = this.createElements();
@@ -62,7 +62,8 @@ export class Chart {
       graphHeight = height - Sizing.LabelHeight;
       graphWidth = width;
     } else if (width < openToSideMinSpace) {
-      graphHeight = Math.min(height - Sizing.LabelHeight, Math.round(width / naturalAspectRatio));
+      const cfgrect = this.configurator.elem.getBoundingClientRect();
+      graphHeight = height - cfgrect.height;
       graphWidth = width;
     } else {
       graphHeight = height;
@@ -82,9 +83,20 @@ export class Chart {
       this.configurator.updateMetrics();
     }
 
-    for (const [metric, el] of this.valElements) {
-      el.innerText = metric.format(metric.current);
+    for (const [metric, { val, max }] of this.valElements) {
+      max.innerText = metric.format(metric.maxY);
+      val.innerText = metric.format(metric.current);
     }
+
+    this.setHasData(this.settings.allMetrics.some(m => m.hasData()));
+  }
+
+  private setHasData(hasData: boolean) {
+    if (hasData === this.hasAnyData) {
+      return;
+    }
+
+    this.elements.container.classList[hasData ? 'remove' : 'add'](styles.noData);
   }
 
   private setConfiguratorOpen(isOpen: boolean) {
@@ -109,18 +121,25 @@ export class Chart {
 
   private createElements() {
     const container = document.createElement('div');
-    container.classList.add(styles.container);
+    container.classList.add(styles.container, styles.noData);
     container.style.setProperty('--primary-series-color', this.settings.colors.primaryGraph);
     container.style.setProperty('--secondary-series-color', this.settings.colors.secondaryGraph);
 
     const graph = document.createElement('div');
     graph.style.position = 'relative';
     graph.appendChild(this.frameCanvas.elem);
+    graph.addEventListener('click', () => this.toggleConfiguration(false));
     container.appendChild(graph);
+
+    const noData = document.createElement('div');
+    noData.classList.add(styles.noDataText);
+    noData.innerText = 'No data yet -- start a debug session to collect some!';
+    container.appendChild(noData);
 
     const labelList = document.createElement('div');
     labelList.classList.add(styles.labelList);
     labelList.style.height = `${Sizing.LabelHeight}px`;
+    labelList.addEventListener('click', () => this.toggleConfiguration(true));
     container.appendChild(labelList);
 
     const leftTime = document.createElement('div');
@@ -136,20 +155,18 @@ export class Chart {
     valueContainer.classList.add(styles.maxContainer);
     graph.appendChild(valueContainer);
 
-    const toggleButton = document.createElement('button');
-    toggleButton.classList.add(styles.toggle);
-    toggleButton.innerHTML = Gear;
-    toggleButton.addEventListener('click', () => this.toggleConfiguration());
-    graph.appendChild(toggleButton);
-
     this.setSeries(labelList, valueContainer);
 
-    return { toggleButton, container, labelList, leftTime, valueContainer };
+    return { container, labelList, leftTime, valueContainer };
   }
 
-  private toggleConfiguration() {
+  private toggleConfiguration(toState = !this.configOpen) {
+    if (toState === this.configOpen) {
+      return;
+    }
+
     this.configHadManualToggle = true;
-    this.setConfiguratorOpen(!this.configOpen);
+    this.setConfiguratorOpen(toState);
     this.updateSize(this.width, this.height);
   }
 
@@ -160,8 +177,9 @@ export class Chart {
   }
 
   private setSeries(labelList: HTMLElement, maxContainer: HTMLElement) {
-    for (const [, el] of this.valElements) {
-      maxContainer.removeChild(el);
+    for (const [, { max, val }] of this.valElements) {
+      max.parentElement?.removeChild(max);
+      val.parentElement?.removeChild(val);
     }
 
     labelList.innerHTML = '';
@@ -171,16 +189,19 @@ export class Chart {
       const label = document.createElement('span');
       label.style.setProperty('--metric-color', this.settings.metricColor(metric));
       label.classList.add(styles.primary);
-      label.innerText = metric.name();
+      label.innerText = `${metric.name()}: `;
       labelList.appendChild(label);
 
-      const val = document.createElement('div');
-      val.classList.add(styles.max, styles.primary);
-      val.style.setProperty('--metric-color', this.settings.metricColor(metric));
+      const val = document.createElement('span');
       val.innerText = metric.format(metric.current);
+      label.appendChild(val);
 
-      maxContainer.appendChild(val);
-      this.valElements.push([metric, val]);
+      const max = document.createElement('div');
+      max.classList.add(styles.max, styles.primary);
+      max.innerText = metric.format(metric.maxY);
+      maxContainer.appendChild(max);
+
+      this.valElements.push([metric, { max, val }]);
     }
   }
 }

@@ -14,12 +14,13 @@ import {
   ToWebViewMessage,
 } from './realtime/protocol';
 
-export const readRealtimeSettings = (): ISettings => {
+export const readRealtimeSettings = (context: vscode.ExtensionContext): ISettings => {
   const config = vscode.workspace.getConfiguration();
   return {
     easing:
       config.get(Config.Easing) ??
       vscode.window.activeColorTheme.kind !== vscode.ColorThemeKind.HighContrast,
+    enabledMetrics: context.workspaceState.get(enabledMetricsKey) ?? [0, 1],
     pollInterval: config.get(Config.PollInterval, 1000),
     viewDuration: config.get(Config.ViewDuration, 30_000),
     zoomLevel: config.get('window.zoomLevel', 0),
@@ -32,13 +33,15 @@ interface ISessionData {
   cts: vscode.CancellationTokenSource;
 }
 
+const enabledMetricsKey = 'enabledMetrics';
+
 /**
  * Tracks ongoing debug sessions and webviews. While there's any visible
  * webview, we'll collect metrics for any debug session that is or becomes
  * active.
  */
 export class RealtimeSessionTracker {
-  private settings = readRealtimeSettings();
+  private settings = readRealtimeSettings(this.context);
   private webviews = new Set<vscode.WebviewView>();
   private sessionData = new Map<vscode.DebugSession, ISessionData>();
   private displayedSession?: vscode.DebugSession;
@@ -48,6 +51,16 @@ export class RealtimeSessionTracker {
    */
   public get visibleWebviews() {
     return [...this.webviews].filter(w => w.visible);
+  }
+
+  constructor(private readonly context: vscode.ExtensionContext) {}
+
+  /**
+   * Updates the metrics enabled in the displayed chart.
+   */
+  public setEnabledMetrics(enabled: ReadonlyArray<number>) {
+    this.context.workspaceState.update(enabledMetricsKey, enabled);
+    this.updateSettings();
   }
 
   /**
@@ -122,7 +135,7 @@ export class RealtimeSessionTracker {
    * Should be called when settings update.
    */
   public updateSettings() {
-    this.settings = readRealtimeSettings();
+    this.settings = readRealtimeSettings(this.context);
     const steps = getSteps(this.settings);
 
     for (const { metrics } of this.sessionData.values()) {
@@ -192,7 +205,7 @@ export class RealtimeSessionTracker {
   }
 
   private getSettingsUpdate() {
-    const settings = readRealtimeSettings();
+    const settings = readRealtimeSettings(this.context);
     const message: ToWebViewMessage = { type: MessageType.UpdateSettings, settings };
     return message;
   }

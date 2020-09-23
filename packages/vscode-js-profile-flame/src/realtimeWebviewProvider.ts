@@ -7,14 +7,11 @@ import * as vscode from 'vscode';
 import { FromWebViewMessage, MessageType } from './realtime/protocol';
 import { RealtimeSessionTracker } from './realtimeSessionTracker';
 
-const enabledMetricsKey = 'enabledMetrics';
-
 export class RealtimeWebviewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'vscode-js-profile-flame.realtime';
 
   constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly context: vscode.ExtensionContext,
     private readonly tracker: RealtimeSessionTracker,
   ) {}
 
@@ -32,7 +29,7 @@ export class RealtimeWebviewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.onDidReceiveMessage((evt: FromWebViewMessage) => {
       switch (evt.type) {
         case MessageType.SetEnabledMetrics:
-          this.context.workspaceState.update(enabledMetricsKey, evt.keys);
+          this.tracker.setEnabledMetrics(evt.keys);
           break;
         default:
         // ignored
@@ -45,7 +42,6 @@ export class RealtimeWebviewProvider implements vscode.WebviewViewProvider {
       vscode.Uri.joinPath(this.extensionUri, 'out', 'realtime.bundle.js'),
     );
     const nonce = randomBytes(16).toString('hex');
-    const metrics = this.context.workspaceState.get(enabledMetricsKey, [0, 1]);
 
     return `<!DOCTYPE html>
 			<html lang="en">
@@ -56,7 +52,6 @@ export class RealtimeWebviewProvider implements vscode.WebviewViewProvider {
 				<title>Realtime Performance</title>
 			</head>
       <body>
-        <script nonce="${nonce}">window.DEFAULT_ENABLED_METRICS=${JSON.stringify(metrics)}</script>
 				<script nonce="${nonce}" src="${scriptUri}"></script>
 			</body>
       </html>

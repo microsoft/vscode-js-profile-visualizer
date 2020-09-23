@@ -17,6 +17,7 @@ export class Settings {
     pollInterval: 1000,
     viewDuration: 30_000,
     zoomLevel: 0,
+    enabledMetrics: [],
     easing: true,
   };
 
@@ -30,9 +31,9 @@ export class Settings {
 
   public allMetrics = createMetrics();
 
-  public enabledMetrics: Metric[] = DEFAULT_ENABLED_METRICS.length
-    ? DEFAULT_ENABLED_METRICS.map(m => this.allMetrics[m]).filter(Boolean)
-    : [this.allMetrics[0]];
+  public get enabledMetrics() {
+    return this.value.enabledMetrics.map(i => this.allMetrics[i]).filter(Boolean);
+  }
 
   public steps = 0;
 
@@ -63,15 +64,13 @@ export class Settings {
   }
 
   public toggleMetric(metric: Metric) {
-    if (this.enabledMetrics.includes(metric)) {
-      this.enabledMetrics = this.enabledMetrics.filter(e => e !== metric);
-    } else {
-      this.enabledMetrics.push(metric);
-    }
+    const enabledMetrics = this.enabledMetrics.includes(metric)
+      ? this.enabledMetrics.filter(e => e !== metric)
+      : this.enabledMetrics.concat(metric);
 
     this.api.postMessage({
       type: MessageType.SetEnabledMetrics,
-      keys: this.enabledMetrics.map(m => this.allMetrics.indexOf(m)),
+      keys: enabledMetrics.map(m => this.allMetrics.indexOf(m)),
     });
 
     this.fireChange();

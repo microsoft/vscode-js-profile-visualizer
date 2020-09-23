@@ -20,7 +20,7 @@
     "vscode": "^1.43.0"
   },
   "activationEvents": [
-		"onView:vscode-js-profile-flame.realtime",
+    "onView:vscode-js-profile-flame.realtime",
     "onCustomEditor:jsProfileVisualizer.cpuprofile.flame"
   ],
   "contributes": {
@@ -42,11 +42,28 @@
           "type": "webview",
           "id": "vscode-js-profile-flame.realtime",
           "name": "Realtime Performance",
-          "when": "debugConfigurationType =~ /^pwa-/"
+          "when": "debugConfigurationType =~ /^pwa-/ || debugConfigurationType == node || debugConfigurationType == chrome"
         }
       ]
     },
-    "configuration":[
+    "menus": {
+      "view/title": [
+        {
+          "command": "vscode-js-profile-flame.setRealtimeCharts",
+          "when": "view == vscode-js-profile-flame.realtime",
+          "group": "navigation@1"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "vscode-js-profile-flame.setRealtimeCharts",
+        "category": "Debug",
+        "title": "Toggle Realtime Performance Charts",
+        "icon": "$(gear)"
+      }
+    ],
+    "configuration": [
       {
         "title": "Flamegraph Visaulizer",
         "properties": {

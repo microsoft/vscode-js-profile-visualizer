@@ -37,7 +37,7 @@ export class CpuMetric extends DerivativeMetric {
   }
 
   public name(): string {
-    return 'CPU Usage (% of a core)';
+    return 'CPU Usage';
   }
 
   protected recalcMax() {
@@ -59,7 +59,7 @@ export class HeapMetric extends Metric {
   }
 
   public name(): string {
-    return 'Heap Used (MB)';
+    return 'Heap Used';
   }
 }
 

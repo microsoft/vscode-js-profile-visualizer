@@ -1,15 +1,10 @@
 .configurator {
-  display: flex;
-  flex-grow: 1;
-  flex-direction: column;
-  margin-top: 4px;
+  padding-top: 4px;
 }
 
 .metric {
   display: none;
-  min-height: 1.2em;
-  max-height: 2.2em;
-  flex-grow: 1;
+  height: 2em;
   align-items: center;
   padding: 0 7px;
   position: relative;

@@ -14,12 +14,13 @@ import { join } from 'path';
 import * as vscode from 'vscode';
 import { CpuProfileEditorProvider } from 'vscode-js-profile-core/out/cpu/editorProvider';
 import { ProfileCodeLensProvider } from 'vscode-js-profile-core/out/profileCodeLensProvider';
-import { RealtimeSessionTracker } from './realtimeSessionTracker';
+import { createMetrics } from './realtime/metrics';
+import { readRealtimeSettings, RealtimeSessionTracker } from './realtimeSessionTracker';
 import { RealtimeWebviewProvider } from './realtimeWebviewProvider';
 
 export function activate(context: vscode.ExtensionContext) {
-  const realtimeTracker = new RealtimeSessionTracker();
-  const realtime = new RealtimeWebviewProvider(context.extensionUri, context, realtimeTracker);
+  const realtimeTracker = new RealtimeSessionTracker(context);
+  const realtime = new RealtimeWebviewProvider(context.extensionUri, realtimeTracker);
 
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider(
@@ -43,6 +44,36 @@ export function activate(context: vscode.ExtensionContext) {
     ),
 
     vscode.debug.onDidTerminateDebugSession(session => realtimeTracker.onSessionDidEnd(session)),
+
+    vscode.commands.registerCommand('vscode-js-profile-flame.setRealtimeCharts', async () => {
+      const metrics = createMetrics();
+      const settings = readRealtimeSettings(context);
+      const quickpick = vscode.window.createQuickPick<{ label: string; index: number }>();
+
+      quickpick.canSelectMany = true;
+      quickpick.items = metrics.map((metric, i) => ({
+        label: metric.name(),
+        index: i,
+      }));
+      quickpick.selectedItems = settings.enabledMetrics.length
+        ? settings.enabledMetrics.map(index => quickpick.items[index])
+        : quickpick.items.slice();
+
+      quickpick.show();
+
+      const chosen = await new Promise<number[] | undefined>(resolve => {
+        quickpick.onDidAccept(() => resolve(quickpick.selectedItems.map(i => i.index)));
+        quickpick.onDidHide(() => resolve(undefined));
+      });
+
+      quickpick.dispose();
+
+      if (!chosen || !chosen.length) {
+        return;
+      }
+
+      realtimeTracker.setEnabledMetrics(chosen);
+    }),
   );
 }
 

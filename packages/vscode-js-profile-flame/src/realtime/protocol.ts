@@ -3,6 +3,7 @@
  *--------------------------------------------------------*/
 
 export interface ISettings {
+  enabledMetrics: number[];
   viewDuration: number;
   pollInterval: number;
   zoomLevel: number;

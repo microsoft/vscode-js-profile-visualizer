@@ -121,7 +121,7 @@ export class FrameCanvas extends Canvas {
     return path;
   }
 
-  private createMetricPath({ max, metrics }: Metric) {
+  private createMetricPath({ maxY, metrics }: Metric) {
     const { width, height } = this;
     const stepSize = width / this.settings.steps;
     const path = new Path2D();
@@ -133,11 +133,11 @@ export class FrameCanvas extends Canvas {
     }
 
     let x = width;
-    path.moveTo(x, height * (1 - metrics[metrics.length - 1] / max));
+    path.moveTo(x, height * (1 - metrics[metrics.length - 1] / maxY));
 
     for (let i = metrics.length - 2; i >= 0; i--) {
       x -= stepSize;
-      path.lineTo(x, height * (1 - metrics[i] / max));
+      path.lineTo(x, height * (1 - metrics[i] / maxY));
     }
 
     path.lineTo(x - stepSize, height - 1);
