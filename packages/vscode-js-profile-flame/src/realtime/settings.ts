@@ -18,6 +18,7 @@ export class Settings {
     viewDuration: 30_000,
     zoomLevel: 0,
     enabledMetrics: [],
+    splitCharts: false,
     easing: true,
   };
 

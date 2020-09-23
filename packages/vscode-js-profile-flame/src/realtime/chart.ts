@@ -182,10 +182,12 @@ export class Chart {
       val.parentElement?.removeChild(val);
     }
 
+    maxContainer.classList[this.settings.value.splitCharts ? 'add' : 'remove'](styles.split);
     labelList.innerHTML = '';
     this.valElements = [];
 
-    for (const metric of this.settings.enabledMetrics) {
+    for (let i = 0; i < this.settings.enabledMetrics.length; i++) {
+      const metric = this.settings.enabledMetrics[i];
       const label = document.createElement('span');
       label.style.setProperty('--metric-color', this.settings.metricColor(metric));
       label.classList.add(styles.primary);
@@ -199,6 +201,7 @@ export class Chart {
       const max = document.createElement('div');
       max.classList.add(styles.max, styles.primary);
       max.innerText = metric.format(metric.maxY);
+      max.style.top = `${(i / this.settings.enabledMetrics.length) * 100}%`;
       maxContainer.appendChild(max);
 
       this.valElements.push([metric, { max, val }]);

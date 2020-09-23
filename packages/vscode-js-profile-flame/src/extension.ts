@@ -50,6 +50,7 @@ export function activate(context: vscode.ExtensionContext) {
       const settings = readRealtimeSettings(context);
       const quickpick = vscode.window.createQuickPick<{ label: string; index: number }>();
 
+      quickpick.title = 'Toggle visible performance charts';
       quickpick.canSelectMany = true;
       quickpick.items = metrics.map((metric, i) => ({
         label: metric.name(),
@@ -73,6 +74,11 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       realtimeTracker.setEnabledMetrics(chosen);
+    }),
+
+    vscode.commands.registerCommand('vscode-js-profile-flame.toggleSplitCharts', () => {
+      const settings = readRealtimeSettings(context);
+      realtimeTracker.setSplitCharts(!settings.splitCharts);
     }),
   );
 }

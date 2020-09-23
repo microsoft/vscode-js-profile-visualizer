@@ -79,6 +79,18 @@
   font-size: 0.8em;
 }
 
+.maxContainer.split {
+  position: static;
+}
+
+.maxContainer.split .max {
+  position: absolute;
+}
+
+.maxContainer.split .max::before {
+  content: none !important;
+}
+
 .max {
   display: inline;
 }

@@ -21,6 +21,7 @@ export const readRealtimeSettings = (context: vscode.ExtensionContext): ISetting
       config.get(Config.Easing) ??
       vscode.window.activeColorTheme.kind !== vscode.ColorThemeKind.HighContrast,
     enabledMetrics: context.workspaceState.get(enabledMetricsKey) ?? [0, 1],
+    splitCharts: context.workspaceState.get(splitChartsKey) ?? false,
     pollInterval: config.get(Config.PollInterval, 1000),
     viewDuration: config.get(Config.ViewDuration, 30_000),
     zoomLevel: config.get('window.zoomLevel', 0),
@@ -34,6 +35,7 @@ interface ISessionData {
 }
 
 const enabledMetricsKey = 'enabledMetrics';
+const splitChartsKey = 'splitCharts';
 
 /**
  * Tracks ongoing debug sessions and webviews. While there's any visible
@@ -60,6 +62,15 @@ export class RealtimeSessionTracker {
    */
   public setEnabledMetrics(enabled: ReadonlyArray<number>) {
     this.context.workspaceState.update(enabledMetricsKey, enabled);
+    this.updateSettings();
+  }
+
+  /**
+   * Configures whether multiple metrics are shown on the same chart, or
+   * different charts.
+   */
+  public setSplitCharts(split: boolean) {
+    this.context.workspaceState.update(splitChartsKey, split);
     this.updateSettings();
   }
 
@@ -193,15 +204,15 @@ export class RealtimeSessionTracker {
     webview.postMessage(this.getSettingsUpdate());
 
     const data = this.displayedSession && this.sessionData.get(this.displayedSession);
-    if (!data) {
-      return;
+    if (data) {
+      const metrics: ToWebViewMessage = {
+        type: MessageType.ApplyData,
+        data: data.metrics.map(m => m.metrics),
+      };
+      webview.postMessage(metrics);
+    } else {
+      this.onDidChangeActiveSession(vscode.debug.activeDebugSession);
     }
-
-    const metrics: ToWebViewMessage = {
-      type: MessageType.ApplyData,
-      data: data.metrics.map(m => m.metrics),
-    };
-    webview.postMessage(metrics);
   }
 
   private getSettingsUpdate() {

@@ -8,7 +8,9 @@ import { Canvas } from './canvas';
 export const enum Sizing {
   LabelHeight = 18,
   RulerWidth = 1,
+  LineWidth = 1,
   Easing = 200,
+  SplitSpacing = 3,
 }
 
 const rulers = 4;
@@ -18,6 +20,7 @@ export class FrameCanvas extends Canvas {
   private paths: [Path2D, string][] = [];
   private ease?: { raf: number; dx: number };
   private rmSettingListener = this.settings.onChange(() => this.redraw());
+  private metricRanges = this.getMetricYRanges();
 
   /**
    * Redraws the max values
@@ -29,10 +32,7 @@ export class FrameCanvas extends Canvas {
       easeLength += this.ease.dx;
     }
 
-    this.paths = this.settings.enabledMetrics.map(metric => [
-      this.createMetricPath(metric),
-      this.settings.metricColor(metric),
-    ]);
+    this.paths = this.createMetricPaths();
 
     if (!shouldEase) {
       this.drawGraph();
@@ -74,6 +74,7 @@ export class FrameCanvas extends Canvas {
 
   protected redraw() {
     this.rulers = this.createRulers();
+    this.metricRanges = this.getMetricYRanges();
     this.updateMetrics(false);
   }
 
@@ -107,43 +108,68 @@ export class FrameCanvas extends Canvas {
 
   private createRulers() {
     const path = new Path2D();
-    const { width, height } = this;
-    const step = (height - Sizing.RulerWidth) / rulers;
 
-    let y = step;
-    for (let i = 0; i < rulers; i++) {
-      const targetY = Math.floor(y) + Sizing.RulerWidth / 2;
-      path.moveTo(0, targetY);
-      path.lineTo(width, targetY);
-      y += step;
+    const ranges = this.settings.value.splitCharts ? this.getMetricYRanges() : [[0, this.height]];
+    for (const [y1, y2] of ranges) {
+      const step = (y2 - y1) / rulers;
+      let y = y1 + step;
+      for (let i = 0; i < rulers; i++) {
+        const targetY = Math.floor(y) - Sizing.RulerWidth / 2;
+        path.moveTo(0, targetY);
+        path.lineTo(this.width, targetY);
+        y += step;
+      }
     }
 
     return path;
   }
 
-  private createMetricPath({ maxY, metrics }: Metric) {
-    const { width, height } = this;
+  private getMetricYRanges(): [number, number][] {
+    const metrics = this.settings.enabledMetrics;
+    if (!this.settings.value.splitCharts) {
+      return metrics.map(() => [0, this.height]);
+    }
+
+    const yStep = this.height / metrics.length;
+    return metrics.map((_, i) => [
+      Math.ceil(yStep * i + (i > 0 ? Sizing.SplitSpacing / 2 : 0)),
+      Math.floor(yStep * (i + 1) - (i < metrics.length - 1 ? Sizing.SplitSpacing / 2 : 0)),
+    ]);
+  }
+
+  private createMetricPaths(): [Path2D, string][] {
+    return this.settings.enabledMetrics.map((metric, i) => [
+      this.createMetricPath(metric, this.metricRanges[i][0], this.metricRanges[i][1]),
+      this.settings.metricColor(metric),
+    ]);
+  }
+
+  private createMetricPath({ maxY, metrics }: Metric, y1: number, y2: number) {
+    const width = this.width;
+    const lineBaseY = y2 - Sizing.LineWidth / 2;
     const stepSize = width / this.settings.steps;
     const path = new Path2D();
 
     if (metrics.length === 0) {
-      path.moveTo(0, height - 1);
-      path.lineTo(width, height - 1);
+      path.moveTo(0, lineBaseY);
+      path.lineTo(width, lineBaseY);
       return path;
     }
 
     let x = width;
-    path.moveTo(x, height * (1 - metrics[metrics.length - 1] / maxY));
+    path.moveTo(x, getY(y1, lineBaseY, 1 - metrics[metrics.length - 1] / maxY));
 
     for (let i = metrics.length - 2; i >= 0; i--) {
       x -= stepSize;
-      path.lineTo(x, height * (1 - metrics[i] / maxY));
+      path.lineTo(x, getY(y1, lineBaseY, 1 - metrics[i] / maxY));
     }
 
-    path.lineTo(x - stepSize, height - 1);
-    path.lineTo(-stepSize, height - 1);
-    path.lineTo(-stepSize, height + 2);
-    path.lineTo(width, height + 2);
+    path.lineTo(x - stepSize, lineBaseY);
+    path.lineTo(-stepSize, lineBaseY);
+    path.lineTo(width, lineBaseY);
     return path;
   }
 }
+
+const getY = (y1: number, y2: number, value: number) =>
+  y1 + (y2 - y1) * Math.max(0, Math.min(1, value));

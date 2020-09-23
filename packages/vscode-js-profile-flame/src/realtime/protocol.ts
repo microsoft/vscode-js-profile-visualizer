@@ -4,6 +4,7 @@
 
 export interface ISettings {
   enabledMetrics: number[];
+  splitCharts: boolean;
   viewDuration: number;
   pollInterval: number;
   zoomLevel: number;
