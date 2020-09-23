@@ -82,9 +82,14 @@ export abstract class Metric {
   public abstract format(metric: number): string;
 
   /**
-   * Returns th ename of the metric.
+   * Returns the name of the metric.
    */
   public abstract name(): string;
+
+  /**
+   * Returns a short label for the metric.
+   */
+  public abstract short(): string;
 
   /**
    * Adds a new metric to the internal series.

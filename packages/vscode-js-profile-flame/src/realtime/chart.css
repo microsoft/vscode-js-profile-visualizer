@@ -87,8 +87,16 @@
   position: absolute;
 }
 
+.maxContainer.split .maxLabel {
+  display: inline;
+}
+
 .maxContainer.split .max::before {
   content: none !important;
+}
+
+.maxLabel {
+  display: none;
 }
 
 .max {

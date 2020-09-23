@@ -40,6 +40,10 @@ export class CpuMetric extends DerivativeMetric {
     return 'CPU Usage';
   }
 
+  public short(): string {
+    return 'CPU';
+  }
+
   protected recalcMax() {
     return 1;
   }
@@ -58,6 +62,10 @@ export class HeapMetric extends Metric {
     return wholeNumberFormat.format(metric) + 'B';
   }
 
+  public short(): string {
+    return 'Heap';
+  }
+
   public name(): string {
     return 'Heap Used';
   }
@@ -72,6 +80,10 @@ export class DOMNodes extends Metric {
 
   public format(metric: number): string {
     return wholeNumberFormat.format(metric);
+  }
+
+  public short(): string {
+    return 'DOM Nodes';
   }
 
   public name(): string {
@@ -90,6 +102,10 @@ export class LayoutCount extends DerivativeMetric {
     return wholeNumberFormat.format(metric);
   }
 
+  public short(): string {
+    return 'Relayouts';
+  }
+
   public name(): string {
     return 'DOM Relayouts / s';
   }
@@ -106,8 +122,12 @@ export class StyleRecalcs extends DerivativeMetric {
     return wholeNumberFormat.format(metric);
   }
 
+  public short(): string {
+    return 'Restyles';
+  }
+
   public name(): string {
-    return 'Style Recalculations / s';
+    return 'Style Recalcs / s';
   }
 }
 

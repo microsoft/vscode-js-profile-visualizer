@@ -64,17 +64,28 @@ export class Settings {
     return () => (this.changeListeners = this.changeListeners.filter(c => c !== listener));
   }
 
+  public setEnabledMetrics(metrics: ReadonlyArray<Metric>) {
+    if (
+      metrics.length === this.enabledMetrics.length &&
+      !metrics.some(m => !this.enabledMetrics.includes(m))
+    ) {
+      return;
+    }
+
+    this.api.postMessage({
+      type: MessageType.SetEnabledMetrics,
+      keys: metrics.map(m => this.allMetrics.indexOf(m)),
+    });
+
+    this.fireChange();
+  }
+
   public toggleMetric(metric: Metric) {
     const enabledMetrics = this.enabledMetrics.includes(metric)
       ? this.enabledMetrics.filter(e => e !== metric)
       : this.enabledMetrics.concat(metric);
 
-    this.api.postMessage({
-      type: MessageType.SetEnabledMetrics,
-      keys: enabledMetrics.map(m => this.allMetrics.indexOf(m)),
-    });
-
-    this.fireChange();
+    this.setEnabledMetrics(enabledMetrics);
   }
 
   public update(newValue: ISettings) {

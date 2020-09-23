@@ -77,6 +77,13 @@ export class Chart {
    * Update the chart metrics
    */
   public updateMetrics() {
+    const { allMetrics, enabledMetrics } = this.settings;
+
+    if (!this.hasAnyData) {
+      const enabled = enabledMetrics.filter(m => m.hasData());
+      this.settings.setEnabledMetrics(enabled.length ? enabled : [allMetrics[0], allMetrics[1]]);
+    }
+
     this.frameCanvas.updateMetrics();
 
     if (this.configOpen) {
@@ -182,8 +189,10 @@ export class Chart {
       val.parentElement?.removeChild(val);
     }
 
-    maxContainer.classList[this.settings.value.splitCharts ? 'add' : 'remove'](styles.split);
+    const split = this.settings.value.splitCharts;
+    maxContainer.classList[split ? 'add' : 'remove'](styles.split);
     labelList.innerHTML = '';
+    maxContainer.innerHTML = '';
     this.valElements = [];
 
     for (let i = 0; i < this.settings.enabledMetrics.length; i++) {
@@ -198,13 +207,19 @@ export class Chart {
       val.innerText = metric.format(metric.current);
       label.appendChild(val);
 
-      const max = document.createElement('div');
-      max.classList.add(styles.max, styles.primary);
-      max.innerText = metric.format(metric.maxY);
-      max.style.top = `${(i / this.settings.enabledMetrics.length) * 100}%`;
-      maxContainer.appendChild(max);
+      const maxWrapper = document.createElement('div');
+      maxWrapper.classList.add(styles.max);
+      maxWrapper.style.top = `${(i / this.settings.enabledMetrics.length) * 100}%`;
+      const maxLabel = document.createElement('span');
+      maxWrapper.classList.add(styles.maxLabel);
+      maxLabel.innerText = `${metric.short()} `;
+      const maxValue = document.createElement('span');
+      maxValue.innerText = metric.format(metric.maxY);
+      maxWrapper.appendChild(maxLabel);
+      maxWrapper.appendChild(maxValue);
+      maxContainer.appendChild(maxWrapper);
 
-      this.valElements.push([metric, { max, val }]);
+      this.valElements.push([metric, { max: maxValue, val }]);
     }
   }
 }
