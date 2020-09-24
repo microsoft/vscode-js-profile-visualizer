@@ -2,6 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
+import * as chroma from 'chroma-js';
 import { Constants, IBounds, IBox, ICanvasSize } from '../flame-graph';
 import fragmentShaderSource from './box.frag';
 import vertexShaderSource from './box.vert';
@@ -51,38 +52,16 @@ interface IOptions {
   scale: number;
   canvas: HTMLCanvasElement;
   focusColor: string;
+  primaryColor: string;
   boxes: ReadonlyArray<IBox>;
 }
-
-const parseColor = (color: string): [number, number, number, number] | undefined => {
-  const rgba = /rgba?\((.*)+\)/.exec(color);
-  if (rgba) {
-    const [r, g, b, a = 255] = rgba[1]
-      .split(',')
-      .map((v, i) => Number(v.trim()) / (i < 3 ? 255 : 1));
-    return [r, g, b, a];
-  }
-
-  const hex =
-    /^#([a-z0-9])([a-z0-9])([a-z0-9])$/i.exec(color) ||
-    /^#([a-z0-9]{2})([a-z0-9]{2})([a-z0-9]{2})([a-z0-9]{2})?$/i.exec(color);
-  if (hex) {
-    const [r, g, b, a = 255] = hex
-      .slice(1)
-      .map(n => (n === undefined ? 'FF' : n))
-      .map(n => parseInt(n.length === 1 ? n.repeat(2) : n, 16))
-      .map(n => n / 0xff);
-    return [r, g, b, a];
-  }
-
-  return undefined;
-};
 
 export const setupGl = ({
   scale: initialScale,
   canvas,
   boxes: initialBoxes,
   focusColor,
+  primaryColor,
 }: IOptions) => {
   // Get A WebGL context
   const gl = canvas.getContext('webgl2');
@@ -173,6 +152,7 @@ export const setupGl = ({
   const hoveredLocation = gl.getUniformLocation(boxProgram, 'hovered');
   const focusedLocation = gl.getUniformLocation(boxProgram, 'focused');
   const focusColorLocation = gl.getUniformLocation(boxProgram, 'focus_color');
+  const primaryColorLocation = gl.getUniformLocation(boxProgram, 'primary_color');
 
   /**
    * Update the bound size of the canvas.
@@ -183,10 +163,24 @@ export const setupGl = ({
   };
 
   const setFocusColor = (color: string) => {
-    const rgba = parseColor(color);
-    if (rgba) {
-      gl.uniform4f(focusColorLocation, ...rgba);
+    if (!chroma.valid(color)) {
+      return;
     }
+
+    const rgba = chroma(color)
+      .rgba()
+      .map(r => r / 255) as [number, number, number, number];
+    gl.uniform4f(focusColorLocation, ...rgba);
+  };
+
+  const setPrimaryColor = (color: string) => {
+    if (!chroma.valid(color)) {
+      return;
+    }
+
+    const parsed = chroma(color);
+    const hsv = parsed.luminance(Math.min(parsed.luminance(), 0.25)).hsv();
+    gl.uniform4f(primaryColorLocation, hsv[0] / 360, hsv[1], hsv[2], parsed.alpha());
   };
 
   // Clear the canvas
@@ -195,6 +189,7 @@ export const setupGl = ({
   setBounds({ minX: 0, maxX: 1, y: 0, level: 0 }, { width: 100, height: 100 }, initialScale);
   setBoxes(initialBoxes);
   setFocusColor(focusColor);
+  setPrimaryColor(primaryColor);
   redraw();
 
   return {
@@ -209,6 +204,10 @@ export const setupGl = ({
     },
     setFocusColor: (color: string) => {
       setFocusColor(color);
+      debounceRedraw();
+    },
+    setPrimaryColor: (color: string) => {
+      setPrimaryColor(color);
       debounceRedraw();
     },
     setBounds: (bounds: IBounds, size: ICanvasSize, scale: number) => {

@@ -16,6 +16,9 @@ uniform int focused;
 // color of focused elements
 uniform vec4 focus_color;
 
+// base primary color, as hsv
+uniform vec4 primary_color;
+
 out vec4 v_color;
 
 // murmur3's 32-bit finalizer, which we use as a simple and fast hash function:
@@ -28,6 +31,32 @@ int hash(int h) {
 
   return h;
 }
+
+float vary_by(float value, float seed, float amount){
+  return value + (seed - 0.5) * amount;
+}
+
+float wrap(float value) {
+  if (value < 0.0) {
+    return value + 1.0;
+  }
+
+  if (value > 1.0) {
+    return value - 1.0;
+  }
+
+  return value;
+}
+
+// Conversion from lolengine wunder WTFPL (https://github.com/lolengine/lolengine/blob/master/COPYING)
+// https://github.com/lolengine/lolengine/blob/c826bbd6f023e878057f22457ea3caf72de60bd4/doc/samples/front_camera_sprite.lolfx#L67-L72
+vec3 hsv2rgb(vec3 c)
+{
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
 
 void main() {
   float range_x = bounds[2] - bounds[0];
@@ -51,7 +80,14 @@ void main() {
   } else if (categorization == 3 /* deemphasize */) {
     v_color = vec4(0.6, 0.6, 0.6, 1) * 0.4;
   } else {
-    v_color = vec4(0.9, float(color_hash & 255) / 512.0, float((color_hash >> 8) & 255) / 600.0, 1.0);
+    v_color = vec4(
+      hsv2rgb(vec3(
+        wrap(vary_by(primary_color[0], float(color_hash & 255) / 255.0, 0.1)),
+        clamp(vary_by(primary_color[1], float((color_hash >> 8) & 255) / 255.0, 0.1), 0.0, 1.0),
+        primary_color[2]
+      )),
+      primary_color[3]
+    );
   }
 
   if (hovered == graph_id) {

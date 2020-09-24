@@ -195,6 +195,7 @@ export const FlameGraph: FunctionComponent<{
       setupGl({
         canvas: glCanvas.current,
         focusColor: cssVariables.focusBorder,
+        primaryColor: cssVariables['charts-red'],
         boxes: [...rawBoxes.boxById.values()],
         scale: dpr,
       }),
@@ -202,7 +203,8 @@ export const FlameGraph: FunctionComponent<{
   );
   useEffect(() => gl?.setBoxes([...rawBoxes.boxById.values()]), [rawBoxes]);
   useEffect(() => gl?.setBounds(bounds, canvasSize, dpr), [bounds, canvasSize]);
-  useEffect(() => gl?.setFocusColor(cssVariables.focusBorder), [cssVariables]);
+  useEffect(() => gl?.setFocusColor(cssVariables.focusBorder), [cssVariables.focusBorder]);
+  useEffect(() => gl?.setPrimaryColor(cssVariables['charts-red']), [cssVariables['charts-red']]);
   useEffect(() => gl?.setFocused(focused?.loc.graphId), [focused]);
   useEffect(() => gl?.setHovered(hovered?.box.loc.graphId), [hovered]);
 

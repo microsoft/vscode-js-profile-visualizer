@@ -1,5 +1,5 @@
 module.exports = {
-  ignorePatterns: ['**/*.d.ts', 'src/test/**/*.ts', 'demos/**/*', '**/*.js', 'testWorkspace/**'],
+  ignorePatterns: ['**/*.d.ts', 'src/test/**/*.ts', 'demos/**/*', '**/*.js', '**/node_modules/**'],
   parser: '@typescript-eslint/parser',
   extends: ['plugin:react/recommended', 'plugin:@typescript-eslint/recommended'],
   plugins: ['header'],
