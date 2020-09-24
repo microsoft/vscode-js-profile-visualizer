@@ -4,6 +4,7 @@
 
 import { Metric } from './baseMetric';
 import { Canvas } from './canvas';
+import { Settings } from './settings';
 
 export const enum Sizing {
   LabelHeight = 18,
@@ -21,6 +22,17 @@ export class FrameCanvas extends Canvas {
   private ease?: { raf: number; dx: number };
   private rmSettingListener = this.settings.onChange(() => this.redraw());
   private metricRanges = this.getMetricYRanges();
+
+  public hoveredIndex?: number;
+  public onHoverIndex: () => void = () => undefined;
+
+  constructor(width: number, height: number, settings: Settings) {
+    super(width, height, settings);
+
+    this.elem.addEventListener('mousemove', evt => this.onMouseMove(evt.pageX));
+    this.elem.addEventListener('mouseout', () => this.clearHover());
+    window.addEventListener('mouseout', () => this.clearHover());
+  }
 
   /**
    * Redraws the max values
@@ -89,6 +101,15 @@ export class FrameCanvas extends Canvas {
     this.ctx.save();
     this.ctx.translate(dx, 0);
 
+    if (this.hoveredIndex && this.settings.enabledMetrics.length) {
+      const stepSize = this.width / this.settings.steps;
+      const x = this.width - (this.settings.enabledMetrics[0].index - this.hoveredIndex) * stepSize;
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, 0);
+      this.ctx.lineTo(x, this.height);
+      this.ctx.stroke();
+    }
+
     // then the chart fill first (so lines will always be in the foreground)
     this.ctx.globalAlpha = 0.1;
     for (const [path, color] of this.paths) {
@@ -104,6 +125,38 @@ export class FrameCanvas extends Canvas {
     }
 
     this.ctx.restore();
+  }
+
+  private clearHover() {
+    if (this.hoveredIndex === undefined) {
+      return;
+    }
+
+    this.hoveredIndex = undefined;
+    this.onHoverIndex();
+
+    if (!this.ease) {
+      this.drawGraph(0); // otherwise it'll draw on the next animation frame
+    }
+  }
+
+  private onMouseMove(x: number) {
+    const { steps, enabledMetrics } = this.settings;
+    if (!enabledMetrics.length) {
+      return;
+    }
+
+    const index = Math.max(0, enabledMetrics[0].index - Math.round((1 - x / this.width) * steps));
+    if (index === this.hoveredIndex) {
+      return;
+    }
+
+    this.hoveredIndex = index;
+    this.onHoverIndex();
+
+    if (!this.ease) {
+      this.drawGraph(0); // otherwise it'll draw on the next animation frame
+    }
   }
 
   private createRulers() {

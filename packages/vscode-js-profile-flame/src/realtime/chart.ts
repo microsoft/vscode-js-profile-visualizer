@@ -33,6 +33,7 @@ export class Chart {
   constructor(private width: number, private height: number, private readonly settings: Settings) {
     this.setConfiguratorOpen(width / height < autoOpenAspectRatio);
     this.applySettings();
+    this.frameCanvas.onHoverIndex = () => this.updateValueElements();
   }
 
   public dispose() {
@@ -90,12 +91,30 @@ export class Chart {
       this.configurator.updateMetrics();
     }
 
-    for (const [metric, { val, max }] of this.valElements) {
-      max.innerText = metric.format(metric.maxY);
-      val.innerText = metric.format(metric.current);
+    this.updateMaxElements();
+    if (this.frameCanvas.hoveredIndex === undefined) {
+      this.updateValueElements();
     }
 
     this.setHasData(this.settings.allMetrics.some(m => m.hasData()));
+  }
+
+  private updateValueElements() {
+    for (const [metric, { val }] of this.valElements) {
+      if (this.frameCanvas.hoveredIndex) {
+        val.innerText = metric.format(
+          metric.valueAt(this.frameCanvas.hoveredIndex) ?? metric.current,
+        );
+      } else {
+        val.innerText = metric.format(metric.current);
+      }
+    }
+  }
+
+  private updateMaxElements() {
+    for (const [metric, { max }] of this.valElements) {
+      max.innerText = metric.format(metric.maxY);
+    }
   }
 
   private setHasData(hasData: boolean) {
@@ -129,8 +148,6 @@ export class Chart {
   private createElements() {
     const container = document.createElement('div');
     container.classList.add(styles.container, styles.noData);
-    container.style.setProperty('--primary-series-color', this.settings.colors.primaryGraph);
-    container.style.setProperty('--secondary-series-color', this.settings.colors.secondaryGraph);
 
     const graph = document.createElement('div');
     graph.style.position = 'relative';

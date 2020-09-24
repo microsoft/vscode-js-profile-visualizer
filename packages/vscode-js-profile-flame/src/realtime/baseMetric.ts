@@ -10,6 +10,12 @@ export abstract class Metric {
   private maxMetric = 1;
 
   /**
+   * Index of the most recent metric. Incremented every time new metrics
+   * are added.
+   */
+  public index = 0;
+
+  /**
    * Gets the max y value that the chart should be scaled to. Defaults to
    * get the max-higher power of 2.
    */
@@ -24,6 +30,13 @@ export abstract class Metric {
     }
 
     return maxY;
+  }
+
+  /**
+   * Gets the value at the given index in the data, if it's still retained.
+   */
+  public valueAt(index: number): number | undefined {
+    return this.innerMetrics[this.innerMetrics.length - (this.index - index) - 1];
   }
 
   /**
@@ -51,6 +64,7 @@ export abstract class Metric {
 
     this.width = width;
     this.maxMetric = 1;
+    this.index = 0;
     if (this.innerMetrics.length) {
       this.innerMetrics = [];
     }
@@ -68,6 +82,7 @@ export abstract class Metric {
    */
   public setData(data: number[]) {
     this.innerMetrics = data;
+    this.index = data.length;
     this.maxMetric = this.recalcMax();
   }
 
@@ -103,6 +118,7 @@ export abstract class Metric {
 
     this.maxMetric = Math.max(this.maxMetric, metric);
     this.innerMetrics.push(metric);
+    this.index++;
   }
 
   protected recalcMax() {

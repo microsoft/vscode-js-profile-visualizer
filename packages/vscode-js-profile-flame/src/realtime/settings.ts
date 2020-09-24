@@ -26,8 +26,7 @@ export class Settings {
     background: string;
     border: string;
     foreground: string;
-    primaryGraph: string;
-    secondaryGraph: string;
+    graphs: string[];
   };
 
   public allMetrics = createMetrics();
@@ -46,17 +45,22 @@ export class Settings {
         background: c[Color.SideBarBackground],
         foreground: c[Color.SideBarForeground] || c[Color.Foreground],
         border: c[Color.TreeIndentGuidesStroke],
-        primaryGraph: c[Color.ListErrorForeground],
-        secondaryGraph: c[Color.ListWarningForeground],
+        graphs: [
+          c[Color.ChartsRed],
+          c[Color.ChartsYellow],
+          c[Color.ChartsBlue],
+          c[Color.ChartsOrange],
+          c[Color.ChartsPurple],
+          c[Color.ChartsGreen],
+        ],
       };
       this.fireChange();
     });
   }
 
   public metricColor(metric: Metric) {
-    return metric === this.enabledMetrics[0]
-      ? this.colors.primaryGraph
-      : this.colors.secondaryGraph;
+    const colors = this.colors.graphs;
+    return colors[this.allMetrics.indexOf(metric) % colors.length];
   }
 
   public onChange(listener: () => void) {
