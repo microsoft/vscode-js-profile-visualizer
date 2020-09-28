@@ -1,6 +1,6 @@
 {
   "name": "vscode-js-profile-notebook",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Notebook for profiles taken from the JavaScript debugger",
   "author": "Connor Peet <connor@peet.io>",
   "homepage": "https://github.com/microsoft/vscode-js-profile-notebook#readme",
@@ -40,6 +40,6 @@
   },
   "dependencies": {
     "vscode-codicons": "github:microsoft/vscode-codicons#dd1edb245d2217efcfb931c293b77b78e634e59a",
-    "vscode-js-profile-core": "^0.0.9"
+    "vscode-js-profile-core": "^0.0.10"
   }
 }
