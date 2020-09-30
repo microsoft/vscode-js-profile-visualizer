@@ -70,7 +70,7 @@
       {
         "command": "vscode-js-profile-flame.setRealtimeCharts",
         "category": "Debug",
-        "title": "Toggle Realtime Performance Charts",
+        "title": "Toggle Visible Realtime Performance Charts",
         "icon": "$(gear)"
       },
       {
