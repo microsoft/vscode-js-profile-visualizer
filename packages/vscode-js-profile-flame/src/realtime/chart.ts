@@ -122,6 +122,7 @@ export class Chart {
       return;
     }
 
+    this.hasAnyData = hasData;
     this.elements.container.classList[hasData ? 'remove' : 'add'](styles.noData);
   }
 

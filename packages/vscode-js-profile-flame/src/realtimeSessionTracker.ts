@@ -132,13 +132,16 @@ export class RealtimeSessionTracker {
    */
   public onSessionDidEnd(session: vscode.DebugSession) {
     const data = this.sessionData.get(session);
-    if (data) {
-      data.cts.cancel();
-      this.sessionData.delete(session);
+    if (!data) {
+      return;
     }
+
+    data.cts.cancel();
+    this.sessionData.delete(session);
 
     if (this.displayedSession === session) {
       this.displayedSession = undefined;
+      this.broadcast({ type: MessageType.ClearData });
     }
   }
 

@@ -17,6 +17,7 @@ export const enum MessageType {
   SwitchGraph,
   SetEnabledMetrics,
   ApplyData,
+  ClearData,
 }
 
 export interface IDAMetrics {
@@ -90,7 +91,11 @@ export interface IApplyData {
   data: number[][];
 }
 
-export type ToWebViewMessage = IAddData | IUpdateSettingsMessage | IApplyData;
+export interface IClearData {
+  type: MessageType.ClearData;
+}
+
+export type ToWebViewMessage = IAddData | IUpdateSettingsMessage | IApplyData | IClearData;
 export type FromWebViewMessage = ISwitchGraph | ISetEnabledGraphs;
 
 export const getSteps = (settings: ISettings) =>

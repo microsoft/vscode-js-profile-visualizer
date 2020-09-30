@@ -34,6 +34,12 @@ window.addEventListener('message', evt => {
       }
       chart.updateMetrics();
       break;
+    case MessageType.ClearData:
+      for (const metric of settings.allMetrics) {
+        metric.setData([]);
+      }
+      chart.updateMetrics();
+      break;
     default:
     // ignored
   }
