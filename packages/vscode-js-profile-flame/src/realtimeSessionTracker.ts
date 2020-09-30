@@ -6,13 +6,7 @@ import * as vscode from 'vscode';
 import { Config } from './extension';
 import { Metric } from './realtime/baseMetric';
 import { createMetrics } from './realtime/metrics';
-import {
-  getSteps,
-  IDAMetrics,
-  ISettings,
-  MessageType,
-  ToWebViewMessage,
-} from './realtime/protocol';
+import { IDAMetrics, ISettings, MessageType, ToWebViewMessage } from './realtime/protocol';
 
 export const readRealtimeSettings = (context: vscode.ExtensionContext): ISettings => {
   const config = vscode.workspace.getConfiguration();
@@ -122,7 +116,7 @@ export class RealtimeSessionTracker {
       };
 
       for (const metric of data.metrics) {
-        metric.reset(getSteps(this.settings) + 3);
+        metric.reset(this.settings.viewDuration, this.settings.pollInterval);
       }
 
       this.collectFromSession(data);
@@ -157,11 +151,9 @@ export class RealtimeSessionTracker {
    */
   public updateSettings() {
     this.settings = readRealtimeSettings(this.context);
-    const steps = getSteps(this.settings);
-
     for (const { metrics } of this.sessionData.values()) {
       for (const metric of metrics) {
-        metric.reset(steps + 3); // no-ops if the steps are already the same
+        metric.reset(this.settings.viewDuration, this.settings.pollInterval); // no-ops if the steps are already the same
       }
     }
 

@@ -8,6 +8,7 @@ export abstract class Metric {
   private innerMetrics: number[] = [];
   private width = 1;
   private maxMetric = 1;
+  private lastIncrements = 500;
 
   /**
    * Index of the most recent metric. Incremented every time new metrics
@@ -57,16 +58,19 @@ export abstract class Metric {
   /**
    * Resets the number of metric buckets stored.
    */
-  public reset(width: number) {
-    if (width === this.width) {
-      return;
-    }
+  public reset(duration: number, increments: number) {
+    const steps = Math.ceil(duration / increments) + 3;
+    this.width = steps;
 
-    this.width = width;
-    this.maxMetric = 1;
-    this.index = 0;
-    if (this.innerMetrics.length) {
+    if (increments !== this.lastIncrements) {
+      this.maxMetric = 1;
+      this.index = 0;
       this.innerMetrics = [];
+      this.lastIncrements = increments;
+    } else if (this.width > this.innerMetrics.length) {
+      this.innerMetrics = this.innerMetrics.slice(-this.width);
+    } else {
+      // same or larger duration with same increment, do nothing
     }
   }
 

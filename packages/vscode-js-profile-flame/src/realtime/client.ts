@@ -4,7 +4,7 @@
 
 import { Chart } from './chart';
 import style from './client.css';
-import { getSteps, MessageType, ToWebViewMessage } from './protocol';
+import { MessageType, ToWebViewMessage } from './protocol';
 import { Settings } from './settings';
 import { api } from './vscodeApi';
 
@@ -22,9 +22,8 @@ window.addEventListener('message', evt => {
       chart.updateMetrics();
       break;
     case MessageType.UpdateSettings:
-      const steps = getSteps(data.settings);
       for (const m of settings.allMetrics) {
-        m.reset(steps + 3); // +1 for ease in, +1 for ease out, +1 so the ease out line interpolates
+        m.reset(data.settings.viewDuration, data.settings.pollInterval);
       }
       settings.update(data.settings);
       break;
