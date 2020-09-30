@@ -55,14 +55,29 @@
           "group": "navigation@1"
         },
         {
-          "command": "vscode-js-profile-flame.toggleSplitCharts",
-          "when": "view == vscode-js-profile-flame.realtime",
+          "command": "vscode-js-profile-flame.collapseCharts",
+          "when": "view == vscode-js-profile-flame.realtime && vscodeJsProfileFlameSplitCharts",
+          "group": "navigation@1"
+        },
+        {
+          "command": "vscode-js-profile-flame.splitCharts",
+          "when": "view == vscode-js-profile-flame.realtime && !vscodeJsProfileFlameSplitCharts",
           "group": "navigation@1"
         },
         {
           "command": "extension.pwa-node-debug.startProfile",
           "when": "view == vscode-js-profile-flame.realtime",
           "group": "navigation@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "vscode-js-profile-flame.collapseCharts",
+          "when": "debugType =~ /^pwa-/ && vscodeJsProfileFlameSplitCharts"
+        },
+        {
+          "command": "vscode-js-profile-flame.splitCharts",
+          "when": "debugType =~ /^pwa-/ && !vscodeJsProfileFlameSplitCharts"
         }
       ]
     },
@@ -74,10 +89,16 @@
         "icon": "$(gear)"
       },
       {
-        "command": "vscode-js-profile-flame.toggleSplitCharts",
+        "command": "vscode-js-profile-flame.collapseCharts",
         "category": "Debug",
-        "title": "Toggle Realtime Split Charts",
-        "icon": "$(split-vertical)"
+        "title": "Collapse to Realtime Metrics Single Chart",
+        "icon": "$(collapse-all)"
+      },
+      {
+        "command": "vscode-js-profile-flame.splitCharts",
+        "category": "Debug",
+        "title": "Split Realtime Metrics to Separate Charts",
+        "icon": "$(expand-all)"
       }
     ],
     "configuration": [

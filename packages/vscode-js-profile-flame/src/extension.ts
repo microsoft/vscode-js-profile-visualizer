@@ -76,9 +76,12 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }),
 
-    vscode.commands.registerCommand('vscode-js-profile-flame.toggleSplitCharts', () => {
-      const settings = readRealtimeSettings(context);
-      realtimeTracker.setSplitCharts(!settings.splitCharts);
+    vscode.commands.registerCommand('vscode-js-profile-flame.splitCharts', () => {
+      realtimeTracker.setSplitCharts(true);
+    }),
+
+    vscode.commands.registerCommand('vscode-js-profile-flame.collapseCharts', () => {
+      realtimeTracker.setSplitCharts(false);
     }),
   );
 }

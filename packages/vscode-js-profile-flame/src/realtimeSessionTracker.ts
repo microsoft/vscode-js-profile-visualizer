@@ -56,7 +56,13 @@ export class RealtimeSessionTracker {
     return this.displayedSession && this.sessionData.get(this.displayedSession)?.metrics;
   }
 
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(private readonly context: vscode.ExtensionContext) {
+    vscode.commands.executeCommand(
+      'setContext',
+      'vscodeJsProfileFlameSplitCharts',
+      readRealtimeSettings(context).splitCharts,
+    );
+  }
 
   /**
    * Updates the metrics enabled in the displayed chart.
@@ -71,6 +77,7 @@ export class RealtimeSessionTracker {
    * different charts.
    */
   public setSplitCharts(split: boolean) {
+    vscode.commands.executeCommand('setContext', 'vscodeJsProfileFlameSplitCharts', split);
     this.context.workspaceState.update(splitChartsKey, split);
     this.updateSettings();
   }
