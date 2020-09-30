@@ -81,6 +81,7 @@
           "debug.flameGraph.realtimePollInterval": {
             "type": "integer",
             "minimum": 0.5,
+            "maximum": 3600,
             "default": 1,
             "description": "How often (in seconds) to refresh statistics from the runtime"
           },

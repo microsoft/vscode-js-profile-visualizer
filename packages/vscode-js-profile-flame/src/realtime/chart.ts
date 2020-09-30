@@ -6,6 +6,7 @@ import { Metric } from './baseMetric';
 import styles from './chart.css';
 import { Configurator } from './configurator';
 import { FrameCanvas, Sizing } from './frameCanvas';
+import { durationFormat } from './metrics';
 import { Settings } from './settings';
 
 const naturalAspectRatio = 16 / 9;
@@ -197,7 +198,7 @@ export class Chart {
 
   private applySettings() {
     const { leftTime, labelList, valueContainer } = this.elements;
-    leftTime.innerText = `${Math.round(this.settings.value.viewDuration / 1000)}s ago`;
+    leftTime.innerText = `${durationFormat(this.settings.value.viewDuration / 1000)} ago`;
     this.setSeries(labelList, valueContainer);
   }
 

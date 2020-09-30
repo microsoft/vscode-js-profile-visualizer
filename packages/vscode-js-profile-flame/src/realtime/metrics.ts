@@ -22,6 +22,24 @@ const smallPercentFormat = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
 });
 
+const durationRawFormat = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 1,
+});
+
+export const durationFormat = (seconds: number) => {
+  if (seconds < 120) {
+    return `${durationRawFormat.format(seconds)}s`;
+  }
+
+  const minutes = seconds / 60;
+  if (minutes < 120) {
+    return `${durationRawFormat.format(minutes)}m`;
+  }
+
+  const hours = minutes / 60;
+  return `${durationRawFormat.format(hours)}h`;
+};
+
 export class CpuMetric extends DerivativeMetric {
   public update(timestamp: number, metrics: IDAMetrics): void {
     if (metrics.cpu /* node */) {
