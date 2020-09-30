@@ -19,7 +19,7 @@
   "engines": {
     "vscode": "^1.50.0-insider"
   },
-  "icon": "packages/vscode-js-profile-flame/resources/logo.png",
+  "icon": "resources/logo.png",
   "activationEvents": [
     "onView:vscode-js-profile-flame.realtime",
     "onCustomEditor:jsProfileVisualizer.cpuprofile.flame"
