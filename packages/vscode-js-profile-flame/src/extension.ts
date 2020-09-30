@@ -52,10 +52,12 @@ export function activate(context: vscode.ExtensionContext) {
 
       quickpick.title = 'Toggle visible performance charts';
       quickpick.canSelectMany = true;
-      quickpick.items = metrics.map((metric, i) => ({
-        label: metric.name(),
-        index: i,
-      }));
+      quickpick.items = (realtimeTracker.currentData?.filter(m => m.hasData()) ?? metrics).map(
+        (metric, i) => ({
+          label: metric.name(),
+          index: i,
+        }),
+      );
       quickpick.selectedItems = settings.enabledMetrics.length
         ? settings.enabledMetrics.map(index => quickpick.items[index])
         : quickpick.items.slice();
@@ -69,11 +71,9 @@ export function activate(context: vscode.ExtensionContext) {
 
       quickpick.dispose();
 
-      if (!chosen || !chosen.length) {
-        return;
+      if (chosen) {
+        realtimeTracker.setEnabledMetrics(chosen);
       }
-
-      realtimeTracker.setEnabledMetrics(chosen);
     }),
 
     vscode.commands.registerCommand('vscode-js-profile-flame.toggleSplitCharts', () => {

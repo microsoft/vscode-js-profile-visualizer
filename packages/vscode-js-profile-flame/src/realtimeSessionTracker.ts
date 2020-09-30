@@ -55,6 +55,13 @@ export class RealtimeSessionTracker {
     return [...this.webviews].filter(w => w.visible);
   }
 
+  /**
+   * Gets currently displayed metric data.
+   */
+  public get currentData() {
+    return this.displayedSession && this.sessionData.get(this.displayedSession)?.metrics;
+  }
+
   constructor(private readonly context: vscode.ExtensionContext) {}
 
   /**
