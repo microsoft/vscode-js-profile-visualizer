@@ -22,8 +22,8 @@ export const readRealtimeSettings = (context: vscode.ExtensionContext): ISetting
       vscode.window.activeColorTheme.kind !== vscode.ColorThemeKind.HighContrast,
     enabledMetrics: context.workspaceState.get(enabledMetricsKey) ?? [0, 1],
     splitCharts: context.workspaceState.get(splitChartsKey) ?? false,
-    pollInterval: config.get(Config.PollInterval, 1000),
-    viewDuration: config.get(Config.ViewDuration, 30_000),
+    pollInterval: config.get(Config.PollInterval, 1) * 1000,
+    viewDuration: config.get(Config.ViewDuration, 30) * 1000,
     zoomLevel: config.get('window.zoomLevel', 0),
   };
 };

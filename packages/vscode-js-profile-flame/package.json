@@ -76,19 +76,19 @@
     ],
     "configuration": [
       {
-        "title": "Flamegraph Visaulizer",
+        "title": "Flamegraph Visualizer",
         "properties": {
           "debug.flameGraph.realtimePollInterval": {
             "type": "integer",
-            "minimum": 500,
-            "default": 1000,
-            "description": "How often (in milliseconds) to refresh statistics from the runtime"
+            "minimum": 0.5,
+            "default": 1,
+            "description": "How often (in seconds) to refresh statistics from the runtime"
           },
           "debug.flameGraph.realtimeViewDuration": {
             "type": "integer",
-            "minimum": 500,
-            "default": 30000,
-            "description": "How much time (in milliseconds) should be kept in the graph"
+            "minimum": 1,
+            "default": 30,
+            "description": "How much time (in seconds) should be kept in the graph"
           },
           "debug.flameGraph.realtimeEasing": {
             "type": "boolean",
