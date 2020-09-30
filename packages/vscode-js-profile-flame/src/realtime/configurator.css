@@ -23,7 +23,8 @@
   border: 2px solid var(--vscode-debugIcon-breakpointUnverifiedForeground);
 }
 
-.metric.available {
+.metric.available,
+.metric.enabled {
   display: flex;
 }
 

@@ -86,11 +86,8 @@ export class Chart {
       this.settings.setEnabledMetrics(enabled.length ? enabled : [allMetrics[0], allMetrics[1]]);
     }
 
+    this.configurator.updateMetrics();
     this.frameCanvas.updateMetrics();
-
-    if (this.configOpen) {
-      this.configurator.updateMetrics();
-    }
 
     this.updateMaxElements();
     if (this.frameCanvas.hoveredIndex === undefined) {
@@ -103,11 +100,12 @@ export class Chart {
   private updateValueElements() {
     for (const [metric, { val }] of this.valElements) {
       if (this.frameCanvas.hoveredIndex) {
-        val.innerText = metric.format(
-          metric.valueAt(this.frameCanvas.hoveredIndex) ?? metric.current,
-        );
+        const value = metric.valueAt(this.frameCanvas.hoveredIndex) ?? metric.current;
+        val.innerText = metric.format(value);
+        this.configurator.updateMetric(metric, value);
       } else {
         val.innerText = metric.format(metric.current);
+        this.configurator.updateMetric(metric, metric.current);
       }
     }
   }
@@ -134,7 +132,6 @@ export class Chart {
 
     this.configOpen = isOpen;
     if (isOpen) {
-      this.configurator.updateMetrics();
       this.elem.appendChild(this.configurator.elem);
       this.elem.removeChild(this.elements.labelList);
       document.body.style.overflowY = 'auto';

@@ -7,13 +7,15 @@ import styles from './configurator.css';
 import { Settings } from './settings';
 
 export class Configurator {
-  private metrics: {
-    metric: Metric;
-    element: HTMLElement;
-    value: HTMLElement;
-    enabled: boolean;
-    available: boolean;
-  }[] = [];
+  private metrics = new Map<
+    Metric,
+    {
+      element: HTMLElement;
+      value: HTMLElement;
+      enabled: boolean;
+      available: boolean;
+    }
+  >();
 
   public elem = document.createElement('div');
 
@@ -36,12 +38,12 @@ export class Configurator {
       value.classList.add(styles.value);
       element.appendChild(value);
 
-      this.metrics.push({ metric, element, enabled: false, available: false, value });
+      this.metrics.set(metric, { element, enabled: false, available: false, value });
       this.elem.appendChild(element);
     }
 
     // move inactive items to the bottom always
-    for (const { element, enabled } of this.metrics) {
+    for (const { element, enabled } of this.metrics.values()) {
       if (!enabled) {
         this.elem.appendChild(element);
       }
@@ -54,23 +56,38 @@ export class Configurator {
    * Updates the configurator state for the metrics.
    */
   public updateMetrics() {
-    for (const m of this.metrics) {
-      if (m.metric.hasData() !== m.available) {
-        m.available = m.metric.hasData();
-        m.element.classList[m.metric.hasData() ? 'add' : 'remove'](styles.available);
-      }
-
-      if (m.available) {
-        m.value.innerText = m.metric.format(m.metric.current);
+    for (const [metric, m] of this.metrics) {
+      if (metric.hasData() !== m.available) {
+        m.available = metric.hasData();
+        m.element.classList[metric.hasData() ? 'add' : 'remove'](styles.available);
       }
     }
   }
 
+  /**
+   * Updates the value displayed for the given metric.
+   */
+  public updateMetric(metric: Metric, currentValue: number) {
+    const m = this.metrics.get(metric);
+    if (!m) {
+      return;
+    }
+
+    if (metric.hasData() !== m.available) {
+      m.available = metric.hasData();
+      m.element.classList[metric.hasData() ? 'add' : 'remove'](styles.available);
+    }
+
+    if (m.available) {
+      m.value.innerText = metric.format(currentValue);
+    }
+  }
+
   private applySettings() {
-    for (const m of this.metrics) {
-      m.enabled = this.settings.enabledMetrics.includes(m.metric);
+    for (const [metric, m] of this.metrics.entries()) {
+      m.enabled = this.settings.enabledMetrics.includes(metric);
       m.element.classList[m.enabled ? 'add' : 'remove'](styles.enabled);
-      m.element.style.setProperty('--metric-color', this.settings.metricColor(m.metric));
+      m.element.style.setProperty('--metric-color', this.settings.metricColor(metric));
     }
   }
 }

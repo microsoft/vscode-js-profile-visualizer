@@ -33,12 +33,14 @@ window.addEventListener('message', evt => {
         settings.allMetrics[i].setData(data.data[i]);
       }
       chart.updateMetrics();
+      updateSize();
       break;
     case MessageType.ClearData:
       for (const metric of settings.allMetrics) {
         metric.setData([]);
       }
       chart.updateMetrics();
+      updateSize();
       break;
     default:
     // ignored
