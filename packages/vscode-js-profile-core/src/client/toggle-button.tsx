@@ -24,6 +24,7 @@ export const ToggleButton: FunctionComponent<{
       type="button"
       role="switch"
       alt={label}
+      title={label}
       aria-label={label}
       aria-checked={checked ? 'true' : 'false'}
       dangerouslySetInnerHTML={{ __html: icon }}
