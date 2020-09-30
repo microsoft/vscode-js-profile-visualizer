@@ -157,7 +157,7 @@ export class Chart {
 
     const noData = document.createElement('div');
     noData.classList.add(styles.noDataText);
-    noData.innerText = 'No data yet -- start a debug session to collect some!';
+    noData.innerText = 'No data available yet';
     container.appendChild(noData);
 
     const labelList = document.createElement('div');
