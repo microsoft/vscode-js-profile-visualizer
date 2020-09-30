@@ -74,7 +74,7 @@
 .maxContainer {
   position: absolute;
   top: 0;
-  left: 0;
+  left: 0.3em;
   background: linear-gradient(to bottom, var(--vscode-sideBar-background), transparent);
   font-size: 0.8em;
 }
@@ -85,6 +85,7 @@
 
 .maxContainer.split .max {
   position: absolute;
+  left: 0.3em;
 }
 
 .maxContainer.split .maxLabel {
@@ -115,9 +116,9 @@
 }
 
 .timeLeft {
-  left: 0;
+  left: 0.3em;
 }
 
 .timeRight {
-  right: 0;
+  right: 0.3em;
 }
