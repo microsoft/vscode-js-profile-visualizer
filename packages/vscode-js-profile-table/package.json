@@ -1,6 +1,6 @@
 {
   "name": "vscode-js-profile-table",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Text visualizer for profiles taken from the JavaScript debugger",
   "author": "Connor Peet <connor@peet.io>",
   "homepage": "https://github.com/microsoft/vscode-js-profile-visualizer#readme",
@@ -47,6 +47,6 @@
   },
   "dependencies": {
     "vscode-codicons": "github:microsoft/vscode-codicons#dd1edb245d2217efcfb931c293b77b78e634e59a",
-    "vscode-js-profile-core": "^0.0.11"
+    "vscode-js-profile-core": "^0.0.12"
   }
 }
