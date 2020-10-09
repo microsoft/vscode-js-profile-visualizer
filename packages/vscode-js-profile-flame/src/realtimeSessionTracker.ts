@@ -40,6 +40,7 @@ export class RealtimeSessionTracker {
   private settings = readRealtimeSettings(this.context);
   private webviews = new Set<vscode.WebviewView>();
   private sessionData = new Map<vscode.DebugSession, ISessionData>();
+  private allSessions = new Map<string /* session ID */, vscode.DebugSession>();
   private displayedSession?: vscode.DebugSession;
 
   /**
@@ -106,6 +107,10 @@ export class RealtimeSessionTracker {
    * tracking it.
    */
   public onDidChangeActiveSession(session: vscode.DebugSession | undefined) {
+    while (session?.configuration.__usePerformanceFromParent) {
+      session = this.allSessions.get(session.configuration.__parentId);
+    }
+
     if (
       !this.visibleWebviews.length ||
       !session?.type.startsWith('pwa-') ||
@@ -135,10 +140,18 @@ export class RealtimeSessionTracker {
   }
 
   /**
+   * Called when a debug session starts.
+   */
+  public onSessionDidStart(session: vscode.DebugSession) {
+    this.allSessions.set(session.id, session);
+  }
+
+  /**
    * Called when a debug session ends. Disposes of the metric collection
    * interval and metric data.
    */
   public onSessionDidEnd(session: vscode.DebugSession) {
+    this.allSessions.delete(session.id);
     const data = this.sessionData.get(session);
     if (!data) {
       return;
