@@ -43,6 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
       realtimeTracker.onDidChangeActiveSession(session),
     ),
 
+    vscode.debug.onDidStartDebugSession(session => realtimeTracker.onSessionDidStart(session)),
     vscode.debug.onDidTerminateDebugSession(session => realtimeTracker.onSessionDidEnd(session)),
 
     vscode.commands.registerCommand('vscode-js-profile-flame.setRealtimeCharts', async () => {
