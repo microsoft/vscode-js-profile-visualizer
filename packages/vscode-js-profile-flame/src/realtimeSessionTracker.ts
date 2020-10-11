@@ -113,7 +113,7 @@ export class RealtimeSessionTracker {
 
     if (
       !this.visibleWebviews.length ||
-      !session?.type.startsWith('pwa-') ||
+      !session ||
       !('__pendingTargetId' in session.configuration)
     ) {
       return;
