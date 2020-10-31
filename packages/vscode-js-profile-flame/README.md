@@ -16,7 +16,7 @@ You can further configure the realtime performance view with the following user 
 
 - `debug.flameGraph.realtimePollInterval`: How often (in seconds) to refresh statistics from the runtime.
 - `debug.flameGraph.realtimeViewDuration`: How much time (in seconds) should be kept in the graph.
-- `debug.flameGraph.realtimeEasing`: Whether easing is enable on the realtime graph.
+- `debug.flameGraph.realtimeEasing`: Whether easing is enabled on the realtime graph.
 
 ### Flame Chart View
 
