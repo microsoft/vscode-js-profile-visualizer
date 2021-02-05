@@ -4,7 +4,9 @@
 
 import { Fragment, FunctionComponent, h } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import * as GoToFileIcon from 'vscode-codicons/src/icons/go-to-file.svg';
 import { binarySearch } from 'vscode-js-profile-core/out/esm/array';
+import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
 import { MiddleOut } from 'vscode-js-profile-core/out/esm/client/middleOutCompression';
 import { useCssVariables } from 'vscode-js-profile-core/out/esm/client/useCssVariables';
 import { usePersistedState } from 'vscode-js-profile-core/out/esm/client/usePersistedState';
@@ -26,7 +28,8 @@ export const enum Constants {
   TimelineHeight = 22,
   TimelineLabelSpacing = 200,
   MinWindow = 0.005,
-  ExtraYBuffer = 30,
+  ExtraYBuffer = 300,
+  DefaultStackLimit = 7,
 }
 
 const pickColor = (location: IColumnLocation): number => {
@@ -683,6 +686,15 @@ export const FlameGraph: FunctionComponent<{
           location={hovered.box.loc}
         />
       )}
+      {focused && (
+        <InfoBox
+          columns={columns}
+          boxes={rawBoxes.boxById}
+          box={focused}
+          model={model}
+          setFocused={setFocused}
+        />
+      )}
     </Fragment>
   );
 };
@@ -791,5 +803,116 @@ const Tooltip: FunctionComponent<{
         Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to file
       </div>
     </div>
+  );
+};
+
+const InfoBox: FunctionComponent<{
+  box: IBox;
+  model: IProfileModel;
+  columns: ReadonlyArray<IColumn>;
+  boxes: ReadonlyMap<number, IBox>;
+  setFocused(box: IBox): void;
+}> = ({ columns, boxes, box, model, setFocused }) => {
+  const originalLocation = model.locations[box.loc.id];
+  const localLocation = box.loc;
+  const [limitedStack, setLimitedStack] = useState(true);
+
+  useEffect(() => setLimitedStack(true), [box]);
+
+  const stack = useMemo(() => {
+    const stack: IBox[] = [box];
+    for (let row = box.row - 1; row >= 0 && stack.length; row--) {
+      const b = getBoxInRowColumn(columns, boxes, box.column, row);
+      if (b) {
+        stack.push(b);
+      }
+    }
+
+    return stack;
+  }, [box, columns, boxes]);
+
+  const shouldTruncateStack = stack.length >= Constants.DefaultStackLimit + 3 && limitedStack;
+
+  return (
+    <div className={styles.info}>
+      <dl>
+        <dt>Self Time</dt>
+        <dd>{decimalFormat.format(localLocation.selfTime / 1000)}ms</dd>
+        <dt>Total Time</dt>
+        <dd>{decimalFormat.format(localLocation.aggregateTime / 1000)}ms</dd>
+        <dt>
+          Self Time<small>Entire Profile</small>
+        </dt>
+        <dd>{decimalFormat.format(originalLocation.selfTime / 1000)}ms</dd>
+        <dt>
+          Total Time<small>Entire Profile</small>
+        </dt>
+        <dd>{decimalFormat.format(originalLocation.aggregateTime / 1000)}ms</dd>
+      </dl>
+      <ol start={0}>
+        {stack.map(
+          (b, i) =>
+            (!shouldTruncateStack || i < Constants.DefaultStackLimit) && (
+              <li key={i}>
+                <BoxLink box={b} onClick={setFocused} link={i > 0} />
+              </li>
+            ),
+        )}
+        {shouldTruncateStack && (
+          <li>
+            <a onClick={() => setLimitedStack(false)}>
+              <em>{stack.length - Constants.DefaultStackLimit} more...</em>
+            </a>
+          </li>
+        )}
+      </ol>
+    </div>
+  );
+};
+
+const BoxLink: FunctionComponent<{ box: IBox; onClick(box: IBox): void; link?: boolean }> = ({
+  box,
+  onClick,
+  link,
+}) => {
+  const vscode = useContext(VsCodeApi) as IVscodeApi;
+  const open = useCallback(
+    (evt: { altKey: boolean }) => {
+      const src = box.loc.src;
+      if (!src?.source.path) {
+        return;
+      }
+
+      vscode.postMessage<IOpenDocumentMessage>({
+        type: 'openDocument',
+        location: src,
+        callFrame: box.loc.callFrame,
+        toSide: evt.altKey,
+      });
+    },
+    [vscode, box],
+  );
+
+  const click = useCallback(() => onClick(box), [box, onClick]);
+  const locText = getLocationText(box.loc);
+  const linkContent = (
+    <Fragment>
+      {box.loc.callFrame.functionName} <em>({locText})</em>
+    </Fragment>
+  );
+
+  return (
+    <Fragment>
+      {link ? <a onClick={click}>{linkContent}</a> : linkContent}
+      {box.loc.src?.source.path && (
+        <Icon
+          i={GoToFileIcon}
+          className={styles.goToFile}
+          onClick={open}
+          role="button"
+          title="Go to File"
+        />
+      )}
+    </Fragment>
   );
 };

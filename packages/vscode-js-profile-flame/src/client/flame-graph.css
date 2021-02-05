@@ -86,6 +86,67 @@
   background-color: var(--vscode-inputOption-activeBackground);
 }
 
+.info {
+  position: absolute;
+  bottom: 0;
+  left: 30px;
+  right: 30px;
+  background: var(--vscode-sideBar-background);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  padding: 1rem;
+  display: flex;
+  align-items: flex-start;
+}
+
+.info dl {
+  display: grid;
+  align-items: flex-start;
+  grid-template-columns: 80px 100px;
+  grid-gap: 0.7rem 0.5rem;
+}
+
+.info dt {
+  opacity: 0.8;
+}
+
+.info dt small {
+  display: block;
+}
+
+.info ol {
+  padding-left: 1em;
+}
+
+.info ol li a {
+  padding: 0.1em 0;
+  display: inline-block;
+  cursor: pointer;
+  color: var(--vscode-editor-foreground);
+}
+
+.info ol li em {
+  font-style: normal;
+}
+
+.info ol li a em {
+  color: var(--vscode-textLink-foreground);
+}
+
+.info ol li a em:hover,
+.info ol li a em:focus {
+  color: var(--vscode-textLink-activeForeground);
+}
+
+.info .goToFile {
+  width: 1em;
+  display: inline-block;
+  cursor: pointer;
+}
+
+:global(.vscode-dark) .info {
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+}
+
 :global(.vscode-high-contrast) .handle {
   opacity: 1;
 }
