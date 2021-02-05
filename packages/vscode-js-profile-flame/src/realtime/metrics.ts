@@ -5,10 +5,25 @@
 import { DerivativeMetric, Metric } from './baseMetric';
 import { IDAMetrics } from './protocol';
 
-// en-us to ensure we can append "B" to make it works
-const wholeNumberFormat = new Intl.NumberFormat('en-US', {
+const sizeLabels = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+const sizeInnerFormat = new Intl.NumberFormat(undefined, {
+  maximumSignificantDigits: 3,
+} as Intl.NumberFormatOptions);
+
+const wholeNumberFormat = new Intl.NumberFormat(undefined, {
   notation: 'compact',
 } as Intl.NumberFormatOptions);
+
+const formatSize = (bytes: number) => {
+  let size = 0;
+  while (bytes > 1000 && size < sizeLabels.length) {
+    bytes /= 1000;
+    size++;
+  }
+
+  return `${sizeInnerFormat.format(bytes)} ${sizeLabels[size]}`;
+};
 
 // you can't mix sig fix and max fraction digits, so need both to avoid things like 0.0000012%
 const largePercentFormat = new Intl.NumberFormat(undefined, {
@@ -77,7 +92,7 @@ export class HeapMetric extends Metric {
   }
 
   public format(metric: number): string {
-    return wholeNumberFormat.format(metric) + 'B';
+    return formatSize(metric);
   }
 
   public short(): string {
