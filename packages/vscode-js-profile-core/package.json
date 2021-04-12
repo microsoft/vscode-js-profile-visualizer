@@ -1,6 +1,6 @@
 {
   "name": "vscode-js-profile-core",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "sideEffects": false,
   "private": true,
   "dependencies": {
