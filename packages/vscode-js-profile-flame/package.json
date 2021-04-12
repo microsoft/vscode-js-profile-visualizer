@@ -65,7 +65,7 @@
           "group": "navigation@1"
         },
         {
-          "command": "extension.pwa-node-debug.startProfile",
+          "command": "extension.js-debug.startProfile",
           "when": "view == vscode-js-profile-flame.realtime",
           "group": "navigation@1"
         }
