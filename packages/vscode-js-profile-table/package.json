@@ -13,8 +13,11 @@
     "type": "git",
     "url": "git+https://github.com/microsoft/vscode-js-profile-visualizer.git"
   },
-  "workspaceTrust": {
-    "request": "never"
+  "capabilities": {
+    "virtualWorkspaces": false,
+    "untrustedWorkspaces": {
+      "supported": true
+    }
   },
   "publisher": "ms-vscode",
   "enableProposedApi": true,
