@@ -19,7 +19,7 @@
       "supported": true
     }
   },
-  "icon": "media/icon.png",
+  "icon": "resources/icon.png",
   "publisher": "ms-vscode",
   "enableProposedApi": true,
   "sideEffects": false,

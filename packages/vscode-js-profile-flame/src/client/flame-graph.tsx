@@ -180,6 +180,7 @@ export const FlameGraph: FunctionComponent<{
     undefined,
   );
   const [drag, setDrag] = useState<IDrag | undefined>(undefined);
+  const [showInfo, setShowInfo] = useState(false);
   const cssVariables = useCssVariables();
 
   const rawBoxes = useMemo(() => buildBoxes(columns, filtered), [columns, filtered]);
@@ -210,6 +211,12 @@ export const FlameGraph: FunctionComponent<{
   useEffect(() => gl?.setPrimaryColor(cssVariables['charts-red']), [cssVariables['charts-red']]);
   useEffect(() => gl?.setFocused(focused?.loc.graphId), [focused]);
   useEffect(() => gl?.setHovered(hovered?.box.loc.graphId), [hovered]);
+
+  useEffect(() => {
+    if (focused) {
+      setShowInfo(true);
+    }
+  }, [focused]);
 
   const openBox = useCallback(
     (box: IBox, evt: { altKey: boolean }) => {
@@ -375,6 +382,8 @@ export const FlameGraph: FunctionComponent<{
           // If there's a tooltip open, close that on first escape
           return hovered?.src === HighlightSource.Keyboard
             ? setHovered(undefined)
+            : showInfo
+            ? setShowInfo(false)
             : setBounds({ minX: 0, maxX: 1, y: 0, level: 0 });
         case 'Enter':
           if ((evt.metaKey || evt.ctrlKey) && hovered) {
@@ -440,7 +449,7 @@ export const FlameGraph: FunctionComponent<{
         setHovered({ box: nextFocus, src: HighlightSource.Keyboard });
       }
     },
-    [zoomToBox, focused, hovered, rawBoxes],
+    [zoomToBox, focused, hovered, rawBoxes, showInfo],
   );
 
   // Keyboard events
@@ -686,7 +695,7 @@ export const FlameGraph: FunctionComponent<{
           location={hovered.box.loc}
         />
       )}
-      {focused && (
+      {focused && showInfo && (
         <InfoBox
           columns={columns}
           boxes={rawBoxes.boxById}
