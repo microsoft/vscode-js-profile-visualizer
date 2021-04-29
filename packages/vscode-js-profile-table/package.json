@@ -11,7 +11,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/microsoft/vscode-js-profile-visualizer.git"
+    "url": "https://github.com/microsoft/vscode-js-profile-visualizer.git"
   },
   "capabilities": {
     "virtualWorkspaces": false,
@@ -19,6 +19,7 @@
       "supported": true
     }
   },
+  "icon": "media/icon.png",
   "publisher": "ms-vscode",
   "enableProposedApi": true,
   "sideEffects": false,

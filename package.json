@@ -1,7 +1,6 @@
 {
   "name": "js-profile-visualizer",
   "private": true,
-  "icon": "media/icon.png",
   "scripts": {
     "postinstall": "lerna bootstrap --force-local",
     "clean": "rimraf \"packages/*/out\"",
