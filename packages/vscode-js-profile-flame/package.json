@@ -6,6 +6,7 @@
   "homepage": "https://github.com/microsoft/vscode-js-profile-visualizer#readme",
   "license": "MIT",
   "main": "out/extension.js",
+  "browser": "out/extension.web.js",
   "files": [
     "out"
   ],
@@ -13,14 +14,29 @@
     "type": "git",
     "url": "https://github.com/microsoft/vscode-js-profile-visualizer.git"
   },
-  "workspaceTrust": {
-    "request": "never"
+  "capabilities": {
+    "virtualWorkspaces": true,
+    "untrustedWorkspaces": {
+      "supported": true
+    }
   },
   "publisher": "ms-vscode",
   "enableProposedApi": true,
   "sideEffects": false,
   "engines": {
     "vscode": "^1.50.0-insider"
+  },
+  "scripts": {
+    "pack": "vsce package --yarn",
+    "compile": "rimraf out && concurrently \"npm:compile:*\"",
+    "compile:client": "webpack --mode production --config webpack.client.js",
+    "compile:realtime": "webpack --mode production --config webpack.realtime.js",
+    "compile:ext": "webpack --mode production --config webpack.extension.js --target node",
+    "compile:ext:web": "webpack --mode production --config webpack.extension.js --target web",
+    "watch": "concurrent \"npm:watch:*\"",
+    "watch:client": "webpack --mode development --config webpack.client.js --watch",
+    "watch:realtime": "webpack --mode development --config webpack.realtime.js --watch",
+    "watch:ext": "webpack --mode development --config webpack.extension.js --watch"
   },
   "icon": "resources/logo.png",
   "activationEvents": [

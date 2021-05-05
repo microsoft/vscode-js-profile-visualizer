@@ -10,7 +10,6 @@ export const enum Config {
 
 const allConfig = [Config.PollInterval, Config.ViewDuration, Config.Easing];
 
-import { join } from 'path';
 import * as vscode from 'vscode';
 import { CpuProfileEditorProvider } from 'vscode-js-profile-core/out/cpu/editorProvider';
 import { ProfileCodeLensProvider } from 'vscode-js-profile-core/out/profileCodeLensProvider';
@@ -27,7 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
       'jsProfileVisualizer.cpuprofile.flame',
       new CpuProfileEditorProvider(
         new ProfileCodeLensProvider(),
-        join(__dirname, 'client.bundle.js'),
+        vscode.Uri.joinPath(context.extensionUri, 'out', 'client.bundle.js'),
       ),
     ),
 

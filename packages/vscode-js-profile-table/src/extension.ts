@@ -4,9 +4,8 @@
 
 import * as vscode from 'vscode';
 import { CpuProfileEditorProvider } from 'vscode-js-profile-core/out/cpu/editorProvider';
-import { ProfileCodeLensProvider } from 'vscode-js-profile-core/out/profileCodeLensProvider';
 import { DownloadFileProvider } from 'vscode-js-profile-core/out/download-file-provider';
-import { join } from 'path';
+import { ProfileCodeLensProvider } from 'vscode-js-profile-core/out/profileCodeLensProvider';
 
 export function activate(context: vscode.ExtensionContext) {
   const lenses = new ProfileCodeLensProvider();
@@ -14,7 +13,10 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider(
       'jsProfileVisualizer.cpuprofile.table',
-      new CpuProfileEditorProvider(lenses, join(__dirname, 'client.bundle.js')),
+      new CpuProfileEditorProvider(
+        lenses,
+        vscode.Uri.joinPath(context.extensionUri, 'out', 'client.bundle.js'),
+      ),
     ),
     vscode.workspace.registerTextDocumentContentProvider(
       'js-viz-download',

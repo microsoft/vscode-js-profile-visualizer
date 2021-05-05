@@ -6,6 +6,7 @@
   "homepage": "https://github.com/microsoft/vscode-js-profile-visualizer#readme",
   "license": "MIT",
   "main": "out/extension.js",
+  "browser": "out/extension.web.js",
   "files": [
     "out"
   ],
@@ -14,10 +15,20 @@
     "url": "https://github.com/microsoft/vscode-js-profile-visualizer.git"
   },
   "capabilities": {
-    "virtualWorkspaces": false,
+    "virtualWorkspaces": true,
     "untrustedWorkspaces": {
       "supported": true
     }
+  },
+  "scripts": {
+    "pack": "vsce package --yarn",
+    "compile": "rimraf out && concurrently \"npm:compile:*\"",
+    "compile:client": "webpack --mode production --config webpack.client.js",
+    "compile:ext": "webpack --mode production --config webpack.extension.js --target node",
+    "compile:ext:web": "webpack --mode production --config webpack.extension.js --target web",
+    "watch": "concurrent \"npm:watch:*\"",
+    "watch:client": "webpack --mode development --config webpack.client.js --watch",
+    "watch:ext": "webpack --mode development --config webpack.extension.js --watch"
   },
   "icon": "resources/icon.png",
   "publisher": "ms-vscode",

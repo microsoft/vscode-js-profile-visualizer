@@ -18,7 +18,7 @@ export class CpuProfileEditorProvider
 
   constructor(
     private readonly lens: ProfileCodeLensProvider,
-    private readonly bundle: string,
+    private readonly bundle: vscode.Uri,
     private readonly extraConsts: Record<string, unknown> = {},
   ) {}
 
@@ -27,7 +27,7 @@ export class CpuProfileEditorProvider
    */
   async openCustomDocument(uri: vscode.Uri) {
     const content = await vscode.workspace.fs.readFile(uri);
-    const raw: ICpuProfileRaw = JSON.parse(content.toString());
+    const raw: ICpuProfileRaw = JSON.parse(new TextDecoder().decode(content));
     const document = new ReadonlyCustomDocument(uri, buildModel(raw));
 
     const annotations = new ProfileAnnotations();
@@ -66,7 +66,7 @@ export class CpuProfileEditorProvider
     });
 
     webviewPanel.webview.options = { enableScripts: true };
-    webviewPanel.webview.html = await bundlePage(this.bundle, {
+    webviewPanel.webview.html = await bundlePage(webviewPanel.webview.asWebviewUri(this.bundle), {
       MODEL: document.userData,
       ...this.extraConsts,
     });

@@ -3,6 +3,16 @@
   "version": "0.0.18",
   "sideEffects": false,
   "private": true,
+  "scripts": {
+    "compile": "concurrently \"npm:compile:*\"",
+    "compile:ext": "tsc -p tsconfig.json",
+    "compile:esm": "tsc -p tsconfig.browser.json",
+    "compile:css": "cpy --parents --cwd=src \"**/*.css\" ../out/esm",
+    "watch": "concurrently \"npm:watch:*\"",
+    "watch:ext": "tsc --watch",
+    "watch:esm": "tsc --watch -p tsconfig.browser.json",
+    "watch:css": "npm run compile:css && cd packages/vscode-js-profile-core && chokidar \"src/**/*.css\" -c \"cpy --parents --cwd=src '**/*.css' ../out/esm\""
+  },
   "dependencies": {
     "node-fetch": "^2.6.1",
     "vscode-codicons": "github:microsoft/vscode-codicons#dd1edb245d2217efcfb931c293b77b78e634e59a"

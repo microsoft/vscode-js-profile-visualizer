@@ -1,24 +1,5 @@
 const path = require('path');
-const fs = require('fs');
-const { join } = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-
-const standalone = process.env.STANDALONE === '1';
 const production = process.argv.includes('production');
-
-const constants = {};
-if (standalone) {
-  const constantPrefix = 'VIZ_';
-  for (const key of Object.keys(process.env).filter(k => k.startsWith(constantPrefix))) {
-    const value = process.env[key];
-    const name = key.slice(constantPrefix.length);
-    try {
-      constants[name] = JSON.parse(fs.readFileSync(value, 'utf-8'));
-    } catch {
-      constants[name] = JSON.parse(value);
-    }
-  }
-}
 
 module.exports = (dirname, file = 'client') => ({
   mode: production ? 'production' : 'development',
@@ -70,12 +51,4 @@ module.exports = (dirname, file = 'client') => ({
       'Access-Control-Allow-Origin': '*',
     },
   },
-  plugins: standalone
-    ? [
-        new HtmlWebpackPlugin({
-          template: join(__dirname, '..', 'samples/index.ejs'),
-          templateParameters: { constants },
-        }),
-      ]
-    : [],
 });

@@ -2,7 +2,6 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { randomBytes } from 'crypto';
 import * as vscode from 'vscode';
 import { FromWebViewMessage, MessageType } from './realtime/protocol';
 import { RealtimeSessionTracker } from './realtimeSessionTracker';
@@ -41,7 +40,7 @@ export class RealtimeWebviewProvider implements vscode.WebviewViewProvider {
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, 'out', 'realtime.bundle.js'),
     );
-    const nonce = randomBytes(16).toString('hex');
+    const nonce = Math.random().toString();
 
     return `<!DOCTYPE html>
 			<html lang="en">

@@ -42,7 +42,7 @@ export class NotebookProvider implements vscode.NotebookProvider {
    */
   public async resolveNotebook(editor: vscode.NotebookEditor): Promise<void> {
     const content = await vscode.workspace.fs.readFile(editor.document.uri);
-    const raw: ICpuProfileWithNotebook = JSON.parse(content.toString());
+    const raw: ICpuProfileWithNotebook = JSON.parse(new TextDecoder().decode(content));
     const model = buildModel(raw);
     this.models.set(editor.document, { raw, model, bottomUp: createBottomUpGraph(model) });
     editor.document.languages = ['cpuprofile'];
