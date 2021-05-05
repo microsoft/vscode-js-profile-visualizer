@@ -33,7 +33,7 @@
     "compile:realtime": "webpack --mode production --config webpack.realtime.js",
     "compile:ext": "webpack --mode production --config webpack.extension.js --target node",
     "compile:ext:web": "webpack --mode production --config webpack.extension.js --target web",
-    "watch": "concurrent \"npm:watch:*\"",
+    "watch": "concurrently \"npm:watch:*\"",
     "watch:client": "webpack --mode development --config webpack.client.js --watch",
     "watch:realtime": "webpack --mode development --config webpack.realtime.js --watch",
     "watch:ext": "webpack --mode development --config webpack.extension.js --watch"
