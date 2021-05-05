@@ -1,6 +1,6 @@
 {
   "name": "vscode-js-profile-core",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "sideEffects": false,
   "private": true,
   "scripts": {
