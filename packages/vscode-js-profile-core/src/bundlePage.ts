@@ -3,14 +3,16 @@
  *--------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { makeNonce, nonceHeader } from './nonce';
 
 export const bundlePage = async (bundleUri: vscode.Uri, constants: { [key: string]: unknown }) => {
-  const nonce = Math.random().toString();
+  const nonce = makeNonce();
   const html = `<!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      ${nonceHeader(nonce)}
       <title>Profile Custom Editor</title>
     </head>
     <body>

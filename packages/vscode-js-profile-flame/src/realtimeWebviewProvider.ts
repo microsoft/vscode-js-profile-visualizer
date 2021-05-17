@@ -3,6 +3,7 @@
  *--------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { makeNonce, nonceHeader } from 'vscode-js-profile-core/out/nonce';
 import { FromWebViewMessage, MessageType } from './realtime/protocol';
 import { RealtimeSessionTracker } from './realtimeSessionTracker';
 
@@ -40,13 +41,13 @@ export class RealtimeWebviewProvider implements vscode.WebviewViewProvider {
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, 'out', 'realtime.bundle.js'),
     );
-    const nonce = Math.random().toString();
+    const nonce = makeNonce();
 
     return `<!DOCTYPE html>
 			<html lang="en">
 			<head>
 				<meta charset="UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
+        ${nonceHeader(nonce)}
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<title>Realtime Performance</title>
 			</head>
