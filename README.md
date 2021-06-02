@@ -6,7 +6,7 @@ A custom editor for viewing `.cpuprofile` files in VS Code. Pairs well with out 
 ![](./flame.png)
 
 ## .cpuprofile format
-This  actually works for any .cpuprofile file   
+This extension (vscode-js-profile-visualizer) works for any .cpuprofile file.   
 Definition of .cpuprofile format :- https://chromedevtools.github.io/devtools-protocol/tot/Profiler/#type-Profile
 
 
