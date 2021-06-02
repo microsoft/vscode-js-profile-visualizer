@@ -5,6 +5,10 @@ A custom editor for viewing `.cpuprofile` files in VS Code. Pairs well with out 
 ![](./table.png)
 ![](./flame.png)
 
+## .cpuprofile format 
+
+https://chromedevtools.github.io/devtools-protocol/tot/Profiler/#type-Profile
+
 
 ## Contributing
 
