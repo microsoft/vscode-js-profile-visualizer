@@ -1,5 +1,7 @@
 {
   "name": "js-profile-visualizer",
+  "version": "0.0.21",
+  "publisher": "ms-vscode",
   "private": true,
   "scripts": {
     "postinstall": "lerna bootstrap --force-local",
