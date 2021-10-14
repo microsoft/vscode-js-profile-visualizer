@@ -58,7 +58,15 @@
         "command": "extension.jsProfileVisualizer.table.clearCodeLenses",
         "title": "Clear Profile Code Lenses"
       }
-    ]
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "extension.jsProfileVisualizer.table.clearCodeLenses",
+          "when": "jsProfileVisualizer.hasCodeLenses == true"
+        }
+      ]
+    }
   },
   "bugs": {
     "url": "https://github.com/microsoft/vscode-js-profile-visualizer/issues"

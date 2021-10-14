@@ -4,14 +4,15 @@
 
 import {
   CodeLens,
+  CodeLensProvider,
+  commands,
   Disposable,
   EventEmitter,
-  CodeLensProvider,
-  TextDocument,
   ProviderResult,
+  TextDocument,
 } from 'vscode';
-import { lowerCaseInsensitivePath } from './path';
 import { DownloadFileProvider } from './download-file-provider';
+import { lowerCaseInsensitivePath } from './path';
 import { ProfileAnnotations } from './profileAnnotations';
 
 /**
@@ -31,13 +32,13 @@ export class ProfileCodeLensProvider implements CodeLensProvider {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public registerLenses(lenses: ProfileAnnotations): Disposable {
+    commands.executeCommand('setContext', 'jsProfileVisualizer.hasCodeLenses', true);
     this.lenses = lenses;
 
     return {
       dispose: () => {
         if (this.lenses === lenses) {
-          this.lenses = undefined;
-          this.changeEmitter.fire();
+          this.clear();
         }
       },
     };
@@ -47,8 +48,11 @@ export class ProfileCodeLensProvider implements CodeLensProvider {
    * Clears the current set of profiling lenses.
    */
   public clear() {
-    this.lenses = undefined;
-    this.changeEmitter.fire();
+    if (this.lenses) {
+      this.lenses = undefined;
+      commands.executeCommand('setContext', 'jsProfileVisualizer.hasCodeLenses', false);
+      this.changeEmitter.fire();
+    }
   }
 
   /**
