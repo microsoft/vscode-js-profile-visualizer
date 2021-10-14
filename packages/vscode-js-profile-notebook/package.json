@@ -14,7 +14,6 @@
     "url": "git+https://github.com/microsoft/vscode-js-profile-notebook.git"
   },
   "publisher": "ms-vscode",
-  "enableProposedApi": true,
   "sideEffects": false,
   "engines": {
     "vscode": "^1.43.0"

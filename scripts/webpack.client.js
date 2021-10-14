@@ -3,7 +3,7 @@ const production = process.argv.includes('production');
 
 module.exports = (dirname, file = 'client') => ({
   mode: production ? 'production' : 'development',
-  devtool: production ? false : 'inline-source-map',
+  devtool: production ? false : 'source-map',
   entry: `./src/client/client.tsx`,
   output: {
     jsonpFunction: path.dirname(dirname).replace(/[^a-z]/gi, ''),

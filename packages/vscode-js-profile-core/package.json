@@ -11,7 +11,7 @@
     "watch": "concurrently \"npm:watch:*\"",
     "watch:ext": "tsc --watch",
     "watch:esm": "tsc --watch -p tsconfig.browser.json",
-    "watch:css": "npm run compile:css && cd packages/vscode-js-profile-core && chokidar \"src/**/*.css\" -c \"cpy --parents --cwd=src '**/*.css' ../out/esm\""
+    "watch:css": "npm run compile:css && chokidar \"src/**/*.css\" -c \"cpy --parents --cwd=src '**/*.css' ../out/esm\""
   },
   "dependencies": {
     "node-fetch": "^2.6.1",

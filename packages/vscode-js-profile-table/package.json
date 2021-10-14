@@ -29,11 +29,10 @@
     "compile:ext:web": "webpack --mode production --config webpack.extension.js --target web",
     "watch": "concurrently \"npm:watch:*\"",
     "watch:client": "webpack --mode development --config webpack.client.js --watch",
-    "watch:ext": "webpack --mode development --config webpack.extension.js --watch"
+    "watch:ext": "webpack --mode development --config webpack.extension.js --watch --target node"
   },
   "icon": "resources/icon.png",
   "publisher": "ms-vscode",
-  "enableProposedApi": true,
   "sideEffects": false,
   "engines": {
     "vscode": "^1.43.0"

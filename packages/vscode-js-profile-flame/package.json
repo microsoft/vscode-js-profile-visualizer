@@ -22,7 +22,6 @@
     }
   },
   "publisher": "ms-vscode",
-  "enableProposedApi": true,
   "sideEffects": false,
   "engines": {
     "vscode": "^1.50.0-insider"

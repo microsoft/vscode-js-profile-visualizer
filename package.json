@@ -8,7 +8,7 @@
     "compile:core": "lerna run --scope vscode-js-profile-core compile",
     "compile:table": "lerna run --scope vscode-js-profile-table compile",
     "compile:flame": "lerna run --scope vscode-js-profile-flame compile",
-    "watch": "concurrently \"npm:watch:core:*\" \"npm:watch:flame:*\" \"npm:watch:table:*\"",
+    "watch": "concurrently \"npm:watch:core\" \"npm:watch:flame\" \"npm:watch:table\"",
     "watch:core": "lerna run --stream --scope vscode-js-profile-core watch",
     "watch:table": "lerna run --stream --scope vscode-js-profile-table watch",
     "watch:flame": "lerna run --stream --scope vscode-js-profile-flame watch",
@@ -18,7 +18,6 @@
     "test:lint": "eslint  \"packages/**/*.{ts,tsx}\"",
     "test:fmt": "prettier --list-different \"packages/**/*.{ts,tsx,css}\" \"!**/out/**\"",
     "test:core:unit": "cd packages/vscode-js-profile-core && mocha",
-    "updatetypes": "cd packages/vscode-js-profile-core/src/types && vscode-dts dev && vscode-dts master",
     "vscode:prepublish": "npm run compile"
   },
   "prettier": {
@@ -33,6 +32,7 @@
     "@types/glob": "^7.1.1",
     "@types/mocha": "^7.0.1",
     "@types/node": "^12.11.7",
+    "@types/vscode": "^1.61.0",
     "@typescript-eslint/eslint-plugin": "^2.18.0",
     "@typescript-eslint/parser": "^2.18.0",
     "autoprefixer": "^9.7.4",
