@@ -170,9 +170,9 @@ export const FlameGraph: FunctionComponent<{
 }> = ({ columns, model, filtered }) => {
   const vscode = useContext(VsCodeApi) as IVscodeApi<ISerializedState>;
 
-  const webCanvas = useRef<HTMLCanvasElement>();
+  const webCanvas = useRef<HTMLCanvasElement>(null);
   const webContext = useMemo(() => webCanvas.current?.getContext('2d'), [webCanvas.current]);
-  const glCanvas = useRef<HTMLCanvasElement>();
+  const glCanvas = useRef<HTMLCanvasElement>(null);
 
   const windowSize = useWindowSize();
   const [canvasSize, setCanvasSize] = useState<ICanvasSize>({ width: 100, height: 100 });
@@ -343,8 +343,9 @@ export const FlameGraph: FunctionComponent<{
       return;
     }
 
-    const { width, height } = (webCanvas.current
-      .parentElement as HTMLElement).getBoundingClientRect();
+    const { width, height } = (
+      webCanvas.current.parentElement as HTMLElement
+    ).getBoundingClientRect();
     if (width === canvasSize.width && height === canvasSize.height) {
       return;
     }
