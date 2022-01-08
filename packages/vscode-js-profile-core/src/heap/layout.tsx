@@ -11,7 +11,7 @@ export interface IBodyProps<T> {
   data: IQueryResults<T>;
 }
 
-type CpuProfileLayoutComponent<T> = FunctionComponent<{
+type HeapProfileLayoutComponent<T> = FunctionComponent<{
   data: IDataSource<T>;
   body: ComponentType<IBodyProps<T>>;
   filterFooter?: ComponentType<{ viewType: string; requireExtension: string }>;
@@ -20,8 +20,8 @@ type CpuProfileLayoutComponent<T> = FunctionComponent<{
 /**
  * Base layout component to display CPU-profile related info.
  */
-export const cpuProfileLayoutFactory =
-  <T extends {}>(): CpuProfileLayoutComponent<T> =>
+export const heapProfileLayoutFactory =
+  <T extends {}>(): HeapProfileLayoutComponent<T> =>
   ({ data, body: RowBody, filterFooter: FilterFooter }) => {
     const RichFilter = useMemo<RichFilterComponent<T>>(richFilter, []);
     const [filteredData, setFilteredData] = useState<IQueryResults<T> | undefined>(undefined);
@@ -29,7 +29,7 @@ export const cpuProfileLayoutFactory =
       () =>
         FilterFooter ? (
           <FilterFooter
-            viewType="jsProfileVisualizer.cpuprofile.flame"
+            viewType="jsProfileVisualizer.heapprofile.flame"
             requireExtension="ms-vscode.vscode-js-profile-flame"
           />
         ) : undefined,

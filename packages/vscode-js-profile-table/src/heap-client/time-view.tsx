@@ -1,0 +1,330 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ *--------------------------------------------------------*/
+
+import { Fragment, FunctionComponent, h } from 'preact';
+import VirtualList from 'preact-virtual-list';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'preact/hooks';
+import * as ChevronDown from 'vscode-codicons/src/icons/chevron-down.svg';
+import * as ChevronRight from 'vscode-codicons/src/icons/chevron-right.svg';
+import { addToSet, removeFromSet, toggleInSet } from 'vscode-js-profile-core/out/esm/array';
+import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
+import { classes } from 'vscode-js-profile-core/out/esm/client/util';
+import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
+import { decimalFormat, getNodeText } from 'vscode-js-profile-core/out/esm/heap/display';
+import { ITreeNode } from 'vscode-js-profile-core/out/esm/heap/model';
+import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/heap/types';
+import { IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
+import styles from '../common/time-view.css';
+
+type SortFn = (node: ITreeNode) => number;
+
+const selfSize: SortFn = n => n.selfSize;
+const totalSize: SortFn = n => n.totalSize || 0;
+
+type NodeAtDepth = { node: ITreeNode; depth: number; position: number };
+
+const getGlobalUniqueId = (node: ITreeNode) => {
+  const parts = [node.id];
+  for (let n = node.parent; n; n = n.parent) {
+    parts.push(n.id);
+  }
+
+  return parts.join('-');
+};
+
+export const TimeView: FunctionComponent<{
+  query: IQueryResults<ITreeNode>;
+  data: ITreeNode[];
+  root: ITreeNode;
+}> = ({ data, query, root }) => {
+  const listRef = useRef<{ base: HTMLElement }>();
+  const [sortFn, setSort] = useState<SortFn | undefined>(() => selfSize);
+  const [focused, setFocused] = useState<undefined | ITreeNode>(undefined);
+  const [expanded, setExpanded] = useState<ReadonlySet<ITreeNode>>(new Set());
+
+  const getSortedChildren = (node: ITreeNode) => {
+    const children = Object.values(node.children);
+    if (sortFn) {
+      children.sort((a, b) => sortFn(b) - sortFn(a));
+    }
+
+    return children;
+  };
+
+  // 1. Top level sorted items
+  const sorted = useMemo(
+    () => (sortFn ? data.slice().sort((a, b) => sortFn(b) - sortFn(a)) : data),
+    [data, sortFn],
+  );
+
+  // 2. Expand nested child nodes
+  const rendered = useMemo(() => {
+    const output: NodeAtDepth[] = sorted
+      .filter(node => query.selectedAndParents.has(node))
+      .map(node => ({ node, position: 1, depth: 0 }));
+
+    for (let i = 0; i < output.length; i++) {
+      const { node, depth } = output[i];
+      if (expanded.has(node)) {
+        const toAdd = getSortedChildren(node).map((node, i) => ({
+          node,
+          position: i + 1,
+          depth: depth + 1,
+        }));
+        output.splice(i + 1, 0, ...toAdd);
+        // we don't increment i further since we want to recurse and expand these nodes
+      }
+    }
+
+    return output;
+  }, [sorted, expanded, sortFn, query]);
+
+  const onKeyDown = useCallback(
+    (evt: KeyboardEvent, node: ITreeNode) => {
+      let nextFocus: ITreeNode | undefined;
+      switch (evt.key) {
+        case 'Enter':
+        case 'Space':
+          setExpanded(toggleInSet(expanded, node));
+          evt.preventDefault();
+          break;
+        case 'ArrowDown':
+          nextFocus = rendered[rendered.findIndex(n => n.node === node) + 1]?.node;
+          break;
+        case 'ArrowUp':
+          nextFocus = rendered[rendered.findIndex(n => n.node === node) - 1]?.node;
+          break;
+        case 'ArrowLeft':
+          if (expanded.has(node)) {
+            setExpanded(removeFromSet(expanded, node));
+          } else {
+            nextFocus = node.parent;
+          }
+          break;
+        case 'ArrowRight':
+          if (node.childrenSize > 0 && !expanded.has(node)) {
+            setExpanded(addToSet(expanded, node));
+          } else {
+            nextFocus = rendered.find(n => n.node.parent === node)?.node;
+          }
+          break;
+        case 'Home':
+          if (listRef.current) {
+            listRef.current.base.scrollTop = 0;
+          }
+
+          nextFocus = rendered[0]?.node;
+          break;
+        case 'End':
+          if (listRef.current) {
+            listRef.current.base.scrollTop = listRef.current.base.scrollHeight;
+          }
+
+          nextFocus = rendered[rendered.length - 1]?.node;
+          break;
+        case '*':
+          const nextExpanded = new Set(expanded);
+          for (const child of Object.values(focused?.parent?.children || {})) {
+            nextExpanded.add(child);
+          }
+          setExpanded(nextExpanded);
+          break;
+      }
+
+      if (nextFocus) {
+        setFocused(nextFocus);
+        evt.preventDefault();
+      }
+    },
+    [rendered, expanded, getSortedChildren],
+  );
+
+  useEffect(() => listRef.current?.base.setAttribute('role', 'tree'), [listRef.current]);
+
+  useLayoutEffect(() => {
+    const el = listRef.current?.base;
+    if (!el || !focused) {
+      return;
+    }
+
+    setTimeout(() => {
+      const button: HTMLButtonElement | null = el.querySelector(
+        `[data-row-id="${getGlobalUniqueId(focused)}"]`,
+      );
+      button?.focus();
+    });
+  }, [focused]);
+
+  const renderRow = useCallback(
+    (row: NodeAtDepth) => (
+      <TimeViewRow
+        root={root}
+        onKeyDown={onKeyDown}
+        node={row.node}
+        depth={row.depth}
+        position={row.position}
+        expanded={expanded}
+        onExpandChange={setExpanded}
+        onFocus={setFocused}
+      />
+    ),
+    [expanded, setExpanded, onKeyDown],
+  );
+
+  return (
+    <Fragment>
+      <TimeViewHeader sortFn={sortFn} onChangeSort={setSort} />
+      <VirtualList
+        ref={listRef}
+        className={styles.rows}
+        data={rendered}
+        renderRow={renderRow}
+        rowHeight={25}
+        overscanCount={100}
+      />
+    </Fragment>
+  );
+};
+
+const TimeViewHeader: FunctionComponent<{
+  sortFn: SortFn | undefined;
+  onChangeSort: (newFn: () => SortFn | undefined) => void;
+}> = ({ sortFn, onChangeSort }) => (
+  <div className={styles.row}>
+    <div
+      id="self-time-header"
+      className={classes(styles.heading, styles.timing)}
+      aria-sort={sortFn === selfSize ? 'descending' : undefined}
+      onClick={useCallback(
+        () => onChangeSort(() => (sortFn === selfSize ? undefined : selfSize)),
+        [sortFn],
+      )}
+    >
+      {sortFn === selfSize && <Icon i={ChevronDown} />}
+      Self Size
+    </div>
+    <div
+      id="total-time-header"
+      className={classes(styles.heading, styles.timing)}
+      aria-sort={sortFn === totalSize ? 'descending' : undefined}
+      onClick={useCallback(
+        () => onChangeSort(() => (sortFn === totalSize ? undefined : totalSize)),
+        [sortFn],
+      )}
+    >
+      {sortFn === totalSize && <Icon i={ChevronDown} />}
+      Total Size
+    </div>
+    <div className={styles.heading}>File</div>
+  </div>
+);
+
+const TimeViewRow: FunctionComponent<{
+  root: ITreeNode;
+  node: ITreeNode;
+  depth: number;
+  position: number;
+  expanded: ReadonlySet<ITreeNode>;
+  onExpandChange: (expanded: ReadonlySet<ITreeNode>) => void;
+  onKeyDown?: (evt: KeyboardEvent, node: ITreeNode) => void;
+  onFocus?: (node: ITreeNode) => void;
+}> = ({
+  root,
+  node,
+  depth,
+  position,
+  expanded,
+  onKeyDown: onKeyDownRaw,
+  onFocus: onFocusRaw,
+  onExpandChange,
+}) => {
+  const vscode = useContext(VsCodeApi);
+
+  const onClick = useCallback(
+    (evt: MouseEvent) =>
+      vscode.postMessage<IOpenDocumentMessage>({
+        type: 'openDocument',
+        callFrame: node.callFrame,
+        // location: node.src,
+        toSide: evt.altKey,
+      }),
+    [vscode, node],
+  );
+
+  const onToggleExpand = useCallback(() => {
+    onExpandChange(toggleInSet(expanded, node));
+  }, [expanded, onExpandChange, node]);
+
+  const onKeyDown = useCallback(
+    (evt: KeyboardEvent) => {
+      onKeyDownRaw?.(evt, node);
+    },
+    [onKeyDownRaw, node],
+  );
+
+  const onFocus = useCallback(() => {
+    onFocusRaw?.(node);
+  }, [onFocusRaw, node]);
+
+  const location = getNodeText(node);
+  const expand = (
+    <span className={styles.expander}>
+      {node.childrenSize > 0 ? <Icon i={expanded.has(node) ? ChevronDown : ChevronRight} /> : null}
+    </span>
+  );
+
+  return (
+    <div
+      className={styles.row}
+      data-row-id={getGlobalUniqueId(node)}
+      onKeyDown={onKeyDown}
+      onFocus={onFocus}
+      onClick={onToggleExpand}
+      tabIndex={0}
+      role="treeitem"
+      aria-posinset={position}
+      aria-setsize={node.parent?.childrenSize ?? 1}
+      aria-level={depth + 1}
+      aria-expanded={expanded.has(node)}
+    >
+      <div className={styles.duration} aria-labelledby="self-time-header">
+        <ImpactBar impact={node.selfSize / node.totalSize} />
+        {decimalFormat.format(node.selfSize)}
+      </div>
+      <div className={styles.duration} aria-labelledby="total-time-header">
+        <ImpactBar impact={node.totalSize / root.totalSize} />
+        {decimalFormat.format(node.totalSize)}
+      </div>
+      {!location ? (
+        <div
+          className={classes(styles.location, styles.virtual)}
+          style={{ marginLeft: depth * 15 }}
+        >
+          {expand} <span className={styles.fn}>{node.callFrame.functionName || '(anonymous)'}</span>
+        </div>
+      ) : (
+        <div className={styles.location} style={{ marginLeft: depth * 15 }}>
+          {expand} <span className={styles.fn}>{node.callFrame.functionName || '(anonymous)'}</span>
+          <span className={styles.file}>
+            <a href="#" onClick={onClick}>
+              {location}
+            </a>
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ImpactBar: FunctionComponent<{ impact: number }> = ({ impact }) => (
+  <div className={styles.impactBar} style={{ transform: `scaleX(${impact})` }} />
+);

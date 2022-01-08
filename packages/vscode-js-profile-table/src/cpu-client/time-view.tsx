@@ -23,7 +23,7 @@ import { decimalFormat, getLocationText } from 'vscode-js-profile-core/out/esm/c
 import { IGraphNode, ILocation } from 'vscode-js-profile-core/out/esm/cpu/model';
 import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/cpu/types';
 import { IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
-import styles from './time-view.css';
+import styles from '../common/time-view.css';
 
 type SortFn = (node: ILocation) => number;
 
@@ -202,9 +202,10 @@ const TimeViewHeader: FunctionComponent<{
       id="self-time-header"
       className={classes(styles.heading, styles.timing)}
       aria-sort={sortFn === selfTime ? 'descending' : undefined}
-      onClick={useCallback(() => onChangeSort(() => (sortFn === selfTime ? undefined : selfTime)), [
-        sortFn,
-      ])}
+      onClick={useCallback(
+        () => onChangeSort(() => (sortFn === selfTime ? undefined : selfTime)),
+        [sortFn],
+      )}
     >
       {sortFn === selfTime && <Icon i={ChevronDown} />}
       Self Time
@@ -213,9 +214,10 @@ const TimeViewHeader: FunctionComponent<{
       id="total-time-header"
       className={classes(styles.heading, styles.timing)}
       aria-sort={sortFn === aggTime ? 'descending' : undefined}
-      onClick={useCallback(() => onChangeSort(() => (sortFn === aggTime ? undefined : aggTime)), [
-        sortFn,
-      ])}
+      onClick={useCallback(
+        () => onChangeSort(() => (sortFn === aggTime ? undefined : aggTime)),
+        [sortFn],
+      )}
     >
       {sortFn === aggTime && <Icon i={ChevronDown} />}
       Total Time

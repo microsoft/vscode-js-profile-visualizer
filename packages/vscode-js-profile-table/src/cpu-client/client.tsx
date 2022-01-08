@@ -2,38 +2,17 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 import { FunctionComponent, h, render } from 'preact';
-import { useCallback, useContext } from 'preact/hooks';
-import * as Flame from 'vscode-codicons/src/icons/flame.svg';
-import { ToggleButton } from 'vscode-js-profile-core/out/esm/client/toggle-button';
-import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
 import { createBottomUpGraph } from 'vscode-js-profile-core/out/esm/cpu/bottomUpGraph';
 import { cpuProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/cpu/layout';
 import { IGraphNode, IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
-import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/cpu/types';
 import { IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
-import styles from './client.css';
+import styles from '../common/client.css';
+import OpenFlameButton from '../common/open-flame-buttom';
 import { TimeView } from './time-view';
 
 declare const MODEL: IProfileModel;
 
 const graph = createBottomUpGraph(MODEL);
-
-const OpenGraphButton: FunctionComponent = () => {
-  const vscode = useContext(VsCodeApi);
-  const closeFlameGraph = useCallback(
-    () =>
-      vscode.postMessage<IReopenWithEditor>({
-        type: 'reopenWith',
-        viewType: 'jsProfileVisualizer.cpuprofile.flame',
-        requireExtension: 'ms-vscode.vscode-js-profile-flame',
-      }),
-    [vscode],
-  );
-
-  return (
-    <ToggleButton icon={Flame} label="Show flame graph" checked={false} onClick={closeFlameGraph} />
-  );
-};
 
 const allChildren = Object.values(graph.children);
 const TimeViewWrapper: FunctionComponent<{
@@ -84,7 +63,7 @@ render(
       },
     }}
     body={TimeViewWrapper}
-    filterFooter={OpenGraphButton}
+    filterFooter={OpenFlameButton}
   />,
   container,
 );
