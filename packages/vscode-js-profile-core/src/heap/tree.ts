@@ -37,9 +37,7 @@ export class TreeNode implements ITreeNode {
   constructor(
     public readonly node: Cdp.HeapProfiler.SamplingHeapProfileNode,
     public readonly parent?: TreeNode,
-  ) {
-    this.parent = parent;
-  }
+  ) {}
 
   public toJSON(): ITreeNode {
     return {
@@ -89,6 +87,5 @@ export const createTree = (model: IProfileModel) => {
     root.totalSize += root.children[child].totalSize;
   }
 
-  console.log(root.totalSize);
   return root;
 };

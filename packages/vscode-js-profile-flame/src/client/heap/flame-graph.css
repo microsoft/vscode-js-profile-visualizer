@@ -1,0 +1,161 @@
+.tooltip {
+  position: absolute;
+  box-sizing: border-box;
+  width: 400px;
+  padding: 5px;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  pointer-events: none;
+}
+
+.tooltip dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-row-gap: 0.4em;
+}
+
+.tooltip dd {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tooltip dt {
+  font-weight: bold;
+  margin-right: 0.5em;
+}
+
+.tooltip .hint {
+  margin-top: 0.5em;
+  text-align: right;
+  font-size: 0.9em;
+}
+
+.handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  opacity: 0;
+  transition: 150ms opacity;
+}
+
+.handle.active,
+.handle:hover {
+  opacity: 1;
+}
+
+.handle .bookend,
+.handle .bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0;
+  box-sizing: border-box;
+}
+
+.handle .bg {
+  cursor: pointer;
+  border-top: 1px solid var(--vscode-editorHoverWidget-border);
+  border-bottom: 1px solid var(--vscode-editorHoverWidget-border);
+}
+
+.handle .bg.active {
+  background-color: var(--vscode-inputOption-activeBackground);
+  border-color: var(--vscode-inputOption-activeBackground);
+  opacity: 1;
+}
+
+.handle .bookend {
+  pointer-events: none;
+}
+
+.handle .bookend > div {
+  pointer-events: all;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--vscode-editorHoverWidget-border);
+  cursor: col-resize;
+}
+
+.handle .bookend.active > div {
+  background-color: var(--vscode-inputOption-activeBackground);
+}
+
+.info {
+  position: absolute;
+  bottom: 0;
+  left: 30px;
+  right: 30px;
+  background: var(--vscode-sideBar-background);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  padding: 1rem;
+  display: flex;
+  align-items: flex-start;
+}
+
+.info dl {
+  display: grid;
+  align-items: flex-start;
+  grid-template-columns: 80px 100px;
+  grid-gap: 0.7rem 0.5rem;
+}
+
+.info dt {
+  opacity: 0.8;
+}
+
+.info dt small {
+  display: block;
+}
+
+.info ol {
+  padding-left: 1em;
+}
+
+.info ol li a {
+  padding: 0.1em 0;
+  display: inline-block;
+  cursor: pointer;
+  color: var(--vscode-editor-foreground);
+}
+
+.info ol li em {
+  font-style: normal;
+}
+
+.info ol li a em {
+  color: var(--vscode-textLink-foreground);
+}
+
+.info ol li a em:hover,
+.info ol li a em:focus {
+  color: var(--vscode-textLink-activeForeground);
+}
+
+.info .goToFile {
+  width: 1em;
+  display: inline-block;
+  cursor: pointer;
+}
+
+:global(.vscode-dark) .info {
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+}
+
+:global(.vscode-high-contrast) .handle {
+  opacity: 1;
+}
+
+:global(.vscode-high-contrast) .handle .bg {
+  background: none;
+  opacity: 1 !important;
+}
+
+:global(.vscode-high-contrast) .handle .bookend > div {
+  background: var(--vscode-editorHoverWidget-border);
+}
