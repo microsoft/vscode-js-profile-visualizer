@@ -19,10 +19,11 @@ import { addToSet, removeFromSet, toggleInSet } from 'vscode-js-profile-core/out
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
 import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
+import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/common/types';
 import { decimalFormat, getNodeText } from 'vscode-js-profile-core/out/esm/heap/display';
 import { ITreeNode } from 'vscode-js-profile-core/out/esm/heap/model';
-import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/heap/types';
 import { IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
+import ImpactBar from '../common/impact-bar';
 import styles from '../common/time-view.css';
 
 type SortFn = (node: ITreeNode) => number;
@@ -324,7 +325,3 @@ const TimeViewRow: FunctionComponent<{
     </div>
   );
 };
-
-const ImpactBar: FunctionComponent<{ impact: number }> = ({ impact }) => (
-  <div className={styles.impactBar} style={{ transform: `scaleX(${impact})` }} />
-);

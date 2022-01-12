@@ -3,6 +3,7 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
+import { categorize, Category } from '../common/model';
 import { IProfileModel, ITreeNode } from './model';
 
 export class TreeNode implements ITreeNode {
@@ -21,10 +22,11 @@ export class TreeNode implements ITreeNode {
     });
   }
 
-  public children: { [id: number]: TreeNode } = {};
+  public children: { [id: number]: ITreeNode } = {};
   public totalSize = 0;
   public selfSize = 0;
   public childrenSize = 0;
+  public category: Category;
 
   public get id() {
     return this.node.id;
@@ -37,10 +39,13 @@ export class TreeNode implements ITreeNode {
   constructor(
     public readonly node: Cdp.HeapProfiler.SamplingHeapProfileNode,
     public readonly parent?: TreeNode,
-  ) {}
+  ) {
+    this.category = categorize(node.callFrame, undefined);
+  }
 
   public toJSON(): ITreeNode {
     return {
+      category: this.category,
       children: this.children,
       childrenSize: this.childrenSize,
       selfSize: this.selfSize,

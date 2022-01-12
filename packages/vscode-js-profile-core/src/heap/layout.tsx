@@ -4,8 +4,8 @@
 import { ComponentType, Fragment, FunctionComponent, h } from 'preact';
 import { useMemo, useState } from 'preact/hooks';
 import { richFilter, RichFilterComponent } from '../client/rich-filter';
+import styles from '../common/layout.css';
 import { IDataSource, IQueryResults } from '../ql';
-import styles from './layout.css';
 
 export interface IBodyProps<T> {
   data: IQueryResults<T>;

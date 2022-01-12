@@ -3,6 +3,7 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
+import { Category } from 'vscode-js-profile-core/out/esm/common/model';
 import { IProfileModel, ITreeNode } from 'vscode-js-profile-core/out/esm/heap/model';
 import { createTree } from 'vscode-js-profile-core/out/esm/heap/tree';
 import { IColumn, IColumnRow } from '../common/types';
@@ -10,11 +11,13 @@ import { IColumn, IColumnRow } from '../common/types';
 /**
  * Accessor for querying columns in the flame graph.
  */
-export class LocationAccessor implements Omit<Omit<ITreeNode, 'children'>, 'childrenSize'> {
+export class LocationAccessor implements ITreeNode {
   public readonly id: number;
   public readonly selfSize: number;
   public readonly totalSize: number;
   public readonly callFrame: Cdp.Runtime.CallFrame;
+  public readonly childrenSize: number;
+  public readonly category: Category;
 
   /**
    * Gets children of the location.
@@ -82,6 +85,8 @@ export class LocationAccessor implements Omit<Omit<ITreeNode, 'children'>, 'chil
     this.selfSize = cell.selfSize;
     this.totalSize = cell.totalSize;
     this.callFrame = cell.callFrame;
+    this.childrenSize = cell.childrenSize;
+    this.category = cell.category;
   }
 }
 

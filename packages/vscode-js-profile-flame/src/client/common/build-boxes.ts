@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { Category } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { Category } from 'vscode-js-profile-core/out/esm/common/model';
 import { Constants } from './constants';
 import { IBox, IColumn, IColumnRow } from './types';
 

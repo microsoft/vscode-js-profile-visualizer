@@ -3,14 +3,14 @@
  *--------------------------------------------------------*/
 import { Fragment, FunctionComponent, h, render } from 'preact';
 import { useCallback, useContext, useMemo } from 'preact/hooks';
-import * as LeftHeavyIcon from 'vscode-codicons/src/icons/graph-left.svg';
 import * as Flame from 'vscode-codicons/src/icons/flame.svg';
+import * as LeftHeavyIcon from 'vscode-codicons/src/icons/graph-left.svg';
 import { ToggleButton } from 'vscode-js-profile-core/out/esm/client/toggle-button';
 import { usePersistedState } from 'vscode-js-profile-core/out/esm/client/usePersistedState';
 import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
+import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/common/types';
 import { cpuProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/cpu/layout';
 import { IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
-import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/cpu/types';
 import { IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
 import styles from './client.css';
 import { FlameGraph } from './flame-graph';

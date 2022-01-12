@@ -4,12 +4,13 @@
 
 import * as vscode from 'vscode';
 import { bundlePage } from '../bundlePage';
-import { ProfileAnnotations } from '../profileAnnotations';
+import { Message } from '../common/types';
+import { openLocation } from '../open-location';
 import { ProfileCodeLensProvider } from '../profileCodeLensProvider';
 import { ReadonlyCustomDocument } from '../readonly-custom-document';
 import { reopenWithEditor } from '../reopenWithEditor';
 import { buildModel, IProfileModel } from './model';
-import { IHeapProfileRaw, Message } from './types';
+import { IHeapProfileRaw } from './types';
 
 export class HeapProfileEditorProvider
   implements vscode.CustomEditorProvider<ReadonlyCustomDocument<IProfileModel>>
@@ -30,7 +31,8 @@ export class HeapProfileEditorProvider
     const raw: IHeapProfileRaw = JSON.parse(new TextDecoder().decode(content));
     const document = new ReadonlyCustomDocument(uri, buildModel(raw));
 
-    const annotations = new ProfileAnnotations();
+    // TODO: annotations
+    // const annotations = new ProfileAnnotations();
     // const rootPath = document.userData.rootPath;
     // for (const location of document.userData.locations) {
     //   annotations.add(rootPath, location);
@@ -50,12 +52,12 @@ export class HeapProfileEditorProvider
     webviewPanel.webview.onDidReceiveMessage((message: Message) => {
       switch (message.type) {
         case 'openDocument':
-          // openLocation({
-          //   rootPath: document.userData?.rootPath,
-          //   viewColumn: message.toSide ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active,
-          //   callFrame: message.callFrame,
-          //   location: message.location,
-          // });
+          openLocation({
+            rootPath: undefined,
+            viewColumn: message.toSide ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active,
+            callFrame: message.callFrame,
+            location: message.location,
+          });
           return;
         case 'reopenWith':
           reopenWithEditor(document.uri, message.viewType, message.requireExtension);

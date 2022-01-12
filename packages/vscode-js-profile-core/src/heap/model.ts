@@ -3,13 +3,15 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
+import { INode } from '../common/model';
 import { IHeapProfileRaw } from './types';
 
-export interface IHeapProfileNode extends Cdp.HeapProfiler.SamplingHeapProfileNode {
+export interface IHeapProfileNode extends INode {
+  selfSize: number;
   totalSize: number;
 }
 
-export interface ITreeNode extends Omit<IHeapProfileNode, 'children'> {
+export interface ITreeNode extends IHeapProfileNode {
   children: { [id: number]: ITreeNode };
   childrenSize: number;
   parent?: ITreeNode;

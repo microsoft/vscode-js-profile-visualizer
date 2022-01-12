@@ -3,19 +3,10 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
-import { ICpuProfileRaw, IAnnotationLocation } from './types';
+import { categorize, INode } from '../common/model';
+import { addRelativeDiskPath, ISourceLocation } from '../location-mapping';
 import { maybeFileUrlToPath } from '../path';
-import { ISourceLocation, addRelativeDiskPath } from '../location-mapping';
-
-/**
- * Category of call frames. Grouped into system, modules, and user code.
- */
-export const enum Category {
-  System,
-  User,
-  Module,
-  Deemphasized,
-}
+import { IAnnotationLocation, ICpuProfileRaw } from './types';
 
 /**
  * One measured node in the call stack. Contains the time it spent in itself,
@@ -34,13 +25,10 @@ export interface IComputedNode {
 /**
  * One location in the source. Multiple nodes can reference a single location.
  */
-export interface ILocation {
-  id: number;
+export interface ILocation extends INode {
   selfTime: number;
   aggregateTime: number;
   ticks: number;
-  category: Category;
-  callFrame: Cdp.Runtime.CallFrame;
   src?: ISourceLocation;
 }
 
@@ -100,22 +88,6 @@ const getBestLocation = (
   }
 
   return candidates[0];
-};
-
-/**
- * Categorizes the given call frame.
- */
-const categorize = (callFrame: Cdp.Runtime.CallFrame, src: ISourceLocation | undefined) => {
-  callFrame.functionName = callFrame.functionName || '(anonymous)';
-  if (callFrame.lineNumber < 0) {
-    return Category.System;
-  }
-
-  if (callFrame.url.includes('node_modules') || !src) {
-    return Category.Module;
-  }
-
-  return Category.User;
 };
 
 /**

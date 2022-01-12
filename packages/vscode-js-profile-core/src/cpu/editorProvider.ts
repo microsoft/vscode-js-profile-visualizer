@@ -4,16 +4,18 @@
 
 import * as vscode from 'vscode';
 import { bundlePage } from '../bundlePage';
+import { Message } from '../common/types';
 import { openLocation } from '../open-location';
 import { ProfileAnnotations } from '../profileAnnotations';
 import { ProfileCodeLensProvider } from '../profileCodeLensProvider';
 import { ReadonlyCustomDocument } from '../readonly-custom-document';
 import { reopenWithEditor } from '../reopenWithEditor';
 import { buildModel, IProfileModel } from './model';
-import { ICpuProfileRaw, Message } from './types';
+import { ICpuProfileRaw } from './types';
 
 export class CpuProfileEditorProvider
-  implements vscode.CustomEditorProvider<ReadonlyCustomDocument<IProfileModel>> {
+  implements vscode.CustomEditorProvider<ReadonlyCustomDocument<IProfileModel>>
+{
   public readonly onDidChangeCustomDocument = new vscode.EventEmitter<never>().event;
 
   constructor(

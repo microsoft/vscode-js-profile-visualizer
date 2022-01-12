@@ -3,7 +3,8 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
-import { Category, ILocation, IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { Category } from 'vscode-js-profile-core/out/esm/common/model';
+import { ILocation, IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
 import { ISourceLocation } from 'vscode-js-profile-core/out/esm/location-mapping';
 
 const enum Constants {
@@ -111,7 +112,7 @@ interface ITopDownGraphNode {
 const createTopDownGraph = (model: IProfileModel) => {
   const graph: ITopDownGraphNode = {
     children: new Map(),
-    location: (null as unknown) as ILocation,
+    location: null as unknown as ILocation,
     aggregateTime: 0,
     selfTime: 0,
   };

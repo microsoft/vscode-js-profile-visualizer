@@ -8,7 +8,7 @@ import { useCssVariables } from 'vscode-js-profile-core/out/esm/client/useCssVar
 import { usePersistedState } from 'vscode-js-profile-core/out/esm/client/usePersistedState';
 import { useWindowSize } from 'vscode-js-profile-core/out/esm/client/useWindowSize';
 import { IVscodeApi, VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
-import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/cpu/types';
+import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/common/types';
 import buildBoxes from './build-boxes';
 import { Constants } from './constants';
 import getBoxInRowColumn from './get-boxIn-row-column';

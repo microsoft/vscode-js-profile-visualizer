@@ -2,6 +2,8 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
+import { Category } from 'vscode-js-profile-core/out/esm/common/model';
+
 export interface IBox {
   column: number;
   row: number;
@@ -30,7 +32,7 @@ export interface ICanvasSize {
 
 export interface IColumnRow {
   graphId: number; //. unique ID of the location in the graph
-  category?: number;
+  category: Category;
   callFrame?: any;
   id: number;
   [key: string]: any;

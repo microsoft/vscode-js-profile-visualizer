@@ -7,8 +7,8 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'preact/ho
 import * as GoToFileIcon from 'vscode-codicons/src/icons/go-to-file.svg';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
 import { IVscodeApi, VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
+import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/common/types';
 import { getLocationText } from 'vscode-js-profile-core/out/esm/cpu/display';
-import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/cpu/types';
 import { Constants } from '../common/constants';
 import getBoxInRowColumn from '../common/get-boxIn-row-column';
 import styles from './common.css';

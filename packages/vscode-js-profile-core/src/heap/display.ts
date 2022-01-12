@@ -5,7 +5,7 @@
 import { ITreeNode } from './model';
 
 /**
- * Gets the human-readable label for the given location.
+ * Gets the human-readable label for the given node.
  */
 export const getNodeText = (node: ITreeNode) => {
   if (!node.callFrame.url) {
