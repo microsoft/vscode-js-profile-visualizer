@@ -8,7 +8,8 @@ import { useCallback } from 'preact/hooks';
 import * as ChevronDown from 'vscode-codicons/src/icons/chevron-down.svg';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
-import { decimalFormat, getLocationText } from 'vscode-js-profile-core/out/esm/cpu/display';
+import { getNodeText } from 'vscode-js-profile-core/out/esm/common/display';
+import { decimalFormat } from 'vscode-js-profile-core/out/esm/cpu/display';
 import { IGraphNode, ILocation } from 'vscode-js-profile-core/out/esm/cpu/model';
 import { IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
 import getGlobalUniqueId from '../common/get-global-unique-id';
@@ -118,7 +119,7 @@ const TimeViewRow: FunctionComponent<{
     onExpandChange,
   });
 
-  const location = getLocationText(node);
+  const location = getNodeText(node);
 
   return (
     <div

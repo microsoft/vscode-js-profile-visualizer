@@ -2,9 +2,8 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { Protocol as Cdp } from 'devtools-protocol';
 import { categorize, Category } from '../common/model';
-import { IProfileModel, ITreeNode } from './model';
+import { IProfileModel, IProfileModelNode, ITreeNode } from './model';
 
 export class TreeNode implements ITreeNode {
   public static root() {
@@ -22,7 +21,7 @@ export class TreeNode implements ITreeNode {
     });
   }
 
-  public children: { [id: number]: ITreeNode } = {};
+  public children: { [id: number]: TreeNode } = {};
   public totalSize = 0;
   public selfSize = 0;
   public childrenSize = 0;
@@ -36,10 +35,11 @@ export class TreeNode implements ITreeNode {
     return this.node.callFrame;
   }
 
-  constructor(
-    public readonly node: Cdp.HeapProfiler.SamplingHeapProfileNode,
-    public readonly parent?: TreeNode,
-  ) {
+  public get src() {
+    return this.node.src;
+  }
+
+  constructor(public readonly node: IProfileModelNode, public readonly parent?: TreeNode) {
     this.category = categorize(node.callFrame, undefined);
   }
 
@@ -52,11 +52,12 @@ export class TreeNode implements ITreeNode {
       totalSize: this.totalSize,
       id: this.id,
       callFrame: this.callFrame,
+      src: this.src,
     };
   }
 }
 
-const processNode = (node: Cdp.HeapProfiler.SamplingHeapProfileNode, parent: TreeNode) => {
+const processNode = (node: IProfileModelNode, parent: TreeNode) => {
   const treeNode = new TreeNode(node, parent);
 
   node.children.forEach(child => {

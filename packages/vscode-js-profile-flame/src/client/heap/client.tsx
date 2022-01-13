@@ -94,7 +94,8 @@ const Root: FunctionComponent = () => {
       data={{
         data: TreeNodeAccessor.rootAccessors(cols),
         getChildren: n => n.children,
-        genericMatchStr: n => [n.callFrame.functionName, n.callFrame.url].join(' '),
+        genericMatchStr: n =>
+          [n.callFrame.functionName, n.callFrame.url, n.src?.source.path ?? ''].join(' '),
         properties: {
           function: {
             type: PropertyType.String,
@@ -106,11 +107,11 @@ const Root: FunctionComponent = () => {
           },
           path: {
             type: PropertyType.String,
-            accessor: n => n.callFrame.url,
+            accessor: n => n.src?.relativePath ?? n.callFrame.url,
           },
           line: {
             type: PropertyType.Number,
-            accessor: n => n.callFrame.lineNumber,
+            accessor: n => (n.src ? n.src.lineNumber : n.callFrame.lineNumber),
           },
           selfTime: {
             type: PropertyType.Number,

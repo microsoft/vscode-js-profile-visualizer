@@ -2,7 +2,8 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { Category } from 'vscode-js-profile-core/out/esm/common/model';
+import { ILocation } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { IHeapProfileNode } from 'vscode-js-profile-core/out/esm/heap/model';
 
 export interface IBox {
   column: number;
@@ -14,8 +15,8 @@ export interface IBox {
   color: number;
   level: number;
   text: string;
-  loc: any;
-  category: any;
+  category: number;
+  loc: IColumnRow;
 }
 
 export interface IBounds {
@@ -30,13 +31,9 @@ export interface ICanvasSize {
   height: number;
 }
 
-export interface IColumnRow {
+export type IColumnRow = (ILocation | IHeapProfileNode) & {
   graphId: number; //. unique ID of the location in the graph
-  category: Category;
-  callFrame?: any;
-  id: number;
-  [key: string]: any;
-}
+};
 
 export interface IColumn {
   x1: number;

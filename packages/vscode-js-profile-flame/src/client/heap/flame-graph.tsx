@@ -5,8 +5,8 @@
 import { Fragment, FunctionComponent, h } from 'preact';
 import { MiddleOut } from 'vscode-js-profile-core/out/esm/client/middleOutCompression';
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
-import { decimalFormat, getNodeText } from 'vscode-js-profile-core/out/esm/heap/display';
-import { IProfileModel, ITreeNode } from 'vscode-js-profile-core/out/esm/heap/model';
+import { decimalFormat, getNodeText } from 'vscode-js-profile-core/out/esm/common/display';
+import { IHeapProfileNode, IProfileModel } from 'vscode-js-profile-core/out/esm/heap/model';
 import { createTree } from 'vscode-js-profile-core/out/esm/heap/tree';
 import { Constants } from '../common/constants';
 import DragHandle from '../common/drag-handle';
@@ -91,7 +91,7 @@ export const FlameGraph: FunctionComponent<{
           upperY={canvasSize.height - hovered.box.y1 + bounds.y}
           lowerY={hovered.box.y2 - bounds.y}
           src={hovered.src}
-          location={hovered.box.loc}
+          location={hovered.box.loc as IHeapProfileNode}
         />
       )}
       {focused && showInfo && (
@@ -107,7 +107,7 @@ const Tooltip: FunctionComponent<{
   left: number;
   upperY: number;
   lowerY: number;
-  location: ITreeNode;
+  location: IHeapProfileNode;
   src: HighlightSource;
 }> = ({ left, lowerY, upperY, src, location, canvasWidth, canvasHeight }) => {
   const label = getNodeText(location);
@@ -133,7 +133,7 @@ const Tooltip: FunctionComponent<{
             <dt>File</dt>
             <dd
               aria-label={file}
-              className={classes(styles.label, location.callFrame && styles.clickable)}
+              className={classes(styles.label, location.src && styles.clickable)}
             >
               <MiddleOut aria-hidden={true} endChars={file?.length} text={label} />
             </dd>
@@ -163,9 +163,9 @@ const InfoBox: FunctionComponent<{
     <div className={styles.info}>
       <dl>
         <dt>Self Size</dt>
-        <dd>{decimalFormat.format(localLocation.selfSize / 1000)}kb</dd>
+        <dd>{decimalFormat.format((localLocation as IHeapProfileNode).selfSize / 1000)}kb</dd>
         <dt>Total Size</dt>
-        <dd>{decimalFormat.format(localLocation.totalSize / 1000)}kb</dd>
+        <dd>{decimalFormat.format((localLocation as IHeapProfileNode).totalSize / 1000)}kb</dd>
       </dl>
       <StackList box={box} columns={columns} boxes={boxes} setFocused={setFocused}></StackList>
     </div>

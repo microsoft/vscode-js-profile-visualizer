@@ -4,6 +4,8 @@
 
 import { Protocol as Cdp } from 'devtools-protocol';
 import { INode } from '../common/model';
+import { ISourceLocation } from '../location-mapping';
+import { maybeFileUrlToPath } from '../path';
 
 export interface IHeapProfileNode extends INode {
   selfSize: number;
@@ -30,10 +32,18 @@ export interface IHeapProfileRaw extends Cdp.HeapProfiler.SamplingHeapProfile {
   $vscode?: IJsDebugAnnotations;
 }
 
+export interface IProfileModelNode
+  extends Omit<Cdp.HeapProfiler.SamplingHeapProfileNode, 'children'> {
+  src?: ISourceLocation;
+  children: IProfileModelNode[];
+}
+
 /**
  * Data model for the profile.
  */
-export type IProfileModel = Cdp.HeapProfiler.SamplingHeapProfile & {
+export type IProfileModel = {
+  head: IProfileModelNode;
+  samples: Cdp.HeapProfiler.SamplingHeapProfileSample[];
   rootPath?: string;
 };
 
@@ -41,6 +51,28 @@ export type IProfileModel = Cdp.HeapProfiler.SamplingHeapProfile & {
  * Computes the model for the given profile.
  */
 export const buildModel = (profile: IHeapProfileRaw): IProfileModel => {
+  let nodes = [profile.head];
+
+  while (nodes.length) {
+    const node = nodes.pop();
+
+    if (node) {
+      const { callFrame } = node;
+      (node as unknown as IHeapProfileNode).src = {
+        lineNumber: callFrame.lineNumber,
+        columnNumber: callFrame.columnNumber,
+        source: {
+          name: maybeFileUrlToPath(callFrame.url),
+          path: maybeFileUrlToPath(callFrame.url),
+          sourceReference: 0,
+        },
+      };
+      if (node.children) {
+        nodes = nodes.concat(node.children);
+      }
+    }
+  }
+
   return {
     head: profile.head,
     samples: profile.samples,

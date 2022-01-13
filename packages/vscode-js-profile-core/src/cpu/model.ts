@@ -29,7 +29,6 @@ export interface ILocation extends INode {
   selfTime: number;
   aggregateTime: number;
   ticks: number;
-  src?: ISourceLocation;
 }
 
 export interface IGraphNode extends ILocation {

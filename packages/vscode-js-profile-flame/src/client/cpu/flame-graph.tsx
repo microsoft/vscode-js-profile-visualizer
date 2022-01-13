@@ -5,29 +5,15 @@
 import { Fragment, FunctionComponent, h } from 'preact';
 import { MiddleOut } from 'vscode-js-profile-core/out/esm/client/middleOutCompression';
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
-import { decimalFormat, getLocationText } from 'vscode-js-profile-core/out/esm/cpu/display';
+import { getNodeText } from 'vscode-js-profile-core/out/esm/common/display';
+import { decimalFormat } from 'vscode-js-profile-core/out/esm/cpu/display';
 import { ILocation, IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
 import { Constants } from '../common/constants';
 import DragHandle from '../common/drag-handle';
 import styles from '../common/flame-graph.css';
 import StackList from '../common/stack-list';
-import { HighlightSource } from '../common/types';
+import { HighlightSource, IBox, IColumn } from '../common/types';
 import useFlame from '../common/use-flame';
-import { IColumn, IColumnLocation } from './stacks';
-
-export interface IBox {
-  column: number;
-  row: number;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  color: number;
-  level: number;
-  text: string;
-  category: number;
-  loc: IColumnLocation;
-}
 
 const clamp = (min: number, v: number, max: number) => Math.max(Math.min(v, max), min);
 
@@ -103,7 +89,7 @@ export const FlameGraph: FunctionComponent<{
           upperY={canvasSize.height - hovered.box.y1 + bounds.y}
           lowerY={hovered.box.y2 - bounds.y}
           src={hovered.src}
-          location={hovered.box.loc}
+          location={hovered.box.loc as ILocation}
         />
       )}
       {focused && showInfo && (
@@ -128,7 +114,7 @@ const Tooltip: FunctionComponent<{
   location: ILocation;
   src: HighlightSource;
 }> = ({ left, lowerY, upperY, src, location, canvasWidth, canvasHeight }) => {
-  const label = getLocationText(location);
+  const label = getNodeText(location);
   const above = lowerY + 300 > canvasHeight && lowerY > canvasHeight / 2;
 
   const file = label?.split(/\\|\//g).pop();
@@ -183,9 +169,9 @@ const InfoBox: FunctionComponent<{
     <div className={styles.info}>
       <dl>
         <dt>Self Time</dt>
-        <dd>{decimalFormat.format(localLocation.selfTime / 1000)}ms</dd>
+        <dd>{decimalFormat.format((localLocation as ILocation).selfTime / 1000)}ms</dd>
         <dt>Total Time</dt>
-        <dd>{decimalFormat.format(localLocation.aggregateTime / 1000)}ms</dd>
+        <dd>{decimalFormat.format((localLocation as ILocation).aggregateTime / 1000)}ms</dd>
         <dt>
           Self Time<small>Entire Profile</small>
         </dt>

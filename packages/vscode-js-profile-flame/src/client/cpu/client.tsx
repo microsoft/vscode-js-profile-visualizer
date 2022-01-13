@@ -13,8 +13,9 @@ import { cpuProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/cpu/layo
 import { IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
 import { IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
 import styles from '../common/client.css';
+import { IColumn } from '../common/types';
 import { FlameGraph } from './flame-graph';
-import { buildColumns, buildLeftHeavyColumns, IColumn, LocationAccessor } from './stacks';
+import { buildColumns, buildLeftHeavyColumns, LocationAccessor } from './stacks';
 
 declare const MODEL: IProfileModel;
 

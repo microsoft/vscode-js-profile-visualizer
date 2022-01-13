@@ -4,20 +4,25 @@
 
 import { Protocol as Cdp } from 'devtools-protocol';
 import { Category } from 'vscode-js-profile-core/out/esm/common/model';
-import { IProfileModel, ITreeNode } from 'vscode-js-profile-core/out/esm/heap/model';
+import {
+  IHeapProfileNode,
+  IProfileModel,
+  ITreeNode,
+} from 'vscode-js-profile-core/out/esm/heap/model';
 import { createTree } from 'vscode-js-profile-core/out/esm/heap/tree';
+import { ISourceLocation } from 'vscode-js-profile-core/out/esm/location-mapping';
 import { IColumn, IColumnRow } from '../common/types';
 
 /**
  * Accessor for querying columns in the flame graph.
  */
-export class TreeNodeAccessor implements ITreeNode {
+export class TreeNodeAccessor implements IHeapProfileNode {
   public readonly id: number;
   public readonly selfSize: number;
   public readonly totalSize: number;
   public readonly callFrame: Cdp.Runtime.CallFrame;
-  public readonly childrenSize: number;
   public readonly category: Category;
+  public readonly src?: ISourceLocation;
 
   /**
    * Gets children of the location.
@@ -82,11 +87,11 @@ export class TreeNodeAccessor implements ITreeNode {
     }
 
     this.id = cell.id;
-    this.selfSize = cell.selfSize;
-    this.totalSize = cell.totalSize;
-    this.callFrame = cell.callFrame;
-    this.childrenSize = cell.childrenSize;
+    this.selfSize = (cell as IHeapProfileNode).selfSize;
+    this.totalSize = (cell as IHeapProfileNode).totalSize;
+    this.callFrame = (cell as IHeapProfileNode).callFrame;
     this.category = cell.category;
+    this.src = cell.src;
   }
 }
 
@@ -182,21 +187,15 @@ export const buildColumns = (model: IProfileModel) => {
   let sizeOffset = 0;
   for (let i = 0; i < cols.length; i++) {
     const root = cols[i];
-    const rows = [
-      {
-        ...root,
-        id: root.id,
-        callFrame: root.callFrame,
-        graphId: graphIdCounter++,
-      },
-    ];
+    const rows = [];
 
-    for (let node = root.parent; node; node = node.parent) {
+    for (let node: ITreeNode | undefined = root; node; node = node.parent) {
       rows.unshift({
         ...node,
         id: node.id,
         callFrame: node.callFrame,
         graphId: graphIdCounter++,
+        src: node.src,
       });
     }
 
