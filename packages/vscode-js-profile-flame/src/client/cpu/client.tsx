@@ -12,7 +12,7 @@ import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/common/types';
 import { cpuProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/cpu/layout';
 import { IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
 import { IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
-import styles from './client.css';
+import styles from '../common/client.css';
 import { FlameGraph } from './flame-graph';
 import { buildColumns, buildLeftHeavyColumns, IColumn, LocationAccessor } from './stacks';
 

@@ -4,11 +4,13 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { addToSet, removeFromSet, toggleInSet } from 'vscode-js-profile-core/out/esm/array';
+import { ICommonNode } from 'vscode-js-profile-core/out/esm/common/model';
 import { IGraphNode } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { ITreeNode } from 'vscode-js-profile-core/out/esm/heap/model';
 import { IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
-import { NodeAtDepth, SortFn } from './types';
+import { SortFn } from './types';
 
-const getGlobalUniqueId = (node: IGraphNode) => {
+const getGlobalUniqueId = (node: ICommonNode) => {
   const parts = [node.id];
   for (let n = node.parent; n; n = n.parent) {
     parts.push(n.id);
@@ -17,21 +19,23 @@ const getGlobalUniqueId = (node: IGraphNode) => {
   return parts.join('-');
 };
 
-const useTimeView = ({
+const useTimeView = <T extends IGraphNode | ITreeNode>({
   data,
   query,
   initSortFn,
 }: {
-  query: IQueryResults<IGraphNode>;
-  data: IGraphNode[];
+  query: IQueryResults<T>;
+  data: T[];
   initSortFn: SortFn;
 }) => {
+  type NodeAtDepth = { node: T; depth: number; position: number };
+
   const listRef = useRef<{ base: HTMLElement }>();
   const [sortFn, setSortFn] = useState<SortFn | undefined>(() => initSortFn);
-  const [focused, setFocused] = useState<undefined | IGraphNode>(undefined);
-  const [expanded, setExpanded] = useState<ReadonlySet<IGraphNode>>(new Set());
+  const [focused, setFocused] = useState<T | undefined>(undefined);
+  const [expanded, setExpanded] = useState<ReadonlySet<T>>(new Set());
 
-  const getSortedChildren = (node: IGraphNode) => {
+  const getSortedChildren = (node: T) => {
     const children = Object.values(node.children);
     if (sortFn) {
       children.sort((a, b) => sortFn(b) - sortFn(a));
@@ -69,8 +73,8 @@ const useTimeView = ({
   }, [sorted, expanded, sortFn, query]);
 
   const onKeyDown = useCallback(
-    (evt: KeyboardEvent, node: IGraphNode) => {
-      let nextFocus: IGraphNode | undefined;
+    (evt: KeyboardEvent, node: T) => {
+      let nextFocus: T | undefined;
       switch (evt.key) {
         case 'Enter':
         case 'Space':
@@ -87,7 +91,7 @@ const useTimeView = ({
           if (expanded.has(node)) {
             setExpanded(removeFromSet(expanded, node));
           } else {
-            nextFocus = node.parent;
+            nextFocus = node.parent as T;
           }
           break;
         case 'ArrowRight':

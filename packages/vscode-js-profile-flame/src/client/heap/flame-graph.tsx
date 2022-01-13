@@ -10,10 +10,10 @@ import { IProfileModel, ITreeNode } from 'vscode-js-profile-core/out/esm/heap/mo
 import { createTree } from 'vscode-js-profile-core/out/esm/heap/tree';
 import { Constants } from '../common/constants';
 import DragHandle from '../common/drag-handle';
+import styles from '../common/flame-graph.css';
 import StackList from '../common/stack-list';
 import { HighlightSource, IBox, IColumn } from '../common/types';
 import useFlame from '../common/use-flame';
-import styles from './flame-graph.css';
 
 const clamp = (min: number, v: number, max: number) => Math.max(Math.min(v, max), min);
 
@@ -95,13 +95,7 @@ export const FlameGraph: FunctionComponent<{
         />
       )}
       {focused && showInfo && (
-        <InfoBox
-          columns={columns}
-          boxes={rawBoxes.boxById}
-          box={focused}
-          model={model}
-          setFocused={setFocused}
-        />
+        <InfoBox columns={columns} boxes={rawBoxes.boxById} box={focused} setFocused={setFocused} />
       )}
     </Fragment>
   );
@@ -159,27 +153,10 @@ const Tooltip: FunctionComponent<{
 
 const InfoBox: FunctionComponent<{
   box: IBox;
-  model: IProfileModel;
   columns: ReadonlyArray<IColumn>;
   boxes: ReadonlyMap<number, IBox>;
   setFocused(box: IBox): void;
-}> = ({ columns, boxes, box, model, setFocused }) => {
-  const nodes: ITreeNode[] = [];
-
-  const tree = createTree(model);
-  let treeNodes: ITreeNode[] = [tree];
-  while (treeNodes.length > 0) {
-    const treeNode = treeNodes.shift();
-
-    if (treeNode) {
-      nodes[treeNode.id] = treeNode;
-    }
-
-    if (treeNode?.children) {
-      treeNodes = [...Object.values(treeNode?.children || {}), ...treeNodes];
-    }
-  }
-
+}> = ({ columns, boxes, box, setFocused }) => {
   const localLocation = box.loc;
 
   return (

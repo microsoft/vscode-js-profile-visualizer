@@ -11,7 +11,7 @@ import { IColumn, IColumnRow } from '../common/types';
 /**
  * Accessor for querying columns in the flame graph.
  */
-export class LocationAccessor implements ITreeNode {
+export class TreeNodeAccessor implements ITreeNode {
   public readonly id: number;
   public readonly selfSize: number;
   public readonly totalSize: number;
@@ -23,7 +23,7 @@ export class LocationAccessor implements ITreeNode {
    * Gets children of the location.
    */
   public get children() {
-    const children: LocationAccessor[] = [];
+    const children: TreeNodeAccessor[] = [];
     let dx = this.x;
 
     // Scan through all columns the cell at this accessor spans. Add their
@@ -31,7 +31,7 @@ export class LocationAccessor implements ITreeNode {
     do {
       const rs = this.model[dx].rows[this.y + 1];
       if (rs && typeof rs !== 'number') {
-        children.push(new LocationAccessor(this.model, dx, this.y + 1));
+        children.push(new TreeNodeAccessor(this.model, dx, this.y + 1));
       }
     } while (
       ++dx < this.model.length &&
@@ -45,10 +45,10 @@ export class LocationAccessor implements ITreeNode {
    * Gets root-level accessors for the list of columns.
    */
   public static rootAccessors(columns: ReadonlyArray<IColumn>) {
-    const accessors: LocationAccessor[] = [];
+    const accessors: TreeNodeAccessor[] = [];
     for (let x = 0; x < columns.length; x++) {
       if (typeof columns[x].rows[0] === 'object') {
-        accessors.push(new LocationAccessor(columns, x, 0));
+        accessors.push(new TreeNodeAccessor(columns, x, 0));
       }
     }
 
@@ -61,7 +61,7 @@ export class LocationAccessor implements ITreeNode {
    */
   public static getFilteredColumns(
     columns: ReadonlyArray<IColumn>,
-    accessors: ReadonlySet<LocationAccessor>,
+    accessors: ReadonlySet<TreeNodeAccessor>,
   ) {
     const mapping = new Array(columns.length);
     for (const accessor of accessors) {

@@ -21,10 +21,10 @@ export interface INode {
   callFrame: Cdp.Runtime.CallFrame;
 }
 
-export interface IGraphNode extends INode {
-  children: { [id: number]: IGraphNode };
+export interface ICommonNode extends INode {
+  children: { [id: number]: ICommonNode };
   childrenSize: number;
-  parent?: IGraphNode;
+  parent?: ICommonNode;
 }
 
 /**

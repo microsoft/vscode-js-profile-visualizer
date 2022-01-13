@@ -10,22 +10,22 @@ import { toggleInSet } from 'vscode-js-profile-core/out/esm/array';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
 import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
 import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/common/types';
-import { getLocationText } from 'vscode-js-profile-core/out/esm/cpu/display';
 import { IGraphNode } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { ITreeNode } from 'vscode-js-profile-core/out/esm/heap/model';
 import styles from '../common/time-view.css';
 
-const useTimeViewRow = ({
+const useTimeViewRow = <T extends IGraphNode | ITreeNode>({
   node,
   expanded,
   onKeyDownRaw,
   onFocusRaw,
   onExpandChange,
 }: {
-  node: IGraphNode;
-  expanded: ReadonlySet<IGraphNode>;
-  onExpandChange: (expanded: ReadonlySet<IGraphNode>) => void;
-  onKeyDownRaw?: (evt: KeyboardEvent, node: IGraphNode) => void;
-  onFocusRaw?: (node: IGraphNode) => void;
+  node: T;
+  expanded: ReadonlySet<T>;
+  onExpandChange: (expanded: ReadonlySet<T>) => void;
+  onKeyDownRaw?: (evt: KeyboardEvent, node: T) => void;
+  onFocusRaw?: (node: T) => void;
 }) => {
   const vscode = useContext(VsCodeApi);
   const onClick = useCallback(
@@ -33,7 +33,7 @@ const useTimeViewRow = ({
       vscode.postMessage<IOpenDocumentMessage>({
         type: 'openDocument',
         callFrame: node.callFrame,
-        location: node.src,
+        location: (node as IGraphNode).src,
         toSide: evt.altKey,
       }),
     [vscode, node],
@@ -56,10 +56,9 @@ const useTimeViewRow = ({
 
   let root = node;
   while (root.parent) {
-    root = root.parent;
+    root = root.parent as T;
   }
 
-  const location = getLocationText(node);
   const expand = (
     <span className={styles.expander}>
       {node.childrenSize > 0 ? <Icon i={expanded.has(node) ? ChevronDown : ChevronRight} /> : null}

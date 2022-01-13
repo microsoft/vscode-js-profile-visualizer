@@ -4,7 +4,6 @@
 
 import { Protocol as Cdp } from 'devtools-protocol';
 import { INode } from '../common/model';
-import { IHeapProfileRaw } from './types';
 
 export interface IHeapProfileNode extends INode {
   selfSize: number;
@@ -18,17 +17,33 @@ export interface ITreeNode extends IHeapProfileNode {
 }
 
 /**
+ * Extra annotations added by js-debug.
+ */
+export interface IJsDebugAnnotations {
+  /**
+   * Workspace root path, if set.
+   */
+  rootPath?: string;
+}
+
+export interface IHeapProfileRaw extends Cdp.HeapProfiler.SamplingHeapProfile {
+  $vscode?: IJsDebugAnnotations;
+}
+
+/**
  * Data model for the profile.
  */
-export type IProfileModel = Cdp.HeapProfiler.SamplingHeapProfile;
+export type IProfileModel = Cdp.HeapProfiler.SamplingHeapProfile & {
+  rootPath?: string;
+};
 
 /**
  * Computes the model for the given profile.
  */
 export const buildModel = (profile: IHeapProfileRaw): IProfileModel => {
-  return profile;
-  // return {
-  //   head: profile.head,
-  //   rootPath: profile.$vscode?.rootPath,
-  // };
+  return {
+    head: profile.head,
+    samples: profile.samples,
+    rootPath: profile.$vscode?.rootPath,
+  };
 };

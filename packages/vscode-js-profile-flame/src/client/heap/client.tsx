@@ -9,13 +9,13 @@ import { ToggleButton } from 'vscode-js-profile-core/out/esm/client/toggle-butto
 import { usePersistedState } from 'vscode-js-profile-core/out/esm/client/usePersistedState';
 import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
 import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/common/types';
-import { cpuProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/cpu/layout';
+import { heapProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/heap/layout';
 import { IProfileModel } from 'vscode-js-profile-core/out/esm/heap/model';
 import { IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
+import styles from '../common/client.css';
 import { IColumn } from '../common/types';
-import styles from './client.css';
 import { FlameGraph } from './flame-graph';
-import { buildColumns, buildLeftHeavyColumns, LocationAccessor } from './stacks';
+import { buildColumns, buildLeftHeavyColumns, TreeNodeAccessor } from './stacks';
 
 declare const MODEL: IProfileModel;
 
@@ -43,7 +43,7 @@ const CloseButton: FunctionComponent = () => {
     () =>
       vscode.postMessage<IReopenWithEditor>({
         type: 'reopenWith',
-        viewType: 'jsProfileVisualizer.cpuprofile.table',
+        viewType: 'jsProfileVisualizer.heapprofile.table',
         requireExtension: 'ms-vscode.vscode-js-profile-table',
       }),
     [vscode],
@@ -54,7 +54,7 @@ const CloseButton: FunctionComponent = () => {
   );
 };
 
-const CpuProfileLayout = cpuProfileLayoutFactory<LocationAccessor>();
+const HeapProfileLayout = heapProfileLayoutFactory<TreeNodeAccessor>();
 
 const Root: FunctionComponent = () => {
   const [leftHeavy, setLeftHeavy] = usePersistedState('leftHeavy', false);
@@ -77,11 +77,11 @@ const Root: FunctionComponent = () => {
   const cols = leftHeavy ? getLeftHeavyCols() : getTimelineCols();
 
   const FlameGraphWrapper: FunctionComponent<{
-    data: IQueryResults<LocationAccessor>;
+    data: IQueryResults<TreeNodeAccessor>;
   }> = useCallback(
     ({ data }) => {
       const filtered = useMemo(
-        () => LocationAccessor.getFilteredColumns(cols, data.selectedAndParents),
+        () => TreeNodeAccessor.getFilteredColumns(cols, data.selectedAndParents),
         [data],
       );
       return <FlameGraph model={MODEL} columns={cols} filtered={filtered} />;
@@ -90,9 +90,9 @@ const Root: FunctionComponent = () => {
   );
 
   return (
-    <CpuProfileLayout
+    <HeapProfileLayout
       data={{
-        data: LocationAccessor.rootAccessors(cols),
+        data: TreeNodeAccessor.rootAccessors(cols),
         getChildren: n => n.children,
         genericMatchStr: n => [n.callFrame.functionName, n.callFrame.url].join(' '),
         properties: {

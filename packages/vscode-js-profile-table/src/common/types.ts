@@ -2,8 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { IGraphNode, ILocation } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { ILocation } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { IHeapProfileNode } from 'vscode-js-profile-core/out/esm/heap/model';
 
-export type SortFn = (node: ILocation) => number;
-
-export type NodeAtDepth = { node: IGraphNode; depth: number; position: number };
+export type SortFn = (node: ILocation | IHeapProfileNode) => number;

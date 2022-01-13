@@ -9,10 +9,10 @@ import { decimalFormat, getLocationText } from 'vscode-js-profile-core/out/esm/c
 import { ILocation, IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
 import { Constants } from '../common/constants';
 import DragHandle from '../common/drag-handle';
+import styles from '../common/flame-graph.css';
 import StackList from '../common/stack-list';
 import { HighlightSource } from '../common/types';
 import useFlame from '../common/use-flame';
-import styles from './flame-graph.css';
 import { IColumn, IColumnLocation } from './stacks';
 
 export interface IBox {

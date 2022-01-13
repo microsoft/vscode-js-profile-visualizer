@@ -17,7 +17,7 @@ const tree = createTree(MODEL);
 const allChildren = Object.values(tree.children);
 const TimeViewWrapper: FunctionComponent<{
   data: IQueryResults<ITreeNode>;
-}> = ({ data }) => <TimeView root={tree} query={data} data={allChildren} />;
+}> = ({ data }) => <TimeView query={data} data={allChildren} />;
 
 const HeapProfileLayout = heapProfileLayoutFactory<ITreeNode>();
 

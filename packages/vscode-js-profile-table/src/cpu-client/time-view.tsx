@@ -8,18 +8,20 @@ import { useCallback } from 'preact/hooks';
 import * as ChevronDown from 'vscode-codicons/src/icons/chevron-down.svg';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
-import { decimalFormat } from 'vscode-js-profile-core/out/esm/cpu/display';
-import { IGraphNode } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { decimalFormat, getLocationText } from 'vscode-js-profile-core/out/esm/cpu/display';
+import { IGraphNode, ILocation } from 'vscode-js-profile-core/out/esm/cpu/model';
 import { IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
 import getGlobalUniqueId from '../common/get-global-unique-id';
 import ImpactBar from '../common/impact-bar';
 import styles from '../common/time-view.css';
-import { NodeAtDepth, SortFn } from '../common/types';
+import { SortFn } from '../common/types';
 import useTimeView from '../common/use-time-view';
 import useTimeViewRow from '../common/use-time-view-row';
 
-const selfTime: SortFn = n => n.selfTime;
-const aggTime: SortFn = n => n.aggregateTime;
+const selfTime: SortFn = n => (n as ILocation).selfTime;
+const aggTime: SortFn = n => (n as ILocation).aggregateTime;
+
+type NodeAtDepth = { node: IGraphNode; depth: number; position: number };
 
 export const TimeView: FunctionComponent<{
   query: IQueryResults<IGraphNode>;
@@ -108,13 +110,15 @@ const TimeViewRow: FunctionComponent<{
   onFocus: onFocusRaw,
   onExpandChange,
 }) => {
-  const { location, root, expand, onKeyDown, onFocus, onToggleExpand, onClick } = useTimeViewRow({
+  const { root, expand, onKeyDown, onFocus, onToggleExpand, onClick } = useTimeViewRow<IGraphNode>({
     node,
     expanded,
     onKeyDownRaw,
     onFocusRaw,
     onExpandChange,
   });
+
+  const location = getLocationText(node);
 
   return (
     <div

@@ -9,8 +9,7 @@ import { openLocation } from '../open-location';
 import { ProfileCodeLensProvider } from '../profileCodeLensProvider';
 import { ReadonlyCustomDocument } from '../readonly-custom-document';
 import { reopenWithEditor } from '../reopenWithEditor';
-import { buildModel, IProfileModel } from './model';
-import { IHeapProfileRaw } from './types';
+import { buildModel, IHeapProfileRaw, IProfileModel } from './model';
 
 export class HeapProfileEditorProvider
   implements vscode.CustomEditorProvider<ReadonlyCustomDocument<IProfileModel>>
@@ -34,8 +33,8 @@ export class HeapProfileEditorProvider
     // TODO: annotations
     // const annotations = new ProfileAnnotations();
     // const rootPath = document.userData.rootPath;
-    // for (const location of document.userData.locations) {
-    //   annotations.add(rootPath, location);
+    // for (const treeNode of document.userData.treeNodes) {
+    //   annotations.add(rootPath, treeNode);
     // }
 
     // this.lens.registerLenses(annotations);
