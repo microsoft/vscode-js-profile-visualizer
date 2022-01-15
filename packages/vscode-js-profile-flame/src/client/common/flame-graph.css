@@ -137,12 +137,6 @@
   color: var(--vscode-textLink-activeForeground);
 }
 
-.info .goToFile {
-  width: 1em;
-  display: inline-block;
-  cursor: pointer;
-}
-
 :global(.vscode-dark) .info {
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
 }
