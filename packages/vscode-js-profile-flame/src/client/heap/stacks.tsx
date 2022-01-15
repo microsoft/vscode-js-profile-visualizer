@@ -92,21 +92,13 @@ export class TreeNodeAccessor implements IHeapProfileNode {
   }
 }
 
-export const buildLeftHeavyColumns = (model: IProfileModel): IColumn[] => {
-  const tree = createTree(model);
-
-  const columns: IColumn[] = [];
-
-  let graphIdCounter = 0;
+const getRawColumns = (tree: ITreeNode) => {
   const cols: ITreeNode[] = [];
 
   const getCols = (node: ITreeNode) => {
-    for (const key in node.children) {
-      if (Object.prototype.hasOwnProperty.call(node.children, key)) {
-        const child = node.children[key];
-        getCols(child);
-      }
-    }
+    Object.values(node.children).forEach(child => {
+      getCols(child);
+    });
 
     if (node.selfSize) {
       cols.push(node);
@@ -115,11 +107,20 @@ export const buildLeftHeavyColumns = (model: IProfileModel): IColumn[] => {
 
   getCols(tree);
 
-  cols.sort((a, b) => b.selfSize - a.selfSize);
+  return cols;
+};
 
+export const buildLeftHeavyColumns = (model: IProfileModel): IColumn[] => {
+  const tree = createTree(model);
+  const rawColumns = getRawColumns(tree);
+  const columns: IColumn[] = [];
+
+  rawColumns.sort((a, b) => b.selfSize - a.selfSize);
+
+  let graphIdCounter = 0;
   let sizeOffset = 0;
-  for (let i = 0; i < cols.length; i++) {
-    const root = cols[i];
+
+  for (const root of rawColumns) {
     const rows = [
       {
         ...root,
@@ -160,30 +161,13 @@ export const buildLeftHeavyColumns = (model: IProfileModel): IColumn[] => {
  */
 export const buildColumns = (model: IProfileModel) => {
   const tree = createTree(model);
-
+  const rawColumns = getRawColumns(tree);
   const columns: IColumn[] = [];
 
   let graphIdCounter = 0;
-  const cols: ITreeNode[] = [];
-
-  const getCols = (node: ITreeNode) => {
-    for (const key in node.children) {
-      if (Object.prototype.hasOwnProperty.call(node.children, key)) {
-        const child = node.children[key];
-        getCols(child);
-      }
-    }
-
-    if (node.selfSize) {
-      cols.push(node);
-    }
-  };
-
-  getCols(tree);
-
   let sizeOffset = 0;
-  for (let i = 0; i < cols.length; i++) {
-    const root = cols[i];
+
+  for (const root of rawColumns) {
     const rows = [];
 
     for (let node: ITreeNode | undefined = root; node; node = node.parent) {
