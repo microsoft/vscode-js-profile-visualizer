@@ -67,9 +67,7 @@ export const buildModel = (profile: IHeapProfileRaw): IProfileModel => {
           sourceReference: 0,
         },
       };
-      if (node.children) {
-        nodes = nodes.concat(node.children);
-      }
+      nodes = nodes.concat(node.children);
     }
   }
 

@@ -40,9 +40,7 @@ export class HeapProfileEditorProvider
       const node = nodes.pop();
       if (node) {
         treeNodes.push(node);
-        if (node.children) {
-          nodes = nodes.concat(Object.values(node.children));
-        }
+        nodes = nodes.concat(Object.values(node.children));
       }
     }
 
