@@ -25,7 +25,7 @@ export class TreeNodeAccessor implements IHeapProfileNode {
   public readonly src?: ISourceLocation;
 
   /**
-   * Gets children of the location.
+   * Gets children of the treeNode.
    */
   public get children() {
     const children: TreeNodeAccessor[] = [];
@@ -38,10 +38,7 @@ export class TreeNodeAccessor implements IHeapProfileNode {
       if (rs && typeof rs !== 'number') {
         children.push(new TreeNodeAccessor(this.model, dx, this.y + 1));
       }
-    } while (
-      ++dx < this.model.length &&
-      this.model[dx].rows[this.y] === this.model[this.x].rows[this.y]
-    );
+    } while (++dx < this.model.length && this.model[dx].rows[this.y] === this.x);
 
     return children;
   }
