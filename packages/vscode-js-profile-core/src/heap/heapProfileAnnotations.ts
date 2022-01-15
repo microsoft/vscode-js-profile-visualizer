@@ -70,8 +70,8 @@ export class HeapProfileAnnotations extends ProfileAnnotations<IProfileInformati
           return [
             new CodeLens(range, {
               title:
-                `${decimalFormat.format(data.totalSize / 1000)}kB Total Size, ` +
-                `${decimalFormat.format(data.selfSize / 1000)}kB Self Size`,
+                `${decimalFormat.format(data.selfSize / 1000)}kB Self Size, ` +
+                `${decimalFormat.format(data.totalSize / 1000)}kB Total Size`,
               command: '',
             }),
             new CodeLens(range, {

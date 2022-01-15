@@ -145,11 +145,11 @@ const TimeViewRow: FunctionComponent<{
     >
       <div className={styles.duration} aria-labelledby="self-size-header">
         <ImpactBar impact={node.selfSize / node.totalSize} />
-        {decimalFormat.format(node.selfSize)}
+        {decimalFormat.format(node.selfSize)}kB
       </div>
       <div className={styles.duration} aria-labelledby="total-size-header">
         <ImpactBar impact={node.totalSize / root.totalSize} />
-        {decimalFormat.format(node.totalSize)}
+        {decimalFormat.format(node.totalSize)}kB
       </div>
       {!location ? (
         <div
