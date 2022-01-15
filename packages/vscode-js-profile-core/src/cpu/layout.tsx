@@ -20,9 +20,12 @@ type CpuProfileLayoutComponent<T> = FunctionComponent<{
 /**
  * Base layout component to display CPU-profile related info.
  */
-export const cpuProfileLayoutFactory =
-  <T extends {}>(): CpuProfileLayoutComponent<T> =>
-  ({ data, body: RowBody, filterFooter: FilterFooter }) => {
+export const cpuProfileLayoutFactory = <T extends {}>(): CpuProfileLayoutComponent<T> => {
+  const CpuProfileLayout: CpuProfileLayoutComponent<T> = ({
+    data,
+    body: RowBody,
+    filterFooter: FilterFooter,
+  }) => {
     const RichFilter = useMemo<RichFilterComponent<T>>(richFilter, []);
     const [filteredData, setFilteredData] = useState<IQueryResults<T> | undefined>(undefined);
     const footer = useMemo(
@@ -50,3 +53,5 @@ export const cpuProfileLayoutFactory =
       </Fragment>
     );
   };
+  return CpuProfileLayout;
+};

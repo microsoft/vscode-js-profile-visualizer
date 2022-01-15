@@ -20,9 +20,12 @@ type HeapProfileLayoutComponent<T> = FunctionComponent<{
 /**
  * Base layout component to display CPU-profile related info.
  */
-export const heapProfileLayoutFactory =
-  <T extends {}>(): HeapProfileLayoutComponent<T> =>
-  ({ data, body: RowBody, filterFooter: FilterFooter }) => {
+export const heapProfileLayoutFactory = <T extends {}>(): HeapProfileLayoutComponent<T> => {
+  const HeapProfileLayout: HeapProfileLayoutComponent<T> = ({
+    data,
+    body: RowBody,
+    filterFooter: FilterFooter,
+  }) => {
     const RichFilter = useMemo<RichFilterComponent<T>>(richFilter, []);
     const [filteredData, setFilteredData] = useState<IQueryResults<T> | undefined>(undefined);
     const footer = useMemo(
@@ -50,3 +53,5 @@ export const heapProfileLayoutFactory =
       </Fragment>
     );
   };
+  return HeapProfileLayout;
+};
