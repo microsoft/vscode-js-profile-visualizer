@@ -27,8 +27,3 @@ export const getNodeText = (node: INode) => {
 
   return `${node.src.source.path}:${node.src.lineNumber}`;
 };
-
-export const decimalFormat = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-});

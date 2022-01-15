@@ -6,10 +6,10 @@ import * as vscode from 'vscode';
 import { bundlePage } from '../bundlePage';
 import { Message } from '../common/types';
 import { openLocation } from '../open-location';
-import { ProfileAnnotations } from '../profileAnnotations';
 import { ProfileCodeLensProvider } from '../profileCodeLensProvider';
 import { ReadonlyCustomDocument } from '../readonly-custom-document';
 import { reopenWithEditor } from '../reopenWithEditor';
+import { CpuProfileAnnotations } from './cpuProfileAnnotations';
 import { buildModel, IProfileModel } from './model';
 import { ICpuProfileRaw } from './types';
 
@@ -32,7 +32,7 @@ export class CpuProfileEditorProvider
     const raw: ICpuProfileRaw = JSON.parse(new TextDecoder().decode(content));
     const document = new ReadonlyCustomDocument(uri, buildModel(raw));
 
-    const annotations = new ProfileAnnotations();
+    const annotations = new CpuProfileAnnotations();
     const rootPath = document.userData.rootPath;
     for (const location of document.userData.locations) {
       annotations.add(rootPath, location);

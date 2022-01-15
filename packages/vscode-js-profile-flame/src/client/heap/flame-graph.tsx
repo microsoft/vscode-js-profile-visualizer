@@ -5,7 +5,8 @@
 import { Fragment, FunctionComponent, h } from 'preact';
 import { MiddleOut } from 'vscode-js-profile-core/out/esm/client/middleOutCompression';
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
-import { decimalFormat, getNodeText } from 'vscode-js-profile-core/out/esm/common/display';
+import { getNodeText } from 'vscode-js-profile-core/out/esm/common/display';
+import { decimalFormat } from 'vscode-js-profile-core/out/esm/heap/display';
 import { IHeapProfileNode, IProfileModel } from 'vscode-js-profile-core/out/esm/heap/model';
 import { createTree } from 'vscode-js-profile-core/out/esm/heap/tree';
 import { Constants } from '../common/constants';
@@ -47,7 +48,7 @@ export const FlameGraph: FunctionComponent<{
   } = useFlame({
     columns,
     range: tree.totalSize,
-    unit: 'kb',
+    unit: 'kB',
     filtered,
   });
 
@@ -91,7 +92,7 @@ export const FlameGraph: FunctionComponent<{
           upperY={canvasSize.height - hovered.box.y1 + bounds.y}
           lowerY={hovered.box.y2 - bounds.y}
           src={hovered.src}
-          location={hovered.box.loc as IHeapProfileNode}
+          node={hovered.box.loc as IHeapProfileNode}
         />
       )}
       {focused && showInfo && (
@@ -107,10 +108,10 @@ const Tooltip: FunctionComponent<{
   left: number;
   upperY: number;
   lowerY: number;
-  location: IHeapProfileNode;
+  node: IHeapProfileNode;
   src: HighlightSource;
-}> = ({ left, lowerY, upperY, src, location, canvasWidth, canvasHeight }) => {
-  const label = getNodeText(location);
+}> = ({ left, lowerY, upperY, src, node, canvasWidth, canvasHeight }) => {
+  const label = getNodeText(node);
   const above = lowerY + 300 > canvasHeight && lowerY > canvasHeight / 2;
 
   const file = label?.split(/\\|\//g).pop();
@@ -127,22 +128,19 @@ const Tooltip: FunctionComponent<{
     >
       <dl>
         <dt>Function</dt>
-        <dd className={styles.function}>{location.callFrame.functionName}</dd>
+        <dd className={styles.function}>{node.callFrame.functionName}</dd>
         {label && (
           <Fragment>
             <dt>File</dt>
-            <dd
-              aria-label={file}
-              className={classes(styles.label, location.src && styles.clickable)}
-            >
+            <dd aria-label={file} className={classes(styles.label, node.src && styles.clickable)}>
               <MiddleOut aria-hidden={true} endChars={file?.length} text={label} />
             </dd>
           </Fragment>
         )}
         <dt className={styles.time}>Self Size</dt>
-        <dd className={styles.time}>{decimalFormat.format(location.selfSize / 1000)}ms</dd>
+        <dd className={styles.time}>{decimalFormat.format(node.selfSize / 1000)}kB</dd>
         <dt className={styles.time}>Total Size</dt>
-        <dd className={styles.time}>{decimalFormat.format(location.totalSize / 1000)}ms</dd>
+        <dd className={styles.time}>{decimalFormat.format(node.totalSize / 1000)}kB</dd>
       </dl>
       <div className={styles.hint}>
         Ctrl+{src === HighlightSource.Keyboard ? 'Enter' : 'Click'} to jump to file
@@ -163,9 +161,9 @@ const InfoBox: FunctionComponent<{
     <div className={styles.info}>
       <dl>
         <dt>Self Size</dt>
-        <dd>{decimalFormat.format((localLocation as IHeapProfileNode).selfSize / 1000)}kb</dd>
+        <dd>{decimalFormat.format((localLocation as IHeapProfileNode).selfSize / 1000)}kB</dd>
         <dt>Total Size</dt>
-        <dd>{decimalFormat.format((localLocation as IHeapProfileNode).totalSize / 1000)}kb</dd>
+        <dd>{decimalFormat.format((localLocation as IHeapProfileNode).totalSize / 1000)}kB</dd>
       </dl>
       <StackList box={box} columns={columns} boxes={boxes} setFocused={setFocused}></StackList>
     </div>

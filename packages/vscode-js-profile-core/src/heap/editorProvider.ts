@@ -9,7 +9,9 @@ import { openLocation } from '../open-location';
 import { ProfileCodeLensProvider } from '../profileCodeLensProvider';
 import { ReadonlyCustomDocument } from '../readonly-custom-document';
 import { reopenWithEditor } from '../reopenWithEditor';
-import { buildModel, IHeapProfileRaw, IProfileModel } from './model';
+import { HeapProfileAnnotations } from './heapProfileAnnotations';
+import { buildModel, IHeapProfileRaw, IProfileModel, ITreeNode } from './model';
+import { createTree } from './tree';
 
 export class HeapProfileEditorProvider
   implements vscode.CustomEditorProvider<ReadonlyCustomDocument<IProfileModel>>
@@ -30,14 +32,27 @@ export class HeapProfileEditorProvider
     const raw: IHeapProfileRaw = JSON.parse(new TextDecoder().decode(content));
     const document = new ReadonlyCustomDocument(uri, buildModel(raw));
 
-    // TODO: annotations
-    // const annotations = new ProfileAnnotations();
-    // const rootPath = document.userData.rootPath;
-    // for (const treeNode of document.userData.treeNodes) {
-    //   annotations.add(rootPath, treeNode);
-    // }
+    const tree = createTree(document.userData);
+    const treeNodes: ITreeNode[] = [tree];
+    let nodes: ITreeNode[] = [tree];
 
-    // this.lens.registerLenses(annotations);
+    while (nodes.length) {
+      const node = nodes.pop();
+      if (node) {
+        treeNodes.push(node);
+        if (node.children) {
+          nodes = nodes.concat(Object.values(node.children));
+        }
+      }
+    }
+
+    const annotations = new HeapProfileAnnotations();
+    const rootPath = document.userData.rootPath;
+    for (const treeNode of treeNodes) {
+      annotations.add(rootPath, treeNode);
+    }
+
+    this.lens.registerLenses(annotations);
     return document;
   }
 
