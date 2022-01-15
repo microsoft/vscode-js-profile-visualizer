@@ -2,27 +2,28 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { h, FunctionComponent, Fragment } from 'preact';
-import styles from './table-view.css';
+import { Fragment, FunctionComponent, h } from 'preact';
+import VirtualList from 'preact-virtual-list';
 import {
-  useMemo,
   useCallback,
   useContext,
-  useState,
-  useLayoutEffect,
-  useRef,
   useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
 } from 'preact/hooks';
-import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
-import { ILocation, IGraphNode } from 'vscode-js-profile-core/out/esm/cpu/model';
-import { classes } from 'vscode-js-profile-core/out/esm/client/util';
-import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/cpu/types';
-import { addToSet, removeFromSet, toggleInSet } from 'vscode-js-profile-core/out/esm/array';
 import * as ChevronDown from 'vscode-codicons/src/icons/chevron-down.svg';
 import * as ChevronRight from 'vscode-codicons/src/icons/chevron-right.svg';
+import { addToSet, removeFromSet, toggleInSet } from 'vscode-js-profile-core/out/esm/array';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
-import VirtualList from 'preact-virtual-list';
-import { getLocationText, decimalFormat } from 'vscode-js-profile-core/out/esm/cpu/display';
+import { classes } from 'vscode-js-profile-core/out/esm/client/util';
+import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
+import { getNodeText } from 'vscode-js-profile-core/out/esm/common/display';
+import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/common/types';
+import { decimalFormat } from 'vscode-js-profile-core/out/esm/cpu/display';
+import { IGraphNode, ILocation } from 'vscode-js-profile-core/out/esm/cpu/model';
+import styles from './table-view.css';
 
 type SortFn = (node: ILocation) => number;
 
@@ -197,9 +198,10 @@ const TimeViewHeader: FunctionComponent<{
       id="self-time-header"
       className={classes(styles.heading, styles.timing)}
       aria-sort={sortFn === selfTime ? 'descending' : undefined}
-      onClick={useCallback(() => onChangeSort(() => (sortFn === selfTime ? undefined : selfTime)), [
-        sortFn,
-      ])}
+      onClick={useCallback(
+        () => onChangeSort(() => (sortFn === selfTime ? undefined : selfTime)),
+        [sortFn],
+      )}
     >
       {sortFn === selfTime && <Icon i={ChevronDown} />}
       Self Time
@@ -208,9 +210,10 @@ const TimeViewHeader: FunctionComponent<{
       id="total-time-header"
       className={classes(styles.heading, styles.timing)}
       aria-sort={sortFn === aggTime ? 'descending' : undefined}
-      onClick={useCallback(() => onChangeSort(() => (sortFn === aggTime ? undefined : aggTime)), [
-        sortFn,
-      ])}
+      onClick={useCallback(
+        () => onChangeSort(() => (sortFn === aggTime ? undefined : aggTime)),
+        [sortFn],
+      )}
     >
       {sortFn === aggTime && <Icon i={ChevronDown} />}
       Total Time
@@ -268,7 +271,7 @@ const TimeViewRow: FunctionComponent<{
     root = root.parent;
   }
 
-  const location = getLocationText(node);
+  const location = getNodeText(node);
   const expand = (
     <span className={styles.expander}>
       {node.childrenSize > 0 ? <Icon i={expanded.has(node) ? ChevronDown : ChevronRight} /> : null}
