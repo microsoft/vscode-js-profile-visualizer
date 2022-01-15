@@ -20,7 +20,7 @@ export interface IProfileInformation {
  */
 export class HeapProfileAnnotations extends ProfileAnnotations<IProfileInformation, ITreeNode> {
   /**
-   * Adds a new code lens at the given location in the file.
+   * Adds a new code lens at the given treeNode in the file.
    */
   protected set(file: string, position: Position, data: ITreeNode) {
     let list = this.data.get(lowerCaseInsensitivePath(file));

@@ -18,7 +18,7 @@ type HeapProfileLayoutComponent<T> = FunctionComponent<{
 }>;
 
 /**
- * Base layout component to display CPU-profile related info.
+ * Base layout component to display heap-profile related info.
  */
 export const heapProfileLayoutFactory = <T extends {}>(): HeapProfileLayoutComponent<T> => {
   const HeapProfileLayout: HeapProfileLayoutComponent<T> = ({
