@@ -31,7 +31,12 @@ export abstract class ProfileAnnotations<DataType, NodeType extends INode> {
       );
 
       const src = node.src;
-      if (!src || src.source.sourceReference !== 0 || !src.source.path) {
+      if (
+        !src ||
+        src.source.sourceReference !== 0 ||
+        !src.source.path ||
+        src.source.path === node.callFrame.url
+      ) {
         return;
       }
 
