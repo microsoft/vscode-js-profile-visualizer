@@ -26,7 +26,7 @@ export abstract class ProfileAnnotations<DataType, NodeType extends INode> {
         for (const path of getCandidateDiskPaths(rootPath, src.source)) {
           this.set(
             path,
-            new Position(Math.max(0, src.lineNumber), Math.max(0, src.columnNumber)),
+            new Position(Math.max(0, src.lineNumber - 1), Math.max(0, src.columnNumber - 1)),
             node,
           );
         }
