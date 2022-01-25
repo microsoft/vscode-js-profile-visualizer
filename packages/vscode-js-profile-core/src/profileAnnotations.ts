@@ -21,18 +21,6 @@ export abstract class ProfileAnnotations<DataType, NodeType extends INode> {
 
   public add(rootPath: string | undefined, node: NodeType) {
     const expand = once(() => {
-      const src = node.src;
-      if (src && src.source.sourceReference === 0 && src.source.path) {
-        for (const path of getCandidateDiskPaths(rootPath, src.source)) {
-          this.set(
-            path,
-            new Position(Math.max(0, src.lineNumber - 1), Math.max(0, src.columnNumber - 1)),
-            node,
-          );
-        }
-        return;
-      }
-
       this.set(
         node.callFrame.url,
         new Position(
@@ -41,6 +29,19 @@ export abstract class ProfileAnnotations<DataType, NodeType extends INode> {
         ),
         node,
       );
+
+      const src = node.src;
+      if (!src || src.source.sourceReference !== 0 || !src.source.path) {
+        return;
+      }
+
+      for (const path of getCandidateDiskPaths(rootPath, src.source)) {
+        this.set(
+          path,
+          new Position(Math.max(0, src.lineNumber - 1), Math.max(0, src.columnNumber - 1)),
+          node,
+        );
+      }
     });
 
     this.addExpansionFn(getBasename(node.callFrame.url), expand);

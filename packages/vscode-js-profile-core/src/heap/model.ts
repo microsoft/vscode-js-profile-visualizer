@@ -74,8 +74,8 @@ const ensureSourceLocations = (profile: IHeapProfileRaw): ReadonlyArray<IAnnotat
       id,
       callFrame,
       location: {
-        lineNumber: callFrame.lineNumber,
-        columnNumber: callFrame.columnNumber,
+        lineNumber: callFrame.lineNumber + 1,
+        columnNumber: callFrame.columnNumber + 1,
         source: {
           name: maybeFileUrlToPath(callFrame.url),
           path: maybeFileUrlToPath(callFrame.url),
