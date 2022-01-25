@@ -4,9 +4,11 @@
 
 import { Protocol as Cdp } from 'devtools-protocol';
 import { categorize, INode } from '../common/model';
-import { addRelativeDiskPath, ISourceLocation } from '../location-mapping';
+import { IAnnotationLocation } from '../common/types';
+import { getBestLocation } from '../getBestLocation';
+import { ISourceLocation } from '../location-mapping';
 import { maybeFileUrlToPath } from '../path';
-import { IAnnotationLocation, ICpuProfileRaw } from './types';
+import { ICpuProfileRaw } from './types';
 
 /**
  * One measured node in the call stack. Contains the time it spent in itself,
@@ -69,24 +71,6 @@ const computeAggregateTime = (index: number, nodes: IComputedNode[]): number => 
   }
 
   return (row.aggregateTime = total);
-};
-
-const getBestLocation = (
-  profile: ICpuProfileRaw,
-  candidates: ReadonlyArray<ISourceLocation> = [],
-) => {
-  if (!profile.$vscode?.rootPath) {
-    return candidates[0];
-  }
-
-  for (const candidate of candidates) {
-    const mapped = addRelativeDiskPath(profile.$vscode.rootPath, candidate);
-    if (mapped.relativePath) {
-      return mapped;
-    }
-  }
-
-  return candidates[0];
 };
 
 /**

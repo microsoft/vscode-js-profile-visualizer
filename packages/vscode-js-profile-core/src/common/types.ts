@@ -5,6 +5,34 @@
 import { Protocol as Cdp } from 'devtools-protocol';
 import { ISourceLocation } from '../location-mapping';
 
+export interface IAnnotationLocation {
+  callFrame: Cdp.Runtime.CallFrame;
+  locations: ISourceLocation[];
+}
+
+/**
+ * Extra annotations added by js-debug.
+ */
+export interface IJsDebugAnnotations {
+  /**
+   * Workspace root path, if set.
+   */
+  rootPath?: string;
+
+  /**
+   * For each node in the profile, the list of locations in corresponds to
+   * in the workspace (if any).
+   */
+  locations: ReadonlyArray<IAnnotationLocation>;
+
+  /**
+   * Optional cell data saved from previously opening the profile as a notebook.
+   */
+  cellData?: {
+    version: number;
+  };
+}
+
 /**
  * Request from the webview to open a document
  */
