@@ -85,7 +85,7 @@ export class CpuMetric extends DerivativeMetric {
 export class HeapMetric extends Metric {
   public update(timestamp: number, metrics: IDAMetrics): void {
     if (metrics.memory /* node */) {
-      this.push(timestamp, metrics.memory.rss);
+      this.push(timestamp, metrics.memory.heapUsed);
     } else if (metrics.JSHeapUsedSize !== undefined /* Chrome */) {
       this.push(timestamp, metrics.JSHeapUsedSize);
     }
