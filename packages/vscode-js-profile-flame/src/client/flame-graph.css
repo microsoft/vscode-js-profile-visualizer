@@ -98,6 +98,16 @@
   align-items: flex-start;
 }
 
+@media (max-width: 400px) {
+  .info {
+    flex-direction: column;
+  }
+
+  .info dl {
+    margin-bottom: 1rem;
+  }
+}
+
 .info dl {
   display: grid;
   align-items: flex-start;
@@ -115,6 +125,10 @@
 
 .info ol {
   padding-left: 1em;
+}
+
+.info ol li {
+  word-break: break-all;
 }
 
 .info ol li a {
