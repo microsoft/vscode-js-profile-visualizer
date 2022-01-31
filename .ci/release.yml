@@ -26,10 +26,10 @@ jobs:
   - script: npm run compile
     displayName: 'npm run compile'
 
-  - script: vsce publish --yarn --noVerify --web -p $(vsce.token)
+  - script: vsce publish --yarn --noVerify -p $(vsce.token)
     displayName: 'flame: vsce publish'
     workingDirectory: packages/vscode-js-profile-flame
 
-  - script: vsce publish --yarn --noVerify --web -p $(vsce.token)
+  - script: vsce publish --yarn --noVerify -p $(vsce.token)
     displayName: 'table: vsce publish'
     workingDirectory: packages/vscode-js-profile-table
