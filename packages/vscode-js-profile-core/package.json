@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "node-fetch": "^2.6.1",
-    "vscode-codicons": "github:microsoft/vscode-codicons#dd1edb245d2217efcfb931c293b77b78e634e59a"
+    "@vscode/codicons": "^0.0.28"
   },
   "devDependencies": {
     "@types/node-fetch": "^2.5.5"

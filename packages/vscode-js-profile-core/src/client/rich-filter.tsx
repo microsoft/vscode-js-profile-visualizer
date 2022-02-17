@@ -2,10 +2,10 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
+import * as CaseSensitive from '@vscode/codicons/src/icons/case-sensitive.svg';
+import * as Regex from '@vscode/codicons/src/icons/regex.svg';
 import { ComponentChild, Fragment, FunctionComponent, h } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import * as CaseSensitive from 'vscode-codicons/src/icons/case-sensitive.svg';
-import * as Regex from 'vscode-codicons/src/icons/regex.svg';
 import { evaluate, IDataSource, IQueryResults } from '../ql';
 import { Filter } from './filter';
 import styles from './rich-filter.css';

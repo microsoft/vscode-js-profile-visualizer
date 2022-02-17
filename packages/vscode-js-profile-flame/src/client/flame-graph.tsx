@@ -2,9 +2,9 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
+import * as GoToFileIcon from '@vscode/codicons/src/icons/go-to-file.svg';
 import { Fragment, FunctionComponent, h } from 'preact';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import * as GoToFileIcon from 'vscode-codicons/src/icons/go-to-file.svg';
 import { binarySearch } from 'vscode-js-profile-core/out/esm/array';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
 import { MiddleOut } from 'vscode-js-profile-core/out/esm/client/middleOutCompression';

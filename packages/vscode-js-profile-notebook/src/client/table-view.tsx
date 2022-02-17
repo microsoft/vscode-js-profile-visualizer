@@ -2,27 +2,27 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { h, FunctionComponent, Fragment } from 'preact';
-import styles from './table-view.css';
+import * as ChevronDown from '@vscode/codicons/src/icons/chevron-down.svg';
+import * as ChevronRight from '@vscode/codicons/src/icons/chevron-right.svg';
+import { Fragment, FunctionComponent, h } from 'preact';
+import VirtualList from 'preact-virtual-list';
 import {
-  useMemo,
   useCallback,
   useContext,
-  useState,
-  useLayoutEffect,
-  useRef,
   useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
 } from 'preact/hooks';
-import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
-import { ILocation, IGraphNode } from 'vscode-js-profile-core/out/esm/cpu/model';
-import { classes } from 'vscode-js-profile-core/out/esm/client/util';
-import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/cpu/types';
 import { addToSet, removeFromSet, toggleInSet } from 'vscode-js-profile-core/out/esm/array';
-import * as ChevronDown from 'vscode-codicons/src/icons/chevron-down.svg';
-import * as ChevronRight from 'vscode-codicons/src/icons/chevron-right.svg';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
-import VirtualList from 'preact-virtual-list';
-import { getLocationText, decimalFormat } from 'vscode-js-profile-core/out/esm/cpu/display';
+import { classes } from 'vscode-js-profile-core/out/esm/client/util';
+import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
+import { decimalFormat, getLocationText } from 'vscode-js-profile-core/out/esm/cpu/display';
+import { IGraphNode, ILocation } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/cpu/types';
+import styles from './table-view.css';
 
 type SortFn = (node: ILocation) => number;
 

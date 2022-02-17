@@ -1,9 +1,9 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
+import * as Flame from '@vscode/codicons/src/icons/flame.svg';
 import { FunctionComponent, h, render } from 'preact';
 import { useCallback, useContext } from 'preact/hooks';
-import * as Flame from 'vscode-codicons/src/icons/flame.svg';
 import { ToggleButton } from 'vscode-js-profile-core/out/esm/client/toggle-button';
 import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
 import { createBottomUpGraph } from 'vscode-js-profile-core/out/esm/cpu/bottomUpGraph';

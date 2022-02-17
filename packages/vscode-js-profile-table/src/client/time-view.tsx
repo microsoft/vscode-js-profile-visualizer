@@ -2,6 +2,8 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
+import * as ChevronDown from '@vscode/codicons/src/icons/chevron-down.svg';
+import * as ChevronRight from '@vscode/codicons/src/icons/chevron-right.svg';
 import { Fragment, FunctionComponent, h } from 'preact';
 import VirtualList from 'preact-virtual-list';
 import {
@@ -13,8 +15,6 @@ import {
   useRef,
   useState,
 } from 'preact/hooks';
-import * as ChevronDown from 'vscode-codicons/src/icons/chevron-down.svg';
-import * as ChevronRight from 'vscode-codicons/src/icons/chevron-right.svg';
 import { addToSet, removeFromSet, toggleInSet } from 'vscode-js-profile-core/out/esm/array';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
