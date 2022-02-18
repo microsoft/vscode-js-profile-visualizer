@@ -22,6 +22,7 @@ extends:
   parameters:
     workingDirectory: packages/vscode-js-profile-table
     publishExtension: ${{ parameters.publishExtension }}
+    vscePackageArgs: --no-dependencies
     buildSteps:
       - script: npm ci
         displayName: Install dependencies
