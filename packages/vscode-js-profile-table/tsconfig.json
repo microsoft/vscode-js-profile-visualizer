@@ -1,7 +1,10 @@
 {
   "extends": "../../scripts/tsconfig.json",
   "include": ["src", "../vscode-js-profile-core/src/types"],
+  "paths": {
+    "vscode-js-profile-core/*": ["packages/vscode-js-profile-core"]
+  },
   "compilerOptions": {
-    "outDir": "out",
+    "outDir": "out"
   }
 }

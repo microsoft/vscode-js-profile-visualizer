@@ -3,19 +3,12 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
-import { ICpuProfileRaw, IAnnotationLocation } from './types';
+import { categorize, INode } from '../common/model';
+import { IAnnotationLocation } from '../common/types';
+import { getBestLocation } from '../getBestLocation';
+import { ISourceLocation } from '../location-mapping';
 import { maybeFileUrlToPath } from '../path';
-import { ISourceLocation, addRelativeDiskPath } from '../location-mapping';
-
-/**
- * Category of call frames. Grouped into system, modules, and user code.
- */
-export const enum Category {
-  System,
-  User,
-  Module,
-  Deemphasized,
-}
+import { ICpuProfileRaw } from './types';
 
 /**
  * One measured node in the call stack. Contains the time it spent in itself,
@@ -34,14 +27,10 @@ export interface IComputedNode {
 /**
  * One location in the source. Multiple nodes can reference a single location.
  */
-export interface ILocation {
-  id: number;
+export interface ILocation extends INode {
   selfTime: number;
   aggregateTime: number;
   ticks: number;
-  category: Category;
-  callFrame: Cdp.Runtime.CallFrame;
-  src?: ISourceLocation;
 }
 
 export interface IGraphNode extends ILocation {
@@ -84,40 +73,6 @@ const computeAggregateTime = (index: number, nodes: IComputedNode[]): number => 
   return (row.aggregateTime = total);
 };
 
-const getBestLocation = (
-  profile: ICpuProfileRaw,
-  candidates: ReadonlyArray<ISourceLocation> = [],
-) => {
-  if (!profile.$vscode?.rootPath) {
-    return candidates[0];
-  }
-
-  for (const candidate of candidates) {
-    const mapped = addRelativeDiskPath(profile.$vscode.rootPath, candidate);
-    if (mapped.relativePath) {
-      return mapped;
-    }
-  }
-
-  return candidates[0];
-};
-
-/**
- * Categorizes the given call frame.
- */
-const categorize = (callFrame: Cdp.Runtime.CallFrame, src: ISourceLocation | undefined) => {
-  callFrame.functionName = callFrame.functionName || '(anonymous)';
-  if (callFrame.lineNumber < 0) {
-    return Category.System;
-  }
-
-  if (callFrame.url.includes('node_modules') || !src) {
-    return Category.Module;
-  }
-
-  return Category.User;
-};
-
 /**
  * Ensures that all profile nodes have a location ID, setting them if they
  * aren't provided by default.
@@ -151,8 +106,8 @@ const ensureSourceLocations = (profile: ICpuProfileRaw): ReadonlyArray<IAnnotati
       id,
       callFrame,
       location: {
-        lineNumber: callFrame.lineNumber,
-        columnNumber: callFrame.columnNumber,
+        lineNumber: callFrame.lineNumber + 1,
+        columnNumber: callFrame.columnNumber + 1,
         source: {
           name: maybeFileUrlToPath(callFrame.url),
           path: maybeFileUrlToPath(callFrame.url),

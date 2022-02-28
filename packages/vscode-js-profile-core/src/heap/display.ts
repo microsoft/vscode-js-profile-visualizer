@@ -3,6 +3,6 @@
  *--------------------------------------------------------*/
 
 export const decimalFormat = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
+  maximumFractionDigits: 0,
+  minimumFractionDigits: 0,
 });

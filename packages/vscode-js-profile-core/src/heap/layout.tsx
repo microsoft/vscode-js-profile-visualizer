@@ -11,17 +11,17 @@ export interface IBodyProps<T> {
   data: IQueryResults<T>;
 }
 
-type CpuProfileLayoutComponent<T> = FunctionComponent<{
+type HeapProfileLayoutComponent<T> = FunctionComponent<{
   data: IDataSource<T>;
   body: ComponentType<IBodyProps<T>>;
   filterFooter?: ComponentType<{ viewType: string; requireExtension: string }>;
 }>;
 
 /**
- * Base layout component to display CPU-profile related info.
+ * Base layout component to display heap-profile related info.
  */
-export const cpuProfileLayoutFactory = <T extends {}>(): CpuProfileLayoutComponent<T> => {
-  const CpuProfileLayout: CpuProfileLayoutComponent<T> = ({
+export const heapProfileLayoutFactory = <T extends {}>(): HeapProfileLayoutComponent<T> => {
+  const HeapProfileLayout: HeapProfileLayoutComponent<T> = ({
     data,
     body: RowBody,
     filterFooter: FilterFooter,
@@ -32,7 +32,7 @@ export const cpuProfileLayoutFactory = <T extends {}>(): CpuProfileLayoutCompone
       () =>
         FilterFooter ? (
           <FilterFooter
-            viewType="jsProfileVisualizer.cpuprofile.flame"
+            viewType="jsProfileVisualizer.heapprofile.flame"
             requireExtension="ms-vscode.vscode-js-profile-flame"
           />
         ) : undefined,
@@ -53,5 +53,5 @@ export const cpuProfileLayoutFactory = <T extends {}>(): CpuProfileLayoutCompone
       </Fragment>
     );
   };
-  return CpuProfileLayout;
+  return HeapProfileLayout;
 };

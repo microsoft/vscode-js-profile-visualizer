@@ -3,21 +3,13 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
-import { Category, ILocation, IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { Category } from 'vscode-js-profile-core/out/esm/common/model';
+import { ILocation, IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
 import { ISourceLocation } from 'vscode-js-profile-core/out/esm/location-mapping';
+import { IColumn, IColumnRow } from '../common/types';
 
 const enum Constants {
   GcFunction = '(garbage collector)',
-}
-
-export interface IColumnLocation extends ILocation {
-  graphId: number; //. unique ID of the location in the graph
-}
-
-export interface IColumn {
-  x1: number;
-  x2: number;
-  rows: (IColumnLocation | number)[];
 }
 
 /**
@@ -92,9 +84,9 @@ export class LocationAccessor implements ILocation {
     }
 
     this.id = cell.id;
-    this.selfTime = cell.selfTime;
-    this.aggregateTime = cell.aggregateTime;
-    this.ticks = cell.ticks;
+    this.selfTime = (cell as ILocation).selfTime;
+    this.aggregateTime = (cell as ILocation).aggregateTime;
+    this.ticks = (cell as ILocation).ticks;
     this.category = cell.category;
     this.callFrame = cell.callFrame;
     this.src = cell.src;
@@ -111,7 +103,7 @@ interface ITopDownGraphNode {
 const createTopDownGraph = (model: IProfileModel) => {
   const graph: ITopDownGraphNode = {
     children: new Map(),
-    location: (null as unknown) as ILocation,
+    location: null as unknown as ILocation,
     aggregateTime: 0,
     selfTime: 0,
   };
@@ -248,7 +240,7 @@ const mergeColumns = (columns: IColumn[]) => {
   let lastFrameWasGc = false;
   for (let x = 1; x < columns.length; x++) {
     const col = columns[x];
-    const root = col.rows[0] as IColumnLocation;
+    const root = col.rows[0] as IColumnRow;
 
     // GC has no stack and can interrupt execution. To avoid breaking up flames,
     // show GC on top of the previous frame. Matches what chrome devtools do.
@@ -263,10 +255,10 @@ const mergeColumns = (columns: IColumn[]) => {
 
     lastFrameWasGc = false;
     for (let y = 0; y < col.rows.length; y++) {
-      const current = col.rows[y] as IColumnLocation;
+      const current = col.rows[y] as IColumnRow;
       const prevOrNumber = columns[x - 1]?.rows[y];
       if (typeof prevOrNumber === 'number') {
-        if (current.id !== (columns[prevOrNumber].rows[y] as IColumnLocation).id) {
+        if (current.id !== (columns[prevOrNumber].rows[y] as IColumnRow).id) {
           break;
         }
         col.rows[y] = prevOrNumber;
@@ -280,8 +272,8 @@ const mergeColumns = (columns: IColumn[]) => {
         typeof prevOrNumber === 'number'
           ? (columns[prevOrNumber].rows[y] as ILocation)
           : prevOrNumber;
-      prev.selfTime += current.selfTime;
-      prev.aggregateTime += current.aggregateTime;
+      (prev as ILocation).selfTime += (current as ILocation).selfTime;
+      (prev as ILocation).aggregateTime += (current as ILocation).aggregateTime;
     }
   }
 };

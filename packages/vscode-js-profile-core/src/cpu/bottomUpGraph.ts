@@ -2,7 +2,8 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { ILocation, IProfileModel, IComputedNode, IGraphNode, Category } from './model';
+import { Category } from '../common/model';
+import { IComputedNode, IGraphNode, ILocation, IProfileModel } from './model';
 
 export class BottomUpNode implements IGraphNode {
   public static root() {

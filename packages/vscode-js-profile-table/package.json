@@ -24,11 +24,13 @@
   "scripts": {
     "pack": "vsce package --yarn",
     "compile": "rimraf out && concurrently \"npm:compile:*\"",
-    "compile:client": "webpack --mode production --config webpack.client.js",
+    "compile:cpu-client": "webpack --mode production --config webpack.cpu-client.js",
+    "compile:heap-client": "webpack --mode production --config webpack.heap-client.js",
     "compile:ext": "webpack --mode production --config webpack.extension.js --target node",
     "compile:ext:web": "webpack --mode production --config webpack.extension.js --target web",
     "watch": "concurrently \"npm:watch:*\"",
-    "watch:client": "webpack --mode development --config webpack.client.js --watch",
+    "watch:cpu-client": "webpack --mode development --config webpack.cpu-client.js --watch",
+    "watch:heap-client": "webpack --mode development --config webpack.heap-client.js --watch",
     "watch:ext": "webpack --mode development --config webpack.extension.js --watch --target node"
   },
   "icon": "resources/icon.png",
@@ -38,7 +40,8 @@
     "vscode": "^1.43.0"
   },
   "activationEvents": [
-    "onCustomEditor:jsProfileVisualizer.cpuprofile.table"
+    "onCustomEditor:jsProfileVisualizer.cpuprofile.table",
+    "onCustomEditor:jsProfileVisualizer.heapprofile.table"
   ],
   "contributes": {
     "customEditors": [
@@ -49,6 +52,16 @@
         "selector": [
           {
             "filenamePattern": "*.cpuprofile"
+          }
+        ]
+      },
+      {
+        "viewType": "jsProfileVisualizer.heapprofile.table",
+        "displayName": "Heap Profile Table Visualizer",
+        "priority": "default",
+        "selector": [
+          {
+            "filenamePattern": "*.heapprofile"
           }
         ]
       }

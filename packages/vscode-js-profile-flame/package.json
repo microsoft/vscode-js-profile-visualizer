@@ -29,19 +29,22 @@
   "scripts": {
     "pack": "vsce package --yarn",
     "compile": "rimraf out && concurrently \"npm:compile:*\"",
-    "compile:client": "webpack --mode production --config webpack.client.js",
+    "compile:cpu-client": "webpack --mode production --config webpack.cpu-client.js",
+    "compile:heap-client": "webpack --mode production --config webpack.heap-client.js",
     "compile:realtime": "webpack --mode production --config webpack.realtime.js",
     "compile:ext": "webpack --mode production --config webpack.extension.js --target node",
     "compile:ext:web": "webpack --mode production --config webpack.extension.js --target web",
     "watch": "concurrently \"npm:watch:*\"",
-    "watch:client": "webpack --mode development --config webpack.client.js --watch",
+    "watch:cpu-client": "webpack --mode development --config webpack.cpu-client.js --watch",
+    "watch:heap-client": "webpack --mode development --config webpack.heap-client.js --watch",
     "watch:realtime": "webpack --mode development --config webpack.realtime.js --watch",
     "watch:ext": "webpack --mode development --config webpack.extension.js --watch --target node"
   },
   "icon": "resources/logo.png",
   "activationEvents": [
     "onView:vscode-js-profile-flame.realtime",
-    "onCustomEditor:jsProfileVisualizer.cpuprofile.flame"
+    "onCustomEditor:jsProfileVisualizer.cpuprofile.flame",
+    "onCustomEditor:jsProfileVisualizer.heapprofile.flame"
   ],
   "contributes": {
     "customEditors": [
@@ -52,6 +55,16 @@
         "selector": [
           {
             "filenamePattern": "*.cpuprofile"
+          }
+        ]
+      },
+      {
+        "viewType": "jsProfileVisualizer.heapprofile.flame",
+        "displayName": "Heap Profile Flame Graph Visualizer",
+        "priority": "option",
+        "selector": [
+          {
+            "filenamePattern": "*.heapprofile"
           }
         ]
       }
