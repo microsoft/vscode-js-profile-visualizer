@@ -17,6 +17,7 @@ module.exports = {
     '@typescript-eslint/no-use-before-define': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/interface-name-prefix': ['error', { prefixWithI: 'always' }],
+    'react/display-name': 'off',
     'react/prop-types': 'off',
     'header/header': [
       'error',

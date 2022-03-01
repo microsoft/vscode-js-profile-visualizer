@@ -5,6 +5,22 @@
 import { ILocation } from 'vscode-js-profile-core/out/esm/cpu/model';
 import { IHeapProfileNode } from 'vscode-js-profile-core/out/esm/heap/model';
 
+export interface IBaseTooltipProp {
+  canvasWidth: number;
+  canvasHeight: number;
+  left: number;
+  upperY: number;
+  lowerY: number;
+  src: HighlightSource;
+}
+
+export interface IBaseInfoBoxProp {
+  box: IBox;
+  columns: ReadonlyArray<IColumn>;
+  boxes: ReadonlyMap<number, IBox>;
+  setFocused(box: IBox): void;
+}
+
 export interface IBox {
   column: number;
   row: number;
@@ -32,7 +48,7 @@ export interface ICanvasSize {
 }
 
 export type IColumnRow = (ILocation | IHeapProfileNode) & {
-  graphId: number; //. unique ID of the location in the graph
+  graphId: number; // unique ID of the location in the graph
 };
 
 export interface IColumn {
