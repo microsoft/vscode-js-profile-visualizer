@@ -13,7 +13,7 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
-  useState
+  useState,
 } from 'preact/hooks';
 import { addToSet, removeFromSet, toggleInSet } from 'vscode-js-profile-core/out/esm/array';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
@@ -198,10 +198,9 @@ const TimeViewHeader: FunctionComponent<{
       id="self-time-header"
       className={classes(styles.heading, styles.timing)}
       aria-sort={sortFn === selfTime ? 'descending' : undefined}
-      onClick={useCallback(
-        () => onChangeSort(() => (sortFn === selfTime ? undefined : selfTime)),
-        [sortFn],
-      )}
+      onClick={useCallback(() => onChangeSort(() => (sortFn === selfTime ? undefined : selfTime)), [
+        sortFn,
+      ])}
     >
       {sortFn === selfTime && <Icon i={ChevronDown} />}
       Self Time
@@ -210,10 +209,9 @@ const TimeViewHeader: FunctionComponent<{
       id="total-time-header"
       className={classes(styles.heading, styles.timing)}
       aria-sort={sortFn === aggTime ? 'descending' : undefined}
-      onClick={useCallback(
-        () => onChangeSort(() => (sortFn === aggTime ? undefined : aggTime)),
-        [sortFn],
-      )}
+      onClick={useCallback(() => onChangeSort(() => (sortFn === aggTime ? undefined : aggTime)), [
+        sortFn,
+      ])}
     >
       {sortFn === aggTime && <Icon i={ChevronDown} />}
       Total Time

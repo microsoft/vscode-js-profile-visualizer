@@ -146,7 +146,7 @@ export const setupGl = ({
       clearTimeout(timeout);
     }
 
-    timeout = setTimeout(redraw, 2) as unknown as number;
+    timeout = (setTimeout(redraw, 2) as unknown) as number;
   };
 
   const boundsLocation = gl.getUniformLocation(boxProgram, 'bounds');

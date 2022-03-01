@@ -14,8 +14,7 @@ import { buildModel, IProfileModel } from './model';
 import { ICpuProfileRaw } from './types';
 
 export class CpuProfileEditorProvider
-  implements vscode.CustomEditorProvider<ReadonlyCustomDocument<IProfileModel>>
-{
+  implements vscode.CustomEditorProvider<ReadonlyCustomDocument<IProfileModel>> {
   public readonly onDidChangeCustomDocument = new vscode.EventEmitter<never>().event;
 
   constructor(

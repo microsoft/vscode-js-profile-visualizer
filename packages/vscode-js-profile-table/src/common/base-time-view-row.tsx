@@ -65,7 +65,7 @@ export const makeBaseTimeViewRow = <T extends IGraphNode | ITreeNode>(): Functio
     </span>
   );
 
-  const location = getNodeText(node)
+  const location = getNodeText(node);
 
   return (
     <div

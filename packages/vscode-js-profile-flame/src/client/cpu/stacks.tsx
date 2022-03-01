@@ -103,7 +103,7 @@ interface ITopDownGraphNode {
 const createTopDownGraph = (model: IProfileModel) => {
   const graph: ITopDownGraphNode = {
     children: new Map(),
-    location: null as unknown as ILocation,
+    location: (null as unknown) as ILocation,
     aggregateTime: 0,
     selfTime: 0,
   };
