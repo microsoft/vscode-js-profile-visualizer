@@ -2,11 +2,9 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 import * as Flame from '@vscode/codicons/src/icons/flame.svg';
-import * as LeftHeavyIcon from '@vscode/codicons/src/icons/graph-left.svg';
 import { Fragment, FunctionComponent, h, render } from 'preact';
 import { useCallback, useContext, useMemo } from 'preact/hooks';
 import { ToggleButton } from 'vscode-js-profile-core/out/esm/client/toggle-button';
-import { usePersistedState } from 'vscode-js-profile-core/out/esm/client/usePersistedState';
 import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
 import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/common/types';
 import { heapProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/heap/layout';
@@ -15,7 +13,7 @@ import { IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
 import styles from '../common/client.css';
 import { IColumn } from '../common/types';
 import { FlameGraph } from './flame-graph';
-import { buildColumns, buildLeftHeavyColumns, TreeNodeAccessor } from './stacks';
+import { buildColumns, TreeNodeAccessor } from './stacks';
 
 declare const MODEL: IProfileModel;
 
@@ -26,15 +24,6 @@ function getTimelineCols() {
   }
 
   return timelineCols;
-}
-
-let leftHeavyCols: IColumn[];
-function getLeftHeavyCols() {
-  if (!leftHeavyCols) {
-    leftHeavyCols = buildLeftHeavyColumns(MODEL);
-  }
-
-  return leftHeavyCols;
 }
 
 const CloseButton: FunctionComponent = () => {
@@ -57,25 +46,16 @@ const CloseButton: FunctionComponent = () => {
 const HeapProfileLayout = heapProfileLayoutFactory<TreeNodeAccessor>();
 
 const Root: FunctionComponent = () => {
-  const [leftHeavy, setLeftHeavy] = usePersistedState('leftHeavy', false);
-
   const FilterFooter: FunctionComponent = useCallback(
     () => (
       <Fragment>
-        <ToggleButton
-          icon={LeftHeavyIcon}
-          label="Toggle left-heavy view"
-          checked={leftHeavy}
-          onClick={() => setLeftHeavy(!leftHeavy)}
-        />
         <CloseButton />{' '}
       </Fragment>
     ),
-    [leftHeavy],
+    [],
   );
 
-  const cols = leftHeavy ? getLeftHeavyCols() : getTimelineCols();
-
+  const cols = getTimelineCols();
   const FlameGraphWrapper: FunctionComponent<{
     data: IQueryResults<TreeNodeAccessor>;
   }> = useCallback(
