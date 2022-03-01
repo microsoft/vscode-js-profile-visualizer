@@ -3,69 +3,38 @@
  *--------------------------------------------------------*/
 
 import * as ChevronDown from '@vscode/codicons/src/icons/chevron-down.svg';
-import { Fragment, FunctionComponent, h } from 'preact';
-import VirtualList from 'preact-virtual-list';
-import { useCallback } from 'preact/hooks';
+import { FunctionComponent, h } from 'preact';
+import { useCallback, useState } from 'preact/hooks';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
-import { getNodeText } from 'vscode-js-profile-core/out/esm/common/display';
 import { decimalFormat } from 'vscode-js-profile-core/out/esm/cpu/display';
 import { IGraphNode, ILocation } from 'vscode-js-profile-core/out/esm/cpu/model';
 import { IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
-import getGlobalUniqueId from '../common/get-global-unique-id';
+import { IRowProps, makeBaseTimeView } from '../common/base-time-view';
+import { makeBaseTimeViewRow } from '../common/base-time-view-row';
 import ImpactBar from '../common/impact-bar';
 import styles from '../common/time-view.css';
 import { SortFn } from '../common/types';
-import useTimeView from '../common/use-time-view';
-import useTimeViewRow from '../common/use-time-view-row';
 
 const selfTime: SortFn = n => (n as ILocation).selfTime;
 const aggTime: SortFn = n => (n as ILocation).aggregateTime;
 
-type NodeAtDepth = { node: IGraphNode; depth: number; position: number };
+const BaseTimeView = makeBaseTimeView<IGraphNode>();
 
 export const TimeView: FunctionComponent<{
   query: IQueryResults<IGraphNode>;
   data: IGraphNode[];
 }> = ({ data, query }) => {
-  const {
-    listRef,
-    rendered,
-    onKeyDown,
-    expanded,
-    setExpanded,
-    setFocused,
-    sortFn,
-    setSortFn,
-  } = useTimeView({ data, query, initSortFn: selfTime });
-
-  const renderRow = useCallback(
-    (row: NodeAtDepth) => (
-      <TimeViewRow
-        onKeyDown={onKeyDown}
-        node={row.node}
-        depth={row.depth}
-        position={row.position}
-        expanded={expanded}
-        onExpandChange={setExpanded}
-        onFocus={setFocused}
-      />
-    ),
-    [expanded, setExpanded, onKeyDown],
-  );
+  const [sortFn, setSortFn] = useState<SortFn | undefined>(() => selfTime);
 
   return (
-    <Fragment>
-      <TimeViewHeader sortFn={sortFn} onChangeSort={setSortFn} />
-      <VirtualList
-        ref={listRef}
-        className={styles.rows}
-        data={rendered}
-        renderRow={renderRow}
-        rowHeight={25}
-        overscanCount={100}
-      />
-    </Fragment>
+    <BaseTimeView
+      data={data}
+      sortFn={sortFn}
+      query={query}
+      header={<TimeViewHeader sortFn={sortFn} onChangeSort={setSortFn} />}
+      row={TimeViewRow}
+    />
   );
 };
 
@@ -100,47 +69,17 @@ const TimeViewHeader: FunctionComponent<{
   </div>
 );
 
-const TimeViewRow: FunctionComponent<{
-  node: IGraphNode;
-  depth: number;
-  position: number;
-  expanded: ReadonlySet<IGraphNode>;
-  onExpandChange: (expanded: ReadonlySet<IGraphNode>) => void;
-  onKeyDown?: (evt: KeyboardEvent, node: IGraphNode) => void;
-  onFocus?: (node: IGraphNode) => void;
-}> = ({
-  node,
-  depth,
-  position,
-  expanded,
-  onKeyDown: onKeyDownRaw,
-  onFocus: onFocusRaw,
-  onExpandChange,
-}) => {
-  const { root, expand, onKeyDown, onFocus, onToggleExpand, onClick } = useTimeViewRow<IGraphNode>({
-    node,
-    expanded,
-    onKeyDownRaw,
-    onFocusRaw,
-    onExpandChange,
-  });
+const BaseTimeViewRow = makeBaseTimeViewRow<IGraphNode>();
 
-  const location = getNodeText(node);
+const TimeViewRow: FunctionComponent<IRowProps<IGraphNode>> = props => {
+  const { node } = props;
+  let root = props.node;
+  while (root.parent) {
+    root = root.parent;
+  }
 
   return (
-    <div
-      className={styles.row}
-      data-row-id={getGlobalUniqueId(node)}
-      onKeyDown={onKeyDown}
-      onFocus={onFocus}
-      onClick={onToggleExpand}
-      tabIndex={0}
-      role="treeitem"
-      aria-posinset={position}
-      aria-setsize={node.parent?.childrenSize ?? 1}
-      aria-level={depth + 1}
-      aria-expanded={expanded.has(node)}
-    >
+    <BaseTimeViewRow {...props}>
       <div className={styles.duration} aria-labelledby="self-time-header">
         <ImpactBar impact={node.selfTime / root.selfTime} />
         {decimalFormat.format(node.selfTime / 1000)}ms
@@ -149,23 +88,6 @@ const TimeViewRow: FunctionComponent<{
         <ImpactBar impact={node.aggregateTime / root.aggregateTime} />
         {decimalFormat.format(node.aggregateTime / 1000)}ms
       </div>
-      {!location ? (
-        <div
-          className={classes(styles.location, styles.virtual)}
-          style={{ marginLeft: depth * 15 }}
-        >
-          {expand} <span className={styles.fn}>{node.callFrame.functionName}</span>
-        </div>
-      ) : (
-        <div className={styles.location} style={{ marginLeft: depth * 15 }}>
-          {expand} <span className={styles.fn}>{node.callFrame.functionName}</span>
-          <span className={styles.file}>
-            <a href="#" onClick={onClick}>
-              {location}
-            </a>
-          </span>
-        </div>
-      )}
-    </div>
+    </BaseTimeViewRow>
   );
 };

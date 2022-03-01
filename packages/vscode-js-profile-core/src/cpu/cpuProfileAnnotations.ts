@@ -19,7 +19,9 @@ export interface IProfileInformation {
  * up-front for very large profiles turned out to be costly (mainly in path)
  * manipulation.
  */
-export class CpuProfileAnnotations extends ProfileAnnotations<IProfileInformation, ILocation> {
+export class CpuProfileAnnotations extends ProfileAnnotations<ILocation> {
+  private readonly data = new Map<string, { position: Position; data: IProfileInformation }[]>();
+
   /**
    * Adds a new code lens at the given location in the file.
    */

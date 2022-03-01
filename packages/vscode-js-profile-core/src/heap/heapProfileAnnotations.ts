@@ -18,7 +18,9 @@ export interface IProfileInformation {
  * up-front for very large profiles turned out to be costly (mainly in path)
  * manipulation.
  */
-export class HeapProfileAnnotations extends ProfileAnnotations<IProfileInformation, ITreeNode> {
+export class HeapProfileAnnotations extends ProfileAnnotations<ITreeNode> {
+  private readonly data = new Map<string, { position: Position; data: IProfileInformation }[]>();
+
   /**
    * Adds a new code lens at the given treeNode in the file.
    */

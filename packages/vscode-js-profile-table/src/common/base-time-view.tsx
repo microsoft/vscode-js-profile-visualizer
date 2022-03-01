@@ -2,12 +2,15 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
+import { ComponentChild, ComponentType, Fragment, FunctionComponent, h } from 'preact';
+import VirtualList from 'preact-virtual-list';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { addToSet, removeFromSet, toggleInSet } from 'vscode-js-profile-core/out/esm/array';
 import { ICommonNode } from 'vscode-js-profile-core/out/esm/common/model';
 import { IGraphNode } from 'vscode-js-profile-core/out/esm/cpu/model';
 import { ITreeNode } from 'vscode-js-profile-core/out/esm/heap/model';
 import { IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
+import styles from './time-view.css';
 import { SortFn } from './types';
 
 const getGlobalUniqueId = (node: ICommonNode) => {
@@ -19,19 +22,28 @@ const getGlobalUniqueId = (node: ICommonNode) => {
   return parts.join('-');
 };
 
-const useTimeView = <T extends IGraphNode | ITreeNode>({
-  data,
-  query,
-  initSortFn,
-}: {
+type NodeAtDepth<T> = { node: T; depth: number; position: number };
+
+export interface IRowProps<T> {
+  node: T;
+  depth: number;
+  position: number;
+  expanded: boolean;
+  onExpanded: (isExpanded: boolean, target: T) => void;
+  onKeyDown: (evt: KeyboardEvent, target: T) => void;
+  onFocus: (target: T) => void;
+}
+
+export const makeBaseTimeView = <T extends IGraphNode | ITreeNode>(): FunctionComponent<{
   query: IQueryResults<T>;
   data: T[];
-  initSortFn: SortFn;
-}) => {
+  sortFn: SortFn | undefined;
+  header: ComponentChild;
+  row: ComponentType<IRowProps<T>>;
+}> => ({ data, header, query, sortFn, row: Row }) => {
   type NodeAtDepth = { node: T; depth: number; position: number };
 
   const listRef = useRef<{ base: HTMLElement }>();
-  const [sortFn, setSortFn] = useState<SortFn | undefined>(() => initSortFn);
   const [focused, setFocused] = useState<T | undefined>(undefined);
   const [expanded, setExpanded] = useState<ReadonlySet<T>>(new Set());
 
@@ -148,16 +160,45 @@ const useTimeView = <T extends IGraphNode | ITreeNode>({
     });
   }, [focused]);
 
-  return {
-    listRef,
-    rendered,
-    onKeyDown,
-    expanded,
-    setExpanded,
-    setFocused,
-    sortFn,
-    setSortFn,
-  };
-};
+  const onExpanded = (isExpanded: boolean, node: T) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (isExpanded) {
+        next.add(node);
+      } else {
+        next.delete(node);
+      }
 
-export default useTimeView;
+      return next.size !== prev.size ? next : prev;
+    });
+  };
+
+  const renderRow = useCallback(
+    (row: NodeAtDepth) => (
+      <Row
+        onKeyDown={onKeyDown}
+        node={row.node}
+        depth={row.depth}
+        position={row.position}
+        expanded={expanded.has(row.node)}
+        onExpanded={onExpanded}
+        onFocus={setFocused}
+      />
+    ),
+    [expanded, setExpanded, onKeyDown],
+  );
+
+  return (
+    <Fragment>
+      {header}
+      <VirtualList
+        ref={listRef}
+        className={styles.rows}
+        data={rendered}
+        renderRow={renderRow}
+        rowHeight={25}
+        overscanCount={100}
+      />
+    </Fragment>
+  );
+};

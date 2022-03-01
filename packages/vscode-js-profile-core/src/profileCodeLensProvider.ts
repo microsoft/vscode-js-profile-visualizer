@@ -21,7 +21,7 @@ import { ProfileAnnotations } from './profileAnnotations';
  */
 export class ProfileCodeLensProvider implements CodeLensProvider {
   private readonly changeEmitter = new EventEmitter<void>();
-  private lenses?: ProfileAnnotations<{}, INode>;
+  private lenses?: ProfileAnnotations<INode>;
 
   /**
    * @inheritdoc
@@ -31,8 +31,7 @@ export class ProfileCodeLensProvider implements CodeLensProvider {
   /**
    * Updates the set of lenses currently being displayed.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public registerLenses(lenses: ProfileAnnotations<{}, INode>): Disposable {
+  public registerLenses(lenses: ProfileAnnotations<INode>): Disposable {
     commands.executeCommand('setContext', 'jsProfileVisualizer.hasCodeLenses', true);
     this.lenses = lenses;
 

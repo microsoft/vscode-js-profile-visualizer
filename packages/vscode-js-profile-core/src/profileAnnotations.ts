@@ -15,11 +15,10 @@ export const getBasename = (pathOrUrl: string) => basenameRe.exec(pathOrUrl)?.[0
  * up-front for very large profiles turned out to be costly (mainly in path)
  * manipulation.
  */
-export abstract class ProfileAnnotations<DataType, NodeType extends INode> {
+export abstract class ProfileAnnotations<TNode extends INode> {
   protected readonly basenamesToExpand = new Map<string, (() => void)[]>();
-  protected readonly data = new Map<string, { position: Position; data: DataType }[]>();
 
-  public add(rootPath: string | undefined, node: NodeType) {
+  public add(rootPath: string | undefined, node: TNode) {
     const expand = once(() => {
       this.set(
         node.callFrame.url,
@@ -70,7 +69,7 @@ export abstract class ProfileAnnotations<DataType, NodeType extends INode> {
   /**
    * Adds a new code lens at the given location in the file.
    */
-  protected abstract set(file: string, position: Position, data: NodeType): void;
+  protected abstract set(file: string, position: Position, data: TNode): void;
 
   /**
    * Get all lenses for a file. Ordered by line number.
