@@ -2,11 +2,11 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { Fragment, FunctionComponent, h } from 'preact';
+import { FunctionComponent, h } from 'preact';
 import { decimalFormat } from 'vscode-js-profile-core/out/esm/cpu/display';
 import { ILocation, IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
 import makeBaseFlame from '../common/base-flame';
-import makeTooltip from '../common/base-flame-tooltip';
+import { BaseTooltip } from '../common/base-flame-tooltip';
 import styles from '../common/flame-graph.css';
 import StackList from '../common/stack-list';
 import { IBaseInfoBoxProp, IColumn } from '../common/types';
@@ -40,31 +40,26 @@ const InfoBox: FunctionComponent<
   );
 };
 
+const BaseFlame = makeBaseFlame<ILocation>();
+
 export const FlameGraph: FunctionComponent<{
   columns: ReadonlyArray<IColumn>;
   filtered: ReadonlyArray<number>;
   model: IProfileModel;
-}> = ({ columns, model, filtered }) => {
-  const BaseFlame = makeBaseFlame<ILocation>();
-  const Tooltip = makeTooltip<ILocation>(({ node }) => {
-    return (
-      <Fragment>
+}> = ({ columns, model, filtered }) => (
+  <BaseFlame
+    columns={columns}
+    range={model.duration}
+    unit={'ms'}
+    filtered={filtered}
+    Tooltip={props => (
+      <BaseTooltip {...props}>
         <dt className={styles.time}>Self Time</dt>
-        <dd className={styles.time}>{decimalFormat.format(node.selfTime / 1000)}ms</dd>
+        <dd className={styles.time}>{decimalFormat.format(props.node.selfTime / 1000)}ms</dd>
         <dt className={styles.time}>Aggregate Time</dt>
-        <dd className={styles.time}>{decimalFormat.format(node.aggregateTime / 1000)}ms</dd>
-      </Fragment>
-    );
-  });
-
-  return (
-    <BaseFlame
-      columns={columns}
-      range={model.duration}
-      unit={'ms'}
-      filtered={filtered}
-      Tooltip={Tooltip}
-      InfoBox={(props: IBaseInfoBoxProp) => <InfoBox {...props} model={model}></InfoBox>}
-    ></BaseFlame>
-  );
-};
+        <dd className={styles.time}>{decimalFormat.format(props.node.aggregateTime / 1000)}ms</dd>
+      </BaseTooltip>
+    )}
+    InfoBox={(props: IBaseInfoBoxProp) => <InfoBox {...props} model={model}></InfoBox>}
+  ></BaseFlame>
+);

@@ -5,15 +5,6 @@
 import { ILocation } from 'vscode-js-profile-core/out/esm/cpu/model';
 import { IHeapProfileNode } from 'vscode-js-profile-core/out/esm/heap/model';
 
-export interface IBaseTooltipProp {
-  canvasWidth: number;
-  canvasHeight: number;
-  left: number;
-  upperY: number;
-  lowerY: number;
-  src: HighlightSource;
-}
-
 export interface IBaseInfoBoxProp {
   box: IBox;
   columns: ReadonlyArray<IColumn>;
