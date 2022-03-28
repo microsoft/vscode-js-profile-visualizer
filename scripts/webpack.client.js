@@ -14,10 +14,13 @@ module.exports = (dirname, file = 'client') => ({
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.json', '.svg', '.vert', '.frag'],
-    fallback: {
-      path: require.resolve('path-browserify'),
-      os: require.resolve('os-browserify/browser'),
-    }
+    ...(
+      node ? {} : {
+        fallback: {
+          path: require.resolve('path-browserify'),
+          os: require.resolve('os-browserify/browser'),
+        }
+      }),
   },
   module: {
     rules: [

@@ -14,10 +14,13 @@ module.exports = dirname => ({
   },
   resolve: {
     extensions: ['.ts', '.js', '.json'],
-    fallback: {
-      path: require.resolve('path-browserify'),
-      os: require.resolve('os-browserify/browser'),
-    }
+    ...(
+      node ? {} : {
+        fallback: {
+          path: require.resolve('path-browserify'),
+          os: require.resolve('os-browserify/browser'),
+        }
+      }),
   },
   node: {
     __dirname: false,
