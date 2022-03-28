@@ -8,7 +8,6 @@ module.exports = (dirname, file = 'client') => ({
   entry: `./src/client/client.tsx`,
   output: {
     hashFunction: "xxhash64",
-    jsonpFunction: path.dirname(dirname).replace(/[^a-z]/gi, ''),
     path: path.join(dirname, 'out'),
     filename: `${file}.bundle.js`,
     publicPath: 'http://localhost:8116/',
