@@ -1,11 +1,13 @@
 const path = require('path');
 const production = process.argv.includes('production');
+const node = process.argv.includes('node');
 
 module.exports = (dirname, file = 'client') => ({
   mode: production ? 'production' : 'development',
   devtool: production ? false : 'source-map',
   entry: `./src/client/client.tsx`,
   output: {
+    hashFunction: "xxhash64",
     jsonpFunction: path.dirname(dirname).replace(/[^a-z]/gi, ''),
     path: path.join(dirname, 'out'),
     filename: `${file}.bundle.js`,
