@@ -1,18 +1,26 @@
 const path = require('path');
 const production = process.argv.includes('production');
+const node = process.argv.includes('node');
 
 module.exports = (dirname, file = 'client') => ({
   mode: production ? 'production' : 'development',
   devtool: production ? false : 'source-map',
   entry: `./src/client/client.tsx`,
   output: {
-    jsonpFunction: path.dirname(dirname).replace(/[^a-z]/gi, ''),
+    hashFunction: "xxhash64",
     path: path.join(dirname, 'out'),
     filename: `${file}.bundle.js`,
     publicPath: 'http://localhost:8116/',
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.json', '.svg', '.vert', '.frag'],
+    ...(
+      node ? {} : {
+        fallback: {
+          path: require.resolve('path-browserify'),
+          os: require.resolve('os-browserify/browser'),
+        }
+      }),
   },
   module: {
     rules: [
