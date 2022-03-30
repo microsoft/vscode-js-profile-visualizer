@@ -7,7 +7,6 @@ module.exports = (dirname, file = 'client') => ({
   devtool: production ? false : 'source-map',
   entry: `./src/client/client.tsx`,
   output: {
-    hashFunction: "xxhash64",
     path: path.join(dirname, 'out'),
     filename: `${file}.bundle.js`,
     publicPath: 'http://localhost:8116/',

@@ -7,7 +7,6 @@ module.exports = dirname => ({
   devtool: production ? false : 'source-map',
   entry: './src/extension.ts',
   output: {
-    hashFunction: "xxhash64",
     path: path.join(dirname, 'out'),
     filename: process.argv.includes('web') ? 'extension.web.js' : 'extension.js',
     libraryTarget: 'commonjs2',
