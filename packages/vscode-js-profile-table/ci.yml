@@ -26,6 +26,8 @@ extends:
     workingDirectory: packages/vscode-js-profile-table
     publishExtension: ${{ parameters.publishExtension }}
     vscePackageArgs: --no-dependencies
+    ghCreateRelease: true
+    ghReleaseAddChangeLog: true
     buildSteps:
       - script: npm ci
         displayName: Install dependencies
