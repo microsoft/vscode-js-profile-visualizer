@@ -37,7 +37,7 @@
   "publisher": "ms-vscode",
   "sideEffects": false,
   "engines": {
-    "vscode": "^1.43.0"
+    "vscode": "^1.67.0-insider"
   },
   "activationEvents": [
     "onCustomEditor:jsProfileVisualizer.cpuprofile.table",

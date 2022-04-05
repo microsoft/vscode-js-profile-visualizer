@@ -13,7 +13,6 @@
     "watch:table": "lerna run --stream --scope vscode-js-profile-table watch",
     "watch:flame": "lerna run --stream --scope vscode-js-profile-flame watch",
     "pack": "npm run compile && lerna run pack",
-    "version": "lerna version",
     "fmt": "prettier --write \"packages/**/*.{ts,tsx,css}\" \"!**/out/**\" && npm run test:lint -- --fix",
     "test": "concurrently \"npm:test:*\"",
     "test:lint": "eslint  \"packages/**/*.{ts,tsx}\"",
