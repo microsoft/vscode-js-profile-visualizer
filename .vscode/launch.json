@@ -20,16 +20,6 @@
         "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-flame",
         "--extensionDevelopmentPath=${workspaceFolder}/../vscode-js-debug/out"
       ]
-    },
-    {
-      "name": "Notebook",
-      "type": "pwa-extensionHost",
-      "request": "launch",
-      "runtimeExecutable": "${execPath}",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-js-profile-notebook",
-        "--extensionDevelopmentPath=${workspaceFolder}/../vscode-js-debug/out"
-      ]
     }
   ]
 }
