@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import * as chroma from 'chroma-js';
+import chroma from 'chroma-js';
 import { Constants } from '../constants';
 import { IBounds, IBox, ICanvasSize } from '../types';
 import fragmentShaderSource from './box.frag';

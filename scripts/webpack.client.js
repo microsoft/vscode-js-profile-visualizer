@@ -12,7 +12,7 @@ module.exports = (dirname, file = 'client') => ({
     publicPath: 'http://localhost:8116/',
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js', '.json', '.svg', '.vert', '.frag'],
+    extensions: ['.ts', '.tsx', '.js', '.json', '.svg', '.vert', '.frag', '.css'],
     ...(node
       ? {}
       : {

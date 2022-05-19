@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import fetch from 'node-fetch';
+import fetch from 'isomorphic-unfetch';
 
 /**
  * Downloads and displays remote content that the visualizer asks for.
@@ -29,7 +29,7 @@ export class DownloadFileProvider implements vscode.TextDocumentContentProvider 
           const text = await res.text();
           return res.ok ? text : `Unexpected ${res.status} from ${uri.query}: ${text}`;
         } catch (e) {
-          return e.stack;
+          return (e as Error).message;
         }
       },
     );
