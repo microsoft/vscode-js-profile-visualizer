@@ -68,7 +68,7 @@ export const richFilter = <T extends {}>(): RichFilterComponent<T> => ({
       );
       setError(undefined);
     } catch (e) {
-      setError(e.message);
+      setError((e as Error).message);
     }
   }, [regex, caseSensitive, text, data]);
 
