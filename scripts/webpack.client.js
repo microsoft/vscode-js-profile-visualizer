@@ -4,7 +4,7 @@ const node = process.argv.includes('node');
 
 module.exports = (dirname, file = 'client') => ({
   mode: production ? 'production' : 'development',
-  devtool: production ? false : 'source-map',
+  devtool: production ? false : 'inline-source-map',
   entry: `./src/client/client.tsx`,
   output: {
     path: path.join(dirname, 'out'),
@@ -13,16 +13,22 @@ module.exports = (dirname, file = 'client') => ({
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.json', '.svg', '.vert', '.frag'],
-    ...(
-      node ? {} : {
-        fallback: {
-          path: require.resolve('path-browserify'),
-          os: require.resolve('os-browserify/browser'),
-        }
-      }),
+    ...(node
+      ? {}
+      : {
+          fallback: {
+            path: require.resolve('path-browserify'),
+            os: require.resolve('os-browserify/browser'),
+          },
+        }),
   },
   module: {
     rules: [
+      {
+        test: /\.js$/,
+        enforce: 'pre',
+        use: ['source-map-loader'],
+      },
       {
         test: /\.tsx?$/,
         loader: 'ts-loader',

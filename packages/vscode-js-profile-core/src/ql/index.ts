@@ -3,25 +3,9 @@
  *--------------------------------------------------------*/
 
 import { compile, lex } from './parser';
+import { Property } from './types';
 
-export const enum PropertyType {
-  String,
-  Number,
-}
-
-export interface IPropertyToPrimitiveType {
-  [PropertyType.Number]: number;
-  [PropertyType.String]: string;
-}
-
-export interface IBasePropertyDefinition<TNode, TProp extends PropertyType> {
-  type: TProp;
-  accessor: (node: TNode) => IPropertyToPrimitiveType[TProp];
-}
-
-export type StringPropertyDefinition<T> = IBasePropertyDefinition<T, PropertyType.String>;
-export type NumberPropertyDefinition<T> = IBasePropertyDefinition<T, PropertyType.Number>;
-export type Property<T> = StringPropertyDefinition<T> | NumberPropertyDefinition<T>;
+export * from './types';
 
 /**
  * Data source that provides a stream of items, and includes the list of

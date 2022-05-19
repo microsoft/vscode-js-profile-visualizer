@@ -108,9 +108,9 @@ const createTopDownGraph = (model: IProfileModel) => {
     selfTime: 0,
   };
 
-  for (let i = 1; i < model.samples.length - 1; i++) {
+  for (let i = 0; i < model.samples.length - 1; i++) {
     const root = model.nodes[model.samples[i]];
-    const selfTime = model.timeDeltas[i - 1];
+    const selfTime = model.timeDeltas[i + 1];
     const locations = [root.locationId];
     for (let id = root.parent; id; id = model.nodes[id].parent) {
       locations.unshift(model.nodes[id].locationId);
@@ -201,10 +201,10 @@ export const buildColumns = (model: IProfileModel) => {
   let graphIdCounter = 0;
 
   // 1. Build initial columns
-  let timeOffset = 0;
-  for (let i = 1; i < model.samples.length - 1; i++) {
+  let timeOffset = model.timeDeltas[0];
+  for (let i = 0; i < model.samples.length; i++) {
     const root = model.nodes[model.samples[i]];
-    const selfTime = model.timeDeltas[i - 1];
+    const selfTime = model.timeDeltas[i + 1];
     const rows = [
       {
         ...model.locations[root.locationId],

@@ -2,9 +2,10 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-export const enum Constants {
-  ViewType = 'js-cpuprofile',
-  MarkdownLanguage = 'markdown',
-  QueryLanguage = 'cpuprofile',
-  TableMimeType = 'x-application/cpuprofile.table',
-}
+import { defineConfig } from 'vitest/config'
+
+export default defineConfig({
+  test: {
+    exclude: ['**/out/**', '**/node_modules/**'],
+  },
+})

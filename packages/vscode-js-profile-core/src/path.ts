@@ -3,16 +3,6 @@
  *--------------------------------------------------------*/
 
 import * as path from 'path';
-import * as vscode from 'vscode';
-
-export const exists = async (file: string) => {
-  try {
-    await vscode.workspace.fs.stat(vscode.Uri.file(file));
-    return true;
-  } catch {
-    return false;
-  }
-};
 
 /**
  * Resolves path segments properly based on whether they appear to be c:/ -style or / style.

@@ -31,6 +31,11 @@ module.exports = dirname => ({
   module: {
     rules: [
       {
+        test: /\.js$/,
+        enforce: 'pre',
+        use: ['source-map-loader'],
+      },
+      {
         test: /\.ts$/,
         loader: 'ts-loader',
         options: {
