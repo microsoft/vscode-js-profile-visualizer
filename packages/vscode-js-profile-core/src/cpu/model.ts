@@ -217,9 +217,20 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 
   // 2. The profile samples are the 'bottom-most' node, the currently running
   // code. Sum of these in the self time.
-  for (let i = 1; i < timeDeltas.length; i++) {
-    nodes[mapId(samples[i])].selfTime += timeDeltas[i - 1];
+  const duration = profile.endTime - profile.startTime;
+  let lastNodeTime = duration - timeDeltas[0];
+  for (let i = 0; i < timeDeltas.length - 1; i++) {
+    const d = timeDeltas[i + 1];
+    nodes[mapId(samples[i])].selfTime += d;
+    lastNodeTime -= d;
   }
+
+  // Add in an extra time delta for the last sample. `timeDeltas[0]` is the
+  // time before the first sample, and the time of the last sample is only
+  // derived (approximately) by the missing time in the sum of deltas. Save
+  // some work by calculating it here.
+  nodes[mapId(samples[timeDeltas.length - 1])].selfTime += lastNodeTime;
+  timeDeltas.push(lastNodeTime);
 
   // 3. Add the aggregate times for all node children and locations
   for (let i = 0; i < nodes.length; i++) {
@@ -235,6 +246,6 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
     samples: samples.map(mapId),
     timeDeltas,
     rootPath: profile.$vscode?.rootPath,
-    duration: profile.endTime - profile.startTime,
+    duration,
   };
 };

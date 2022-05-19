@@ -2,14 +2,23 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { DebugProtocol as Dap } from 'vscode-debugprotocol';
-import * as vscode from 'vscode';
-import { properRelative, exists } from './path';
-import { resolve } from 'path';
-import { ISourceLocation } from './location-mapping';
 import { Protocol as Cdp } from 'devtools-protocol';
 import { tmpdir } from 'os';
+import { resolve } from 'path';
+import * as vscode from 'vscode';
+import { DebugProtocol as Dap } from 'vscode-debugprotocol';
 import { DownloadFileProvider } from './download-file-provider';
+import { ISourceLocation } from './location-mapping';
+import { properRelative } from './path';
+
+const exists = async (file: string) => {
+  try {
+    await vscode.workspace.fs.stat(vscode.Uri.file(file));
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 /**
  * Gets the best location for display among the given set of candidates

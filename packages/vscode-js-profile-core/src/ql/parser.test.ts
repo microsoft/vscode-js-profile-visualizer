@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { expect } from 'chai';
+import { describe, expect, it } from 'vitest';
 import { IDataSource, IQuery, PropertyType } from '.';
 import { compile, lex, LexOutput, ParseError, Token } from './parser';
 
@@ -72,7 +72,9 @@ describe('ql', () => {
     ];
 
     for (const [input, output] of ttable) {
-      it(input, () => expect(lex(input).map(l => [l.token, l.text])).to.deep.equal(output));
+      it(input, () => {
+        expect(lex(input).map(l => [l.token, l.text])).to.deep.equal(output);
+      });
     }
   });
 

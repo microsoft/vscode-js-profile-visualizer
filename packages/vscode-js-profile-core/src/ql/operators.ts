@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { IPropertyToPrimitiveType, Property, PropertyType } from './index';
+import { IPropertyToPrimitiveType, Property, PropertyType } from './types';
 
 export interface IOperator<T> {
   appliesTo: T;

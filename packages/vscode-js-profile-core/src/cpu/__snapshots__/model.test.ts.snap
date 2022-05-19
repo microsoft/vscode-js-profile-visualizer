@@ -1,0 +1,121 @@
+// Vitest Snapshot v1
+
+exports[`model > models #0 1`] = `
+{
+  "duration": 1100000,
+  "locations": [
+    {
+      "aggregateTime": 900000,
+      "callFrame": {
+        "columnNumber": 0,
+        "functionName": "Native",
+        "lineNumber": 0,
+        "scriptId": "",
+        "url": "",
+      },
+      "category": 1,
+      "id": 0,
+      "selfTime": 900000,
+      "src": {
+        "columnNumber": 0,
+        "lineNumber": 0,
+        "source": {
+          "name": "",
+          "path": "",
+          "sourceReference": 0,
+        },
+      },
+      "ticks": 0,
+    },
+    {
+      "aggregateTime": 900000,
+      "callFrame": {
+        "columnNumber": 0,
+        "functionName": "func1",
+        "lineNumber": 3,
+        "scriptId": "468",
+        "url": "test.js",
+      },
+      "category": 1,
+      "id": 1,
+      "selfTime": 0,
+      "src": {
+        "columnNumber": 0,
+        "lineNumber": 3,
+        "relativePath": "test.js",
+        "source": {
+          "name": "test.js",
+          "path": "test.js",
+          "sourceReference": 0,
+        },
+      },
+      "ticks": 0,
+    },
+    {
+      "aggregateTime": 900000,
+      "callFrame": {
+        "columnNumber": 0,
+        "functionName": "<anonymous>",
+        "lineNumber": 8,
+        "scriptId": "468",
+        "url": "test.js",
+      },
+      "category": 1,
+      "id": 2,
+      "selfTime": 0,
+      "src": {
+        "columnNumber": 0,
+        "lineNumber": 8,
+        "relativePath": "test.js",
+        "source": {
+          "name": "test.js",
+          "path": "test.js",
+          "sourceReference": 0,
+        },
+      },
+      "ticks": 0,
+    },
+  ],
+  "nodes": [
+    {
+      "aggregateTime": 900000,
+      "children": [],
+      "id": 0,
+      "locationId": 0,
+      "parent": 1,
+      "selfTime": 900000,
+    },
+    {
+      "aggregateTime": 900000,
+      "children": [
+        0,
+      ],
+      "id": 1,
+      "locationId": 1,
+      "parent": 2,
+      "selfTime": 0,
+    },
+    {
+      "aggregateTime": 900000,
+      "children": [
+        1,
+      ],
+      "id": 2,
+      "locationId": 2,
+      "selfTime": 0,
+    },
+  ],
+  "rootPath": ".",
+  "samples": [
+    0,
+    0,
+    0,
+  ],
+  "timeDeltas": [
+    200000,
+    400000,
+    500000,
+    0,
+  ],
+}
+`;
