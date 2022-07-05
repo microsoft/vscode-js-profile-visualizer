@@ -229,8 +229,10 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
   // time before the first sample, and the time of the last sample is only
   // derived (approximately) by the missing time in the sum of deltas. Save
   // some work by calculating it here.
-  nodes[mapId(samples[timeDeltas.length - 1])].selfTime += lastNodeTime;
-  timeDeltas.push(lastNodeTime);
+  if (nodes.length) {
+    nodes[mapId(samples[timeDeltas.length - 1])].selfTime += lastNodeTime;
+    timeDeltas.push(lastNodeTime);
+  }
 
   // 3. Add the aggregate times for all node children and locations
   for (let i = 0; i < nodes.length; i++) {

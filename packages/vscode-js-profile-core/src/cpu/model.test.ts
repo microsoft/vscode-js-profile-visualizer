@@ -11,6 +11,17 @@ describe('model', () => {
       expect(buildModel(profiles[i])).toMatchSnapshot();
     });
   }
+
+  it('does not error on empty, profile', () => {
+    buildModel({
+      nodes: [],
+      samples: [],
+      timeDeltas: [],
+      startTime: 1654100488066000,
+      endTime: 1654100490779000,
+      $vscode: { rootPath: '.', locations: [] },
+    });
+  });
 });
 
 const profiles = [
