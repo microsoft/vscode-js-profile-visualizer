@@ -1,7 +1,7 @@
 {
   "name": "vscode-js-profile-flame",
   "displayName": "Flame Chart Visualizer for JavaScript Profiles",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Flame graph visualizer for profiles taken from the JavaScript debugger",
   "author": "Connor Peet <connor@peet.io>",
   "homepage": "https://github.com/microsoft/vscode-js-profile-visualizer#readme",
@@ -169,7 +169,7 @@
   "dependencies": {
     "@vscode/codicons": "^0.0.30",
     "chroma-js": "^2.4.2",
-    "vscode-js-profile-core": "^1.0.2",
+    "vscode-js-profile-core": "^1.0.3",
     "vscode-webview-tools": "^0.1.1"
   }
 }
