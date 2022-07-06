@@ -77,58 +77,62 @@ export const setupGl = ({
   );
 
   const boxAttributeLocation = gl.getAttribLocation(boxProgram, 'boxes');
-  const boxBuffer = gl.createVertexArray();
+  const indexBuffer = gl.createBuffer();
+  let triangleCount = 0;
 
-  let vertexCount = 0;
   const setBoxes = (boxes: ReadonlyArray<IBox>) => {
     const boxesBuffer = gl.createBuffer();
 
-    vertexCount = boxes.length * 6;
-    const positions = new Float32Array(vertexCount * 4);
+    triangleCount = boxes.length * 2;
+    const positions = new Float32Array(boxes.length * 4 * 4); // (x, y, id, cat) per box corner
+    const indexData = new Uint32Array(triangleCount * 3); // (a, b, c) per triangle
 
-    let k = 0;
+    let bi = 0;
+    let ii = 0;
     for (const box of boxes) {
-      // top left:
-      positions[k++] = box.x1;
-      positions[k++] = box.y1 - Constants.BoxHeight;
-      positions[k++] = box.loc.graphId;
-      positions[k++] = box.category;
+      const topLeft = bi >>> 2;
+      positions[bi++] = box.x1;
+      positions[bi++] = box.y1 - Constants.BoxHeight;
+      positions[bi++] = box.loc.graphId;
+      positions[bi++] = box.category;
 
-      // top right:
-      positions[k++] = box.x2;
-      positions[k++] = box.y1 - Constants.BoxHeight;
-      positions[k++] = box.loc.graphId;
-      positions[k++] = box.category;
+      const topRight = bi >>> 2;
+      positions[bi++] = box.x2;
+      positions[bi++] = box.y1 - Constants.BoxHeight;
+      positions[bi++] = box.loc.graphId;
+      positions[bi++] = box.category;
 
-      // bottom left:
-      positions[k++] = box.x1;
-      positions[k++] = box.y2 - 1 - Constants.BoxHeight;
-      positions[k++] = box.loc.graphId;
-      positions[k++] = box.category;
+      const bottomLeft = bi >>> 2;
+      positions[bi++] = box.x1;
+      positions[bi++] = box.y2 - 1 - Constants.BoxHeight;
+      positions[bi++] = box.loc.graphId;
+      positions[bi++] = box.category;
 
-      // bottom left (triangle 2):
-      positions[k++] = box.x1;
-      positions[k++] = box.y2 - 1 - Constants.BoxHeight;
-      positions[k++] = box.loc.graphId;
-      positions[k++] = box.category;
+      const bottomRight = bi >>> 2;
+      positions[bi++] = box.x2;
+      positions[bi++] = box.y2 - 1 - Constants.BoxHeight;
+      positions[bi++] = box.loc.graphId;
+      positions[bi++] = box.category;
 
-      // top right (triangle 2):
-      positions[k++] = box.x2;
-      positions[k++] = box.y1 - Constants.BoxHeight;
-      positions[k++] = box.loc.graphId;
-      positions[k++] = box.category;
+      // triangle 1:
+      indexData[ii++] = topLeft;
+      indexData[ii++] = topRight;
+      indexData[ii++] = bottomLeft;
 
-      // bottom right:
-      positions[k++] = box.x2;
-      positions[k++] = box.y2 - 1 - Constants.BoxHeight;
-      positions[k++] = box.loc.graphId;
-      positions[k++] = box.category;
+      // triangle 2:
+      indexData[ii++] = topRight;
+      indexData[ii++] = bottomLeft;
+      indexData[ii++] = bottomRight;
     }
+
+    console.assert(ii === indexData.length, 'expected to have written all indices');
+    console.assert(bi === positions.length, 'expected to have written all positions');
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData, gl.STATIC_DRAW);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, boxesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    gl.bindVertexArray(boxBuffer);
-    gl.enableVertexAttribArray(boxAttributeLocation);
     gl.vertexAttribPointer(boxAttributeLocation, 4, gl.FLOAT, false, 0, 0);
   };
 
@@ -137,7 +141,9 @@ export const setupGl = ({
    */
   const redraw = () => {
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.enableVertexAttribArray(boxAttributeLocation);
+    gl.drawElements(gl.TRIANGLES, triangleCount, gl.UNSIGNED_INT, 0);
   };
 
   let timeout: number;
@@ -146,7 +152,7 @@ export const setupGl = ({
       clearTimeout(timeout);
     }
 
-    timeout = (setTimeout(redraw, 2) as unknown) as number;
+    timeout = setTimeout(redraw, 2) as unknown as number;
   };
 
   const boundsLocation = gl.getUniformLocation(boxProgram, 'bounds');
@@ -168,10 +174,9 @@ export const setupGl = ({
       return;
     }
 
-    const rgba = chroma(color)
-      .rgba()
-      .map(r => r / 255) as [number, number, number, number];
-    gl.uniform4f(focusColorLocation, ...rgba);
+    const rgba = chroma(color).rgba();
+    rgba[3] = 255;
+    gl.uniform4fv(focusColorLocation, new Float32Array(rgba.map(r => r / 255)));
   };
 
   const setPrimaryColor = (color: string) => {
