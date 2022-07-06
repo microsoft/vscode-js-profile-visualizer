@@ -77,42 +77,42 @@ export const setupGl = ({
   );
 
   const boxAttributeLocation = gl.getAttribLocation(boxProgram, 'boxes');
-  const indexBuffer = gl.createBuffer();
-  let triangleCount = 0;
+  const vertexBuffer = gl.createBuffer();
+  let vertexCount = 0;
 
   const setBoxes = (boxes: ReadonlyArray<IBox>) => {
     const boxesBuffer = gl.createBuffer();
 
-    triangleCount = boxes.length * 2;
+    vertexCount = boxes.length * 2 * 3; // 2 triangles, 3 verticies each
     const positions = new Float32Array(boxes.length * 4 * 4); // (x, y, id, cat) per box corner
-    const indexData = new Uint32Array(triangleCount * 3); // (a, b, c) per triangle
+    const indexData = new Uint32Array(vertexCount);
 
-    let bi = 0;
+    let pi = 0;
     let ii = 0;
     for (const box of boxes) {
-      const topLeft = bi >>> 2;
-      positions[bi++] = box.x1;
-      positions[bi++] = box.y1 - Constants.BoxHeight;
-      positions[bi++] = box.loc.graphId;
-      positions[bi++] = box.category;
+      const topLeft = pi >>> 2;
+      positions[pi++] = box.x1;
+      positions[pi++] = box.y1 - Constants.BoxHeight;
+      positions[pi++] = box.loc.graphId;
+      positions[pi++] = box.category;
 
-      const topRight = bi >>> 2;
-      positions[bi++] = box.x2;
-      positions[bi++] = box.y1 - Constants.BoxHeight;
-      positions[bi++] = box.loc.graphId;
-      positions[bi++] = box.category;
+      const topRight = pi >>> 2;
+      positions[pi++] = box.x2;
+      positions[pi++] = box.y1 - Constants.BoxHeight;
+      positions[pi++] = box.loc.graphId;
+      positions[pi++] = box.category;
 
-      const bottomLeft = bi >>> 2;
-      positions[bi++] = box.x1;
-      positions[bi++] = box.y2 - 1 - Constants.BoxHeight;
-      positions[bi++] = box.loc.graphId;
-      positions[bi++] = box.category;
+      const bottomLeft = pi >>> 2;
+      positions[pi++] = box.x1;
+      positions[pi++] = box.y2 - 1 - Constants.BoxHeight;
+      positions[pi++] = box.loc.graphId;
+      positions[pi++] = box.category;
 
-      const bottomRight = bi >>> 2;
-      positions[bi++] = box.x2;
-      positions[bi++] = box.y2 - 1 - Constants.BoxHeight;
-      positions[bi++] = box.loc.graphId;
-      positions[bi++] = box.category;
+      const bottomRight = pi >>> 2;
+      positions[pi++] = box.x2;
+      positions[pi++] = box.y2 - 1 - Constants.BoxHeight;
+      positions[pi++] = box.loc.graphId;
+      positions[pi++] = box.category;
 
       // triangle 1:
       indexData[ii++] = topLeft;
@@ -126,9 +126,9 @@ export const setupGl = ({
     }
 
     console.assert(ii === indexData.length, 'expected to have written all indices');
-    console.assert(bi === positions.length, 'expected to have written all positions');
+    console.assert(pi === positions.length, 'expected to have written all positions');
 
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData, gl.STATIC_DRAW);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, boxesBuffer);
@@ -141,9 +141,9 @@ export const setupGl = ({
    */
   const redraw = () => {
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexBuffer);
     gl.enableVertexAttribArray(boxAttributeLocation);
-    gl.drawElements(gl.TRIANGLES, triangleCount, gl.UNSIGNED_INT, 0);
+    gl.drawElements(gl.TRIANGLES, vertexCount, gl.UNSIGNED_INT, 0);
   };
 
   let timeout: number;
