@@ -1,6 +1,6 @@
 # vscode-js-profile-visualizer
 
-A custom editor for viewing `.cpuprofile` files in VS Code. Pairs well with out new [JavaScript debugger](https://github.com/microsoft/vscode-js-debug).
+A custom editor for viewing `.cpuprofile` files in VS Code. Pairs well with our new [JavaScript debugger](https://github.com/microsoft/vscode-js-debug).
 
 ![](./table.png)
 ![](./flame.png)
