@@ -2,7 +2,7 @@
   "name": "vscode-js-profile-flame",
   "displayName": "Flame Chart Visualizer for JavaScript Profiles",
   "version": "1.0.4",
-  "description": "Flame graph visualizer for profiles taken from the JavaScript debugger",
+  "description": "Flame graph visualizer for CPU profiles taken from the JavaScript debugger",
   "author": "Connor Peet <connor@peet.io>",
   "homepage": "https://github.com/microsoft/vscode-js-profile-visualizer#readme",
   "license": "MIT",
