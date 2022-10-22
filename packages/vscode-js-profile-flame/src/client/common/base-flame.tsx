@@ -507,7 +507,9 @@ const makeBaseFlame = <T extends IHeapProfileNode | ILocation>(): FunctionCompon
         openBox(box, evt);
       } else if (box) {
         zoomToBox(box);
-      } else {
+      } else if (evt.ctrlKey || evt.button === 2) {
+        // Zoom out fully on ctrl+click or right click since left button drags
+        // and clicks are often ambiguous
         setBounds({ minX: 0, maxX: 1, y: 0, level: 0 });
       }
 
