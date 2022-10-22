@@ -17,14 +17,22 @@ export function activate(context: vscode.ExtensionContext) {
       new CpuProfileEditorProvider(
         lenses,
         vscode.Uri.joinPath(context.extensionUri, 'out', 'cpu-client.bundle.js'),
-      ),
+      ), {
+        webviewOptions: {
+          retainContextWhenHidden: true
+        }
+      }
     ),
     vscode.window.registerCustomEditorProvider(
       'jsProfileVisualizer.heapprofile.table',
       new HeapProfileEditorProvider(
         lenses,
         vscode.Uri.joinPath(context.extensionUri, 'out', 'heap-client.bundle.js'),
-      ),
+      ), {
+        webviewOptions: {
+          retainContextWhenHidden: true
+        }
+      }
     ),
     vscode.workspace.registerTextDocumentContentProvider(
       'js-viz-download',
