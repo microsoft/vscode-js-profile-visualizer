@@ -7,6 +7,8 @@
 .row {
   display: flex;
   height: 23px;
+  cursor: default;
+  user-select: none;
 }
 
 .row:focus {
@@ -98,7 +100,6 @@
 .expander {
   background: none;
   opacity: 0.7;
-  cursor: pointer;
   outline: 0;
   border: 0;
 }
