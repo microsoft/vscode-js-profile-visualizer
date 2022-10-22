@@ -1,10 +1,10 @@
 .wrapper {
-  background: var(--vscode-editor-background);
+  background: var(--vscode-input-background);
   flex-grow: 1;
   display: flex;
   align-items: center;
   border: 1px solid transparent;
-  background: var(--vscode-input-background);
+  border-radius: 2px;
 }
 
 .wrapper:focus-within {
