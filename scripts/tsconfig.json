@@ -10,13 +10,14 @@
 		"declaration": false,
 		"sourceMap": true,
 		"strict": true,
-    "jsx": "react",
+		"jsx": "react",
 		"jsxFactory": "h",
 		"moduleResolution": "node",
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
 		"noUnusedParameters": true,
-		"esModuleInterop": true
+		"esModuleInterop": true,
+		"preserveWatchOutput": true
 	},
 	"exclude": [
 		"node_modules",
