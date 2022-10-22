@@ -109,7 +109,7 @@
   width: 1em;
 }
 
-.expander:hover {
+.row:hover .expander {
   opacity: 1;
 }
 
