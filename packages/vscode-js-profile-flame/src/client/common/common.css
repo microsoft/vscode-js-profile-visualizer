@@ -1,3 +1,7 @@
+.function {
+  font-family: var(--vscode-editor-font-family);
+}
+
 .goToFile {
   width: 1em;
   display: inline-block;

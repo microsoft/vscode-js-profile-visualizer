@@ -86,7 +86,7 @@ const BoxLink: FunctionComponent<{ box: IBox; onClick(box: IBox): void; link?: b
   const locText = getNodeText(box.loc);
   const linkContent = (
     <Fragment>
-      {box.loc.callFrame.functionName} <em>({locText})</em>
+      <span className={styles.function}>{box.loc.callFrame.functionName}</span> <em title={locText}>{locText}</em>
     </Fragment>
   );
 

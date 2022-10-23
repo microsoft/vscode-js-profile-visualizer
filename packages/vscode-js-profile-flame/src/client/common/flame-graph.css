@@ -96,6 +96,8 @@
   padding: 1rem;
   display: flex;
   align-items: flex-start;
+  flex: 0 0 auto;
+  overflow: hidden;
 }
 
 @media (max-width: 400px) {
@@ -125,21 +127,31 @@
 
 .info ol {
   padding-left: 1em;
+  overflow: hidden;
 }
 
 .info ol li {
-  word-break: break-all;
+  white-space: nowrap;
+  display: flex;
+  flex: 0 0 auto;
+  line-height: 1.5em;
 }
 
 .info ol li a {
   padding: 0.1em 0;
-  display: inline-block;
+  display: flex;
   cursor: pointer;
   color: var(--vscode-editor-foreground);
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .info ol li em {
   font-style: normal;
+  direction: rtl;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  padding-left: 2em;
 }
 
 .info ol li a em {
