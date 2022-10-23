@@ -136,23 +136,25 @@ export const setupGl = ({
     gl.vertexAttribPointer(boxAttributeLocation, 4, gl.FLOAT, false, 0, 0);
   };
 
+  let timeout: number;
+
   /**
    * Redraws the set of arrays on the screen.
    */
   const redraw = () => {
+    timeout = 0;
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexBuffer);
     gl.enableVertexAttribArray(boxAttributeLocation);
     gl.drawElements(gl.TRIANGLES, vertexCount, gl.UNSIGNED_INT, 0);
   };
 
-  let timeout: number;
   const debounceRedraw = () => {
     if (timeout) {
-      clearTimeout(timeout);
+      return;
     }
 
-    timeout = setTimeout(redraw, 2) as unknown as number;
+    timeout = requestAnimationFrame(redraw) as unknown as number;
   };
 
   const boundsLocation = gl.getUniformLocation(boxProgram, 'bounds');
