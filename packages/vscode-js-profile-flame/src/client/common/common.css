@@ -7,3 +7,13 @@
   display: inline-block;
   cursor: pointer;
 }
+
+.lineNumber {
+  padding: 3px 4px;
+  border-radius: 11px;
+  font-size: 11px;
+  min-width: 18px;
+  min-height: 18px;
+  background-color: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+}
