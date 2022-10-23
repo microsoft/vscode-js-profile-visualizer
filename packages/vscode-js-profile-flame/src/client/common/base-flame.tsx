@@ -32,10 +32,24 @@ import { setupGl } from './webgl/boxes';
 
 const clamp = (min: number, v: number, max: number) => Math.max(Math.min(v, max), min);
 
-const timelineFormat = new Intl.NumberFormat(undefined, {
-  maximumSignificantDigits: 3,
-  minimumSignificantDigits: 3,
-});
+/**
+ * Formats a timestamp for the current locale, the number of decimal digits
+ * depends upon the total range being looked at.
+ */
+function formatTimestamp(timestampMicroseconds: number, rangeMicroseconds: number) {
+  const rangeMilliseconds = rangeMicroseconds / 1000
+  let precision = 0;
+  if (rangeMilliseconds < 1) {
+    precision = 2;
+  } else if (rangeMilliseconds < 10) {
+    precision = 1;
+  }
+
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: precision,
+    maximumFractionDigits: precision
+  }).format(timestampMicroseconds / 1000);
+}
 
 const dpr = window.devicePixelRatio || 1;
 
@@ -204,18 +218,22 @@ const makeBaseFlame = <T extends IHeapProfileNode | ILocation>(): FunctionCompon
     webContext.strokeStyle = cssVariables['editorRuler-foreground'];
     webContext.lineWidth = 1 / dpr;
 
+    // Timeline min spacing
+    // Timeline max spacing
+
     const labels = Math.round(canvasSize.width / Constants.TimelineLabelSpacing);
     const spacing = canvasSize.width / labels;
 
-    const timeRange = range * (bounds.maxX - bounds.minX);
     const timeStart = range * bounds.minX;
+    const timeEnd = range * bounds.maxX;
+    const timeRange = timeEnd - timeStart;
 
     webContext.beginPath();
     for (let i = 1; i <= labels; i++) {
       const time = (i / labels) * timeRange + timeStart;
       const x = i * spacing;
       webContext.fillText(
-        `${timelineFormat.format(time / 1000)}${unit}`,
+        `${formatTimestamp(time, timeRange)}${unit}`,
         x - 3,
         Constants.TimelineHeight / 2,
       );

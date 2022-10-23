@@ -7,7 +7,7 @@ export const enum Constants {
   TextColor = '#fff',
   BoxColor = '#000',
   TimelineHeight = 22,
-  TimelineLabelSpacing = 200,
+  TimelineLabelSpacing = 100,
   MinWindow = 0.005,
   ExtraYBuffer = 300,
   DefaultStackLimit = 7,
