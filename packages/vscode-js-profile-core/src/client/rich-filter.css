@@ -1,4 +1,9 @@
 .f {
   display: flex;
   align-items: center;
+  background: var(--vscode-editorWidget-background);
+  box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
+  height: 33px;
+  padding: 4px;
+  box-sizing: border-box;
 }
