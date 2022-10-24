@@ -86,6 +86,7 @@
 .fn {
   max-width: 80%;
   text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .file {
@@ -95,6 +96,7 @@
   margin-left: 2em;
   font-size: 0.8em;
   opacity: 0.8;
+  flex-shrink: 1;
 }
 
 .expander {
@@ -102,6 +104,7 @@
   opacity: 0.7;
   outline: 0;
   border: 0;
+  flex-shrink: 0;
 }
 
 .expander svg,
