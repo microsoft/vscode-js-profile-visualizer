@@ -218,9 +218,6 @@ const makeBaseFlame = <T extends IHeapProfileNode | ILocation>(): FunctionCompon
     webContext.strokeStyle = cssVariables['editorRuler-foreground'];
     webContext.lineWidth = 1 / dpr;
 
-    // Timeline min spacing
-    // Timeline max spacing
-
     const labels = Math.round(canvasSize.width / Constants.TimelineLabelSpacing);
     const spacing = canvasSize.width / labels;
 
