@@ -148,48 +148,50 @@ const makeBaseFlame = <T extends IHeapProfileNode | ILocation>(): FunctionCompon
       return;
     }
 
-    webContext.clearRect(0, Constants.TimelineHeight, canvasSize.width, canvasSize.height);
-    webContext.save();
-    webContext.beginPath();
-    webContext.rect(0, Constants.TimelineHeight, canvasSize.width, canvasSize.height);
+    requestAnimationFrame(() => {
+      webContext.clearRect(0, Constants.TimelineHeight, canvasSize.width, canvasSize.height);
+      webContext.save();
+      webContext.beginPath();
+      webContext.rect(0, Constants.TimelineHeight, canvasSize.width, canvasSize.height);
+      webContext.clip();
 
-    for (const box of rawBoxes.boxById.values()) {
-      if (box.y2 < bounds.y) {
-        continue;
+      for (const box of rawBoxes.boxById.values()) {
+        if (box.y2 < bounds.y) {
+          continue;
+        }
+
+        if (box.y1 > bounds.y + canvasSize.height) {
+          continue;
+        }
+
+        const xScale = canvasSize.width / (bounds.maxX - bounds.minX);
+        const x1 = Math.max(0, (box.x1 - bounds.minX) * xScale);
+        if (x1 > canvasSize.width) {
+          continue;
+        }
+
+        const x2 = (box.x2 - bounds.minX) * xScale;
+        if (x2 < 0) {
+          continue;
+        }
+
+        const width = x2 - x1;
+        if (width < 10) {
+          continue;
+        }
+
+        textCache.drawText(
+          webContext,
+          box.text,
+          x1 + 3,
+          box.y1 - bounds.y + 3,
+          width - 6,
+          Constants.BoxHeight,
+        );
       }
 
-      if (box.y1 > bounds.y + canvasSize.height) {
-        continue;
-      }
-
-      const xScale = canvasSize.width / (bounds.maxX - bounds.minX);
-      const x1 = Math.max(0, (box.x1 - bounds.minX) * xScale);
-      if (x1 > canvasSize.width) {
-        continue;
-      }
-
-      const x2 = (box.x2 - bounds.minX) * xScale;
-      if (x2 < 0) {
-        continue;
-      }
-
-      const width = x2 - x1;
-      if (width < 10) {
-        continue;
-      }
-
-      textCache.drawText(
-        webContext,
-        box.text,
-        x1 + 3,
-        box.y1 - bounds.y + 3,
-        width - 6,
-        Constants.BoxHeight,
-      );
-    }
-
-    webContext.clip();
-    webContext.restore();
+      webContext.restore();
+    });
   }, [webContext, bounds, rawBoxes, canvasSize, cssVariables]);
 
   // Re-render the zoom indicator when bounds change
