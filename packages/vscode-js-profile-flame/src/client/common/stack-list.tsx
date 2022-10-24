@@ -84,9 +84,11 @@ const BoxLink: FunctionComponent<{ box: IBox; onClick(box: IBox): void; link?: b
 
   const click = useCallback(() => onClick(box), [box, onClick]);
   const locText = getNodeText(box.loc);
+  const lineCol = locText?.match(/:(\d+(:\d+)?)$/)?.[1];
+  const locFile = locText?.substring(0, locText.length - (lineCol ? lineCol.length + 1 : 0));
   const linkContent = (
     <Fragment>
-      {box.loc.callFrame.functionName} <em>({locText})</em>
+      <span className={styles.function}>{box.loc.callFrame.functionName}</span> <em title={locFile}>{locFile} <span className={styles.lineNumber}>{lineCol}</span></em>
     </Fragment>
   );
 
