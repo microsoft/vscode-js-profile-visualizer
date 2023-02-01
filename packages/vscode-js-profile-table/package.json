@@ -39,10 +39,6 @@
   "engines": {
     "vscode": "^1.67.0-insider"
   },
-  "activationEvents": [
-    "onCustomEditor:jsProfileVisualizer.cpuprofile.table",
-    "onCustomEditor:jsProfileVisualizer.heapprofile.table"
-  ],
   "contributes": {
     "customEditors": [
       {

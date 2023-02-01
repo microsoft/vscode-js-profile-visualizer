@@ -41,11 +41,6 @@
     "watch:ext": "webpack --mode development --config webpack.extension.js --watch --target node"
   },
   "icon": "resources/logo.png",
-  "activationEvents": [
-    "onView:vscode-js-profile-flame.realtime",
-    "onCustomEditor:jsProfileVisualizer.cpuprofile.flame",
-    "onCustomEditor:jsProfileVisualizer.heapprofile.flame"
-  ],
   "contributes": {
     "customEditors": [
       {
