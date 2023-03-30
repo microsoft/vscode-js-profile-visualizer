@@ -9,11 +9,80 @@
 }
 
 .lineNumber {
-  padding: 3px 4px;
-  border-radius: 11px;
-  font-size: 11px;
-  min-width: 18px;
-  min-height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.lineNumber span {
   background-color: var(--vscode-badge-background);
   color: var(--vscode-badge-foreground);
+  opacity: 0.6;
+
+  padding: 3px 6px;
+  border-radius: 11px;
+  min-width: 18px;
+  min-height: 18px;
+  line-height: 11px;
+  font-weight: 400;
+  text-align: center;
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+.stackList {
+  display: grid;
+  grid-template-columns: min-content 1fr min-content;
+  padding-left: 1em;
+  overflow: hidden;
+  font-size: 11px;
+  flex-grow: 1;
+}
+
+.stackRow {
+  display: contents;
+  line-height: 2em;
+  color: currentColor;
+  cursor: pointer;
+}
+
+.stackRow > * {
+  padding: 0 3px;
+}
+
+.stackRow > *:first-child {
+  padding-left: 4px;
+}
+
+.stackRow > *:last-child {
+  padding-left: 4px;
+}
+
+.stackRow:hover > * {
+  color: var(--vscode-list-hoverForeground);
+  background: var(--vscode-list-hoverBackground);
+}
+
+.stackList dt,
+.stackList dd {
+  white-space: nowrap;
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.stackList dt {
+  font-family: var(--vscode-editor-font-family);
+  color: var(--vscode-foreground);
+}
+
+.stackList dd {
+  align-items: center;
+  color: var(--vscode-list-deemphasizedForeground) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  flex-grow: 1;
+}
+
+.more {
+  cursor: pointer;
 }

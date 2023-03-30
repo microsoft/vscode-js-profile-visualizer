@@ -33,6 +33,12 @@ import { setupGl } from './webgl/boxes';
 const clamp = (min: number, v: number, max: number) => Math.max(Math.min(v, max), min);
 
 /**
+ * Smallest range that can be shown. Below this level, boxes fail to render
+ * due to floating point precision issues.
+ */
+const smallestZoomableRange = 1e-7;
+
+/**
  * Formats a timestamp for the current locale, the number of decimal digits
  * depends upon the total range being looked at.
  */
@@ -474,15 +480,16 @@ const makeBaseFlame = <T extends IHeapProfileNode | ILocation>(): FunctionCompon
         return;
       }
 
+      const scale = 1 + clamp(-0.5, evt.deltaY, 2);
       const range = bounds.maxX - bounds.minX;
-      const center = bounds.minX + (range * (evt.pageX - left)) / width;
-      const scale = evt.deltaY / -400;
-      setBounds({
-        minX: Math.max(0, bounds.minX + scale * (center - bounds.minX)),
-        maxX: Math.min(1, bounds.maxX - scale * (bounds.maxX - center)),
-        y: bounds.y,
-        level: bounds.level,
-      });
+      const newRange = Math.max(smallestZoomableRange, range * scale);
+
+      // 0-1 range of the distance from the center to the left/right edge
+      const dleft = (evt.pageX - left) / width;
+      const minX = Math.max(0, bounds.minX + dleft * (range - newRange));
+      const maxX = Math.min(1, minX + newRange);
+      const next = { minX, maxX, y: bounds.y, level: bounds.level };
+      setBounds(next);
 
       evt.preventDefault();
     },
@@ -523,7 +530,7 @@ const makeBaseFlame = <T extends IHeapProfileNode | ILocation>(): FunctionCompon
       if (box && (evt.ctrlKey || evt.metaKey)) {
         openBox(box, evt);
       } else if (box) {
-        zoomToBox(box);
+        setFocused(box);
       } else if (evt.ctrlKey || evt.button === 2) {
         // Zoom out fully on ctrl+click or right click since left button drags
         // and clicks are often ambiguous

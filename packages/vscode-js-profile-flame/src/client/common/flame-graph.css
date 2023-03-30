@@ -105,36 +105,24 @@
     flex-direction: column;
   }
 
-  .info dl {
+  .times {
     margin-bottom: 1rem;
   }
 }
 
-.info dl {
+.times {
   display: grid;
   align-items: flex-start;
   grid-template-columns: 80px 100px;
   grid-gap: 0.7rem 0.5rem;
 }
 
-.info dt {
+.times dt {
   opacity: 0.8;
 }
 
-.info dt small {
+.times dt small {
   display: block;
-}
-
-.info ol {
-  padding-left: 1em;
-  overflow: hidden;
-}
-
-.info ol li {
-  white-space: nowrap;
-  display: flex;
-  flex: 0 0 auto;
-  line-height: 1.5em;
 }
 
 .info ol li a {

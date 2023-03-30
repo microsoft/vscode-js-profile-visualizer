@@ -39,31 +39,28 @@ const StackList: FunctionComponent<{
   const shouldTruncateStack = stack.length >= Constants.DefaultStackLimit + 3 && limitedStack;
 
   return (
-    <ol start={0}>
+    <dl start={0} className={styles.stackList}>
       {stack.map(
         (b, i) =>
           (!shouldTruncateStack || i < Constants.DefaultStackLimit) && (
-            <li key={i}>
-              <BoxLink box={b} onClick={setFocused} link={i > 0} />
-            </li>
+            <BoxLink box={b} onClick={setFocused} key={i} />
           ),
       )}
       {shouldTruncateStack && (
-        <li>
-          <a onClick={() => setLimitedStack(false)}>
-            <em>{stack.length - Constants.DefaultStackLimit} more...</em>
-          </a>
-        </li>
+        <Fragment>
+          <dt>...</dt>
+          <dd>
+            <a onClick={() => setLimitedStack(false)} className={styles.more}>
+              <em>{stack.length - Constants.DefaultStackLimit} more...</em>
+            </a>
+          </dd>
+        </Fragment>
       )}
-    </ol>
+    </dl>
   );
 };
 
-const BoxLink: FunctionComponent<{ box: IBox; onClick(box: IBox): void; link?: boolean }> = ({
-  box,
-  onClick,
-  link,
-}) => {
+const BoxLink: FunctionComponent<{ box: IBox; onClick(box: IBox): void }> = ({ box, onClick }) => {
   const vscode = useContext(VsCodeApi) as IVscodeApi;
   const open = useCallback(
     (evt: { altKey: boolean }) => {
@@ -86,25 +83,26 @@ const BoxLink: FunctionComponent<{ box: IBox; onClick(box: IBox): void; link?: b
   const locText = getNodeText(box.loc);
   const lineCol = locText?.match(/:(\d+(:\d+)?)$/)?.[1];
   const locFile = locText?.substring(0, locText.length - (lineCol ? lineCol.length + 1 : 0));
-  const linkContent = (
-    <Fragment>
-      <span className={styles.function}>{box.loc.callFrame.functionName}</span> <em title={locFile}>{locFile} <span className={styles.lineNumber}>{lineCol}</span></em>
-    </Fragment>
-  );
 
   return (
-    <Fragment>
-      {link ? <a onClick={click}>{linkContent}</a> : linkContent}
-      {box.loc.src?.source.path && (
-        <Icon
-          i={GoToFileIcon}
-          className={styles.goToFile}
-          onClick={open}
-          role="button"
-          title="Go to File"
-        />
-      )}
-    </Fragment>
+    <div className={styles.stackRow} onClick={click}>
+      <dt>{box.loc.callFrame.functionName}</dt>
+      <dd title={locFile}>
+        {locFile}{' '}
+        {box.loc.src?.source.path && (
+          <Icon
+            i={GoToFileIcon}
+            className={styles.goToFile}
+            onClick={open}
+            role="button"
+            title="Go to File"
+          />
+        )}
+      </dd>
+      <span className={styles.lineNumber}>
+        <span>L{lineCol}</span>
+      </span>
+    </div>
   );
 };
 
