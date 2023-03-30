@@ -21,7 +21,7 @@ const InfoBox: FunctionComponent<
 
   return (
     <div className={styles.info}>
-      <dl>
+      <dl className={styles.times}>
         <dt>Self Time</dt>
         <dd>{decimalFormat.format((localLocation as ILocation).selfTime / 1000)}ms</dd>
         <dt>Total Time</dt>
