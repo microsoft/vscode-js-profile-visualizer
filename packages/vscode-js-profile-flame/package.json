@@ -164,7 +164,7 @@
   "dependencies": {
     "@vscode/codicons": "^0.0.30",
     "chroma-js": "^2.4.2",
-    "vscode-js-profile-core": "^1.0.5",
+    "vscode-js-profile-core": "*",
     "vscode-webview-tools": "^0.1.1"
   }
 }
