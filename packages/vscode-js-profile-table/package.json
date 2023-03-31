@@ -37,7 +37,7 @@
   "publisher": "ms-vscode",
   "sideEffects": false,
   "engines": {
-    "vscode": "^1.67.0-insider"
+    "vscode": "^1.74.0"
   },
   "contributes": {
     "customEditors": [
