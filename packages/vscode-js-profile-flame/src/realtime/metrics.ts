@@ -144,6 +144,46 @@ export class ResidentSetMetric extends Metric {
   }
 }
 
+export class ExternalMetric extends Metric {
+  public update(timestamp: number, metrics: IDAMetrics): void {
+    if (metrics.memory /* node */) {
+      this.push(timestamp, metrics.memory.external);
+    }
+  }
+
+  public format(metric: number): string {
+    return formatSize(metric);
+  }
+
+  public short(): string {
+    return 'External';
+  }
+
+  public name(): string {
+    return 'External Memory';
+  }
+}
+
+export class ArrayBuffersMetric extends Metric {
+  public update(timestamp: number, metrics: IDAMetrics): void {
+    if (metrics.memory /* node */) {
+      this.push(timestamp, metrics.memory.arrayBuffers);
+    }
+  }
+
+  public format(metric: number): string {
+    return formatSize(metric);
+  }
+
+  public short(): string {
+    return 'ArrayBuffer';
+  }
+
+  public name(): string {
+    return 'ArrayBuffer Memory';
+  }
+}
+
 export class DOMNodes extends Metric {
   public update(timestamp: number, metrics: IDAMetrics): void {
     if (metrics.Nodes) {
@@ -209,6 +249,8 @@ export const createMetrics = () => [
   new HeapMetric(),
   new HeapTotalMetric(),
   new ResidentSetMetric(),
+  new ExternalMetric(),
+  new ArrayBuffersMetric(),
   new DOMNodes(),
   new LayoutCount(),
   new StyleRecalcs(),
