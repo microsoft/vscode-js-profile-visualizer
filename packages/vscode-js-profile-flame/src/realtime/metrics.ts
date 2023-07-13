@@ -104,6 +104,86 @@ export class HeapMetric extends Metric {
   }
 }
 
+export class HeapTotalMetric extends Metric {
+  public update(timestamp: number, metrics: IDAMetrics): void {
+    if (metrics.memory /* node */) {
+      this.push(timestamp, metrics.memory.heapTotal);
+    }
+  }
+
+  public format(metric: number): string {
+    return formatSize(metric);
+  }
+
+  public short(): string {
+    return 'Heap Total';
+  }
+
+  public name(): string {
+    return 'Heap Total';
+  }
+}
+
+export class ResidentSetMetric extends Metric {
+  public update(timestamp: number, metrics: IDAMetrics): void {
+    if (metrics.memory /* node */) {
+      this.push(timestamp, metrics.memory.rss);
+    }
+  }
+
+  public format(metric: number): string {
+    return formatSize(metric);
+  }
+
+  public short(): string {
+    return 'RSS';
+  }
+
+  public name(): string {
+    return 'Resident Set Size';
+  }
+}
+
+export class ExternalMetric extends Metric {
+  public update(timestamp: number, metrics: IDAMetrics): void {
+    if (metrics.memory /* node */) {
+      this.push(timestamp, metrics.memory.external);
+    }
+  }
+
+  public format(metric: number): string {
+    return formatSize(metric);
+  }
+
+  public short(): string {
+    return 'External';
+  }
+
+  public name(): string {
+    return 'External Memory';
+  }
+}
+
+export class ArrayBuffersMetric extends Metric {
+  public update(timestamp: number, metrics: IDAMetrics): void {
+    if (metrics.memory /* node */) {
+      this.push(timestamp, metrics.memory.arrayBuffers);
+    }
+  }
+
+  public format(metric: number): string {
+    return formatSize(metric);
+  }
+
+  public short(): string {
+    return 'ArrayBuffer';
+  }
+
+  public name(): string {
+    return 'ArrayBuffer Memory';
+  }
+}
+
 export class DOMNodes extends Metric {
   public update(timestamp: number, metrics: IDAMetrics): void {
     if (metrics.Nodes) {
@@ -167,6 +247,10 @@ export class StyleRecalcs extends DerivativeMetric {
 export const createMetrics = () => [
   new CpuMetric(),
   new HeapMetric(),
+  new HeapTotalMetric(),
+  new ResidentSetMetric(),
+  new ExternalMetric(),
+  new ArrayBuffersMetric(),
   new DOMNodes(),
   new LayoutCount(),
   new StyleRecalcs(),
