@@ -172,6 +172,8 @@ export const setupGl = ({
   };
 
   const setFocusColor = (color: string) => {
+    color = color.trim();
+
     if (!chroma.valid(color)) {
       return;
     }
@@ -182,6 +184,8 @@ export const setupGl = ({
   };
 
   const setPrimaryColor = (color: string) => {
+    color = color.trim();
+
     if (!chroma.valid(color)) {
       return;
     }
