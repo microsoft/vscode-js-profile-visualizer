@@ -21,7 +21,7 @@ parameters:
 extends:
   template: azure-pipelines/extension/stable.yml@templates
   parameters:
-    workingDirectory: packages/vscode-js-profile-flame
+    workingDirectory: $(Build.SourcesDirectory)/packages/vscode-js-profile-flame
     publishExtension: ${{ parameters.publishExtension }}
     vscePackageArgs: --no-dependencies
     buildSteps:
