@@ -5,7 +5,10 @@
 import { CustomDocument, Uri } from 'vscode';
 
 export class ReadonlyCustomDocument<TData> implements CustomDocument {
-  constructor(public readonly uri: Uri, public readonly userData: TData) {}
+  constructor(
+    public readonly uri: Uri,
+    public readonly userData: TData,
+  ) {}
 
   /**
    * @inheritdoc

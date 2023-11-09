@@ -2,15 +2,6 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-interface INode {
-  text: string;
-  nextOldest?: INode;
-  x: number;
-  y: number;
-  width: number;
-  row: number;
-}
-
 /**
  * An LRU cache that holds rendered text.
  */
@@ -21,7 +12,11 @@ export class TextCache {
   public readonly charHeight: number;
   private capacity = 128;
 
-  constructor(font: string, color: string, private readonly scale: number) {
+  constructor(
+    font: string,
+    color: string,
+    private readonly scale: number,
+  ) {
     const canvas = document.createElement('canvas');
     canvas.width = screen.width;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

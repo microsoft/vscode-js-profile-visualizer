@@ -17,88 +17,88 @@ import { IRowProps } from './base-time-view';
 import getGlobalUniqueId from './get-global-unique-id';
 import styles from './time-view.css';
 
-export const makeBaseTimeViewRow = <T extends IGraphNode | ITreeNode>(): FunctionComponent<
-  IRowProps<T>
-> => ({
-  node,
-  depth,
-  expanded,
-  position,
-  onKeyDown: onKeyDownRaw,
-  onFocus: onFocusRaw,
-  onExpanded,
-  children,
-}) => {
-  const vscode = useContext(VsCodeApi);
-  const onClick = useCallback(
-    (evt: MouseEvent) =>
-      vscode.postMessage<IOpenDocumentMessage>({
-        type: 'openDocument',
-        callFrame: node.callFrame,
-        location: (node as IGraphNode).src,
-        toSide: evt.altKey,
-      }),
-    [vscode, node],
-  );
+export const makeBaseTimeViewRow =
+  <T extends IGraphNode | ITreeNode>(): FunctionComponent<IRowProps<T>> =>
+  ({
+    node,
+    depth,
+    expanded,
+    position,
+    onKeyDown: onKeyDownRaw,
+    onFocus: onFocusRaw,
+    onExpanded,
+    children,
+  }) => {
+    const vscode = useContext(VsCodeApi);
+    const onClick = useCallback(
+      (evt: MouseEvent) =>
+        vscode.postMessage<IOpenDocumentMessage>({
+          type: 'openDocument',
+          callFrame: node.callFrame,
+          location: (node as IGraphNode).src,
+          toSide: evt.altKey,
+        }),
+      [vscode, node],
+    );
 
-  const onToggleExpand = useCallback(() => onExpanded(!expanded, node), [expanded, node]);
+    const onToggleExpand = useCallback(() => onExpanded(!expanded, node), [expanded, node]);
 
-  const onKeyDown = useCallback(
-    (evt: KeyboardEvent) => {
-      onKeyDownRaw?.(evt, node);
-    },
-    [onKeyDownRaw, node],
-  );
+    const onKeyDown = useCallback(
+      (evt: KeyboardEvent) => {
+        onKeyDownRaw?.(evt, node);
+      },
+      [onKeyDownRaw, node],
+    );
 
-  const onFocus = useCallback(() => {
-    onFocusRaw?.(node);
-  }, [onFocusRaw, node]);
+    const onFocus = useCallback(() => {
+      onFocusRaw?.(node);
+    }, [onFocusRaw, node]);
 
-  let root = node;
-  while (root.parent) {
-    root = root.parent as T;
-  }
+    let root = node;
+    while (root.parent) {
+      root = root.parent as T;
+    }
 
-  const expand = (
-    <span className={styles.expander}>
-      {node.childrenSize > 0 ? <Icon i={expanded ? ChevronDown : ChevronRight} /> : null}
-    </span>
-  );
+    const expand = (
+      <span className={styles.expander}>
+        {node.childrenSize > 0 ? <Icon i={expanded ? ChevronDown : ChevronRight} /> : null}
+      </span>
+    );
 
-  const location = getNodeText(node);
+    const location = getNodeText(node);
 
-  return (
-    <div
-      className={styles.row}
-      data-row-id={getGlobalUniqueId(node)}
-      onKeyDown={onKeyDown}
-      onFocus={onFocus}
-      onClick={onToggleExpand}
-      tabIndex={0}
-      role="treeitem"
-      aria-posinset={position}
-      aria-setsize={node.parent?.childrenSize ?? 1}
-      aria-level={depth + 1}
-      aria-expanded={expanded}
-    >
-      {children}
-      {!location ? (
-        <div
-          className={classes(styles.location, styles.virtual)}
-          style={{ marginLeft: depth * 15 }}
-        >
-          {expand} <span className={styles.fn}>{node.callFrame.functionName}</span>
-        </div>
-      ) : (
-        <div className={styles.location} style={{ marginLeft: depth * 15 }}>
-          {expand} <span className={styles.fn}>{node.callFrame.functionName}</span>
-          <span className={styles.file}>
-            <a href="#" onClick={onClick}>
-              {location}
-            </a>
-          </span>
-        </div>
-      )}
-    </div>
-  );
-};
+    return (
+      <div
+        className={styles.row}
+        data-row-id={getGlobalUniqueId(node)}
+        onKeyDown={onKeyDown}
+        onFocus={onFocus}
+        onClick={onToggleExpand}
+        tabIndex={0}
+        role="treeitem"
+        aria-posinset={position}
+        aria-setsize={node.parent?.childrenSize ?? 1}
+        aria-level={depth + 1}
+        aria-expanded={expanded}
+      >
+        {children}
+        {!location ? (
+          <div
+            className={classes(styles.location, styles.virtual)}
+            style={{ marginLeft: depth * 15 }}
+          >
+            {expand} <span className={styles.fn}>{node.callFrame.functionName}</span>
+          </div>
+        ) : (
+          <div className={styles.location} style={{ marginLeft: depth * 15 }}>
+            {expand} <span className={styles.fn}>{node.callFrame.functionName}</span>
+            <span className={styles.file}>
+              <a href="#" onClick={onClick}>
+                {location}
+              </a>
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };

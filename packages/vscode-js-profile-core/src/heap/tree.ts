@@ -39,7 +39,10 @@ export class TreeNode implements ITreeNode {
     return this.node.src;
   }
 
-  constructor(public readonly node: IProfileModelNode, public readonly parent?: TreeNode) {
+  constructor(
+    public readonly node: IProfileModelNode,
+    public readonly parent?: TreeNode,
+  ) {
     this.category = categorize(node.callFrame, undefined);
   }
 

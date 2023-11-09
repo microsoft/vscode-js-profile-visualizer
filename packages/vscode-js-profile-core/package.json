@@ -14,10 +14,6 @@
     "watch:css": "npm run compile:css && chokidar \"src/**/*.css\" -c \"cpy --parents --cwd=src '**/*.css' ../out/esm\""
   },
   "dependencies": {
-    "@vscode/codicons": "^0.0.30",
-    "isomorphic-unfetch": "^3.1.0"
-  },
-  "devDependencies": {
-    "@types/node-fetch": "^2.6.1"
+    "@vscode/codicons": "^0.0.35"
   }
 }

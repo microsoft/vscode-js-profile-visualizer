@@ -6,7 +6,7 @@ import * as CaseSensitive from '@vscode/codicons/src/icons/case-sensitive.svg';
 import * as Regex from '@vscode/codicons/src/icons/regex.svg';
 import { ComponentChild, Fragment, FunctionComponent, h } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import { evaluate, IDataSource, IQueryResults } from '../ql';
+import { IDataSource, IQueryResults, evaluate } from '../ql';
 import { Filter } from './filter';
 import styles from './rich-filter.css';
 import { ToggleButton } from './toggle-button';
@@ -45,58 +45,55 @@ export type RichFilterComponent<T> = FunctionComponent<{
   foot?: ComponentChild;
 }>;
 
-export const richFilter = <T extends {}>(): RichFilterComponent<T> => ({
-  placeholder,
-  data,
-  onChange,
-  foot,
-}) => {
-  const [regex, setRegex] = useState(false);
-  const [caseSensitive, setCaseSensitive] = useState(false);
-  const [text, setText] = usePersistedState('filterText', '');
-  const [error, setError] = useState<string | undefined>(undefined);
+export const richFilter =
+  <T,>(): RichFilterComponent<T> =>
+  ({ placeholder, data, onChange, foot }) => {
+    const [regex, setRegex] = useState(false);
+    const [caseSensitive, setCaseSensitive] = useState(false);
+    const [text, setText] = usePersistedState('filterText', '');
+    const [error, setError] = useState<string | undefined>(undefined);
 
-  useEffect(() => {
-    try {
-      onChange(
-        evaluate({
-          input: text,
-          regex,
-          caseSensitive,
-          datasource: data,
-        }),
-      );
-      setError(undefined);
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }, [regex, caseSensitive, text, data]);
+    useEffect(() => {
+      try {
+        onChange(
+          evaluate({
+            input: text,
+            regex,
+            caseSensitive,
+            datasource: data,
+          }),
+        );
+        setError(undefined);
+      } catch (e) {
+        setError((e as Error).message);
+      }
+    }, [regex, caseSensitive, text, data]);
 
-  return (
-    <div className={styles.f}>
-      <Filter
-        value={text}
-        placeholder={placeholder}
-        onChange={setText}
-        foot={
-          <Fragment>
-            <ToggleButton
-              icon={CaseSensitive}
-              label="Match Case"
-              checked={caseSensitive}
-              onChange={setCaseSensitive}
-            />
-            <ToggleButton
-              icon={Regex}
-              label="Use Regular Expression"
-              checked={regex}
-              onChange={setRegex}
-            />
-          </Fragment>
-        }
-      />
-      {error && <div className={styles.error}>{error}</div>}
-      {foot}
-    </div>
-  );
-};
+    return (
+      <div className={styles.f}>
+        <Filter
+          value={text}
+          placeholder={placeholder}
+          onChange={setText}
+          foot={
+            <Fragment>
+              <ToggleButton
+                icon={CaseSensitive}
+                label="Match Case"
+                checked={caseSensitive}
+                onChange={setCaseSensitive}
+              />
+              <ToggleButton
+                icon={Regex}
+                label="Use Regular Expression"
+                checked={regex}
+                onChange={setRegex}
+              />
+            </Fragment>
+          }
+        />
+        {error && <div className={styles.error}>{error}</div>}
+        {foot}
+      </div>
+    );
+  };

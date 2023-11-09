@@ -5,10 +5,8 @@
 import { Color, observeColors } from 'vscode-webview-tools';
 import { Metric } from './baseMetric';
 import { createMetrics } from './metrics';
-import { getSteps, ISettings, MessageType } from './protocol';
+import { ISettings, MessageType, getSteps } from './protocol';
 import { IVscodeApi } from './vscodeApi';
-
-declare const DEFAULT_ENABLED_METRICS: number[];
 
 export class Settings {
   private changeListeners: (() => void)[] = [];

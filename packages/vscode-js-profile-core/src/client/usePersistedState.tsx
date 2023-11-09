@@ -9,7 +9,7 @@ import { IVscodeApi, VsCodeApi } from './vscodeApi';
 /**
  * Like useState, but also persists changes to the VS Code webview API.
  */
-export const usePersistedState = <T extends unknown>(key: string, defaultValue: T) => {
+export const usePersistedState = <T,>(key: string, defaultValue: T) => {
   const vscode = useContext(VsCodeApi) as IVscodeApi<{ [key: string]: T }>;
   const [value, setValue] = useState(vscode.getState()?.[key] ?? defaultValue);
 

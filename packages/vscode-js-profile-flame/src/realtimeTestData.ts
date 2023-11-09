@@ -17,7 +17,7 @@ export function sendTestData(webviewView: vscode.WebviewView) {
       data: {
         timestamp: Date.now(),
         cpu: { system: cpuTime, user: cpuTime },
-        memory: ({ rss: (Math.sin(x) * 20 + 40) * 1024 * 1024 } as unknown) as NodeJS.MemoryUsage,
+        memory: { rss: (Math.sin(x) * 20 + 40) * 1024 * 1024 } as unknown as NodeJS.MemoryUsage,
       },
     };
     x += 0.1;

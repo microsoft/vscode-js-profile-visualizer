@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 import { ComponentType, Fragment, FunctionComponent, h } from 'preact';
 import { useMemo, useState } from 'preact/hooks';
-import { richFilter, RichFilterComponent } from '../client/rich-filter';
+import { RichFilterComponent, richFilter } from '../client/rich-filter';
 import styles from '../common/layout.css';
 import { IDataSource, IQueryResults } from '../ql';
 
@@ -20,7 +20,7 @@ type CpuProfileLayoutComponent<T> = FunctionComponent<{
 /**
  * Base layout component to display CPU-profile related info.
  */
-export const cpuProfileLayoutFactory = <T extends {}>(): CpuProfileLayoutComponent<T> => {
+export const cpuProfileLayoutFactory = <T,>(): CpuProfileLayoutComponent<T> => {
   const CpuProfileLayout: CpuProfileLayoutComponent<T> = ({
     data,
     body: RowBody,

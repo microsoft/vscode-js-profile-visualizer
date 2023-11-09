@@ -6,6 +6,8 @@ import { Metric } from './baseMetric';
 import { Canvas } from './canvas';
 import { Settings } from './settings';
 
+/* eslint-disable @typescript-eslint/no-duplicate-enum-values */
+
 export const enum Sizing {
   LabelHeight = 18,
   RulerWidth = 1,

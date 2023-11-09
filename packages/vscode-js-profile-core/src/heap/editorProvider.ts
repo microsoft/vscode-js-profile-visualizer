@@ -14,7 +14,8 @@ import { buildModel, IHeapProfileRaw, IProfileModel, ITreeNode } from './model';
 import { createTree } from './tree';
 
 export class HeapProfileEditorProvider
-  implements vscode.CustomEditorProvider<ReadonlyCustomDocument<IProfileModel>> {
+  implements vscode.CustomEditorProvider<ReadonlyCustomDocument<IProfileModel>>
+{
   public readonly onDidChangeCustomDocument = new vscode.EventEmitter<never>().event;
 
   constructor(
