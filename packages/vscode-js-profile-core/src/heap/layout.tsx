@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 import { ComponentType, Fragment, FunctionComponent, h } from 'preact';
 import { useMemo, useState } from 'preact/hooks';
-import { richFilter, RichFilterComponent } from '../client/rich-filter';
+import { RichFilterComponent, richFilter } from '../client/rich-filter';
 import styles from '../common/layout.css';
 import { IDataSource, IQueryResults } from '../ql';
 
@@ -20,7 +20,7 @@ type HeapProfileLayoutComponent<T> = FunctionComponent<{
 /**
  * Base layout component to display heap-profile related info.
  */
-export const heapProfileLayoutFactory = <T extends {}>(): HeapProfileLayoutComponent<T> => {
+export const heapProfileLayoutFactory = <T,>(): HeapProfileLayoutComponent<T> => {
   const HeapProfileLayout: HeapProfileLayoutComponent<T> = ({
     data,
     body: RowBody,

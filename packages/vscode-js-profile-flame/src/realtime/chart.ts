@@ -31,7 +31,11 @@ export class Chart {
     return this.elements.container;
   }
 
-  constructor(private width: number, private height: number, private readonly settings: Settings) {
+  constructor(
+    private width: number,
+    private height: number,
+    private readonly settings: Settings,
+  ) {
     this.setConfiguratorOpen(width / height < autoOpenAspectRatio);
     this.applySettings();
     this.frameCanvas.onHoverIndex = () => this.updateValueElements();

@@ -3,7 +3,6 @@
  *--------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import fetch from 'isomorphic-unfetch';
 
 /**
  * Downloads and displays remote content that the visualizer asks for.

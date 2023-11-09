@@ -6,7 +6,10 @@ import { IQuery, PropertyType } from '.';
 import { operators } from './operators';
 
 export class ParseError extends Error {
-  constructor(message: string, public readonly index: number) {
+  constructor(
+    message: string,
+    public readonly index: number,
+  ) {
     super(message);
   }
 }

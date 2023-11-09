@@ -49,9 +49,10 @@ const TimeViewHeader: FunctionComponent<{
       id="self-size-header"
       className={classes(styles.heading, styles.timing)}
       aria-sort={sortFn === selfSize ? 'descending' : undefined}
-      onClick={useCallback(() => onChangeSort(() => (sortFn === selfSize ? undefined : selfSize)), [
-        sortFn,
-      ])}
+      onClick={useCallback(
+        () => onChangeSort(() => (sortFn === selfSize ? undefined : selfSize)),
+        [sortFn],
+      )}
     >
       {sortFn === selfSize && <Icon i={ChevronDown} />}
       Self Size

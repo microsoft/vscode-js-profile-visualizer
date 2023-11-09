@@ -14,7 +14,11 @@ export class Canvas {
   public readonly ctx = this.elem.getContext('2d') as CanvasRenderingContext2D;
   protected scale = 1;
 
-  constructor(public width: number, public height: number, protected readonly settings: Settings) {
+  constructor(
+    public width: number,
+    public height: number,
+    protected readonly settings: Settings,
+  ) {
     this.updateSize(width, height, true);
   }
 

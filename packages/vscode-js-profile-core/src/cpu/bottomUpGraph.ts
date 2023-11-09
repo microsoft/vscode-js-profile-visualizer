@@ -45,7 +45,10 @@ export class BottomUpNode implements IGraphNode {
     return this.location.category;
   }
 
-  constructor(public readonly location: ILocation, public readonly parent?: BottomUpNode) {}
+  constructor(
+    public readonly location: ILocation,
+    public readonly parent?: BottomUpNode,
+  ) {}
 
   public addNode(node: IComputedNode) {
     this.selfTime += node.selfTime;

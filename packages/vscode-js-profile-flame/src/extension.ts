@@ -28,11 +28,12 @@ export function activate(context: vscode.ExtensionContext) {
       new CpuProfileEditorProvider(
         new ProfileCodeLensProvider(),
         vscode.Uri.joinPath(context.extensionUri, 'out', 'cpu-client.bundle.js'),
-      ), {
+      ),
+      {
         webviewOptions: {
-          retainContextWhenHidden: true
-        }
-      }
+          retainContextWhenHidden: true,
+        },
+      },
     ),
 
     vscode.window.registerCustomEditorProvider(
@@ -40,11 +41,12 @@ export function activate(context: vscode.ExtensionContext) {
       new HeapProfileEditorProvider(
         new ProfileCodeLensProvider(),
         vscode.Uri.joinPath(context.extensionUri, 'out', 'heap-client.bundle.js'),
-      ), {
+      ),
+      {
         webviewOptions: {
-          retainContextWhenHidden: true
-        }
-      }
+          retainContextWhenHidden: true,
+        },
+      },
     ),
 
     vscode.window.registerWebviewViewProvider(RealtimeWebviewProvider.viewType, realtime),
