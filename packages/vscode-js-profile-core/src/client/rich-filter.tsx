@@ -8,6 +8,7 @@ import { ComponentChild, Fragment, FunctionComponent, h } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { IDataSource, IQueryResults, evaluate } from '../ql';
 import { Filter } from './filter';
+import { FilterBar } from './filterBar';
 import styles from './rich-filter.css';
 import { ToggleButton } from './toggle-button';
 import { usePersistedState } from './usePersistedState';
@@ -70,7 +71,7 @@ export const richFilter =
     }, [regex, caseSensitive, text, data]);
 
     return (
-      <div className={styles.f}>
+      <FilterBar>
         <Filter
           value={text}
           placeholder={placeholder}
@@ -94,6 +95,6 @@ export const richFilter =
         />
         {error && <div className={styles.error}>{error}</div>}
         {foot}
-      </div>
+      </FilterBar>
     );
   };

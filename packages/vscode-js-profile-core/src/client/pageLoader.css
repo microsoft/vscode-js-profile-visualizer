@@ -1,0 +1,29 @@
+.progress {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 2px;
+	pointer-events: none;
+	overflow: hidden;
+	z-index: 1;
+}
+
+.progress::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	width: 2%;
+	animation-name: progress;
+	animation-duration: 4s;
+	animation-iteration-count: infinite;
+	animation-timing-function: linear;
+	transform: translate3d(0px, 0px, 0px);
+	background: var(--vscode-progressBar-background);
+}
+
+@keyframes progress {
+	from { transform: translateX(0%) scaleX(1) }
+	50% { transform: translateX(2500%) scaleX(3) }
+	to { transform: translateX(4900%) scaleX(1) }
+}

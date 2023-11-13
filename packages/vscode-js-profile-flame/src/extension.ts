@@ -13,6 +13,7 @@ const allConfig = [Config.PollInterval, Config.ViewDuration, Config.Easing];
 import * as vscode from 'vscode';
 import { CpuProfileEditorProvider } from 'vscode-js-profile-core/out/cpu/editorProvider';
 import { HeapProfileEditorProvider } from 'vscode-js-profile-core/out/heap/editorProvider';
+import { HeapSnapshotEditorProvider } from 'vscode-js-profile-core/out/heapsnapshot/editorProvider';
 import { ProfileCodeLensProvider } from 'vscode-js-profile-core/out/profileCodeLensProvider';
 import { createMetrics } from './realtime/metrics';
 import { readRealtimeSettings, RealtimeSessionTracker } from './realtimeSessionTracker';
@@ -47,6 +48,15 @@ export function activate(context: vscode.ExtensionContext) {
           retainContextWhenHidden: true,
         },
       },
+    ),
+
+    vscode.window.registerCustomEditorProvider(
+      'jsProfileVisualizer.heapsnapshot.flame',
+      new HeapSnapshotEditorProvider(
+        vscode.Uri.joinPath(context.extensionUri, 'out', 'heapsnapshot-client.bundle.js'),
+      ),
+      // note: context is not retained when hidden, unlike other editors, because
+      // the model is kept in a worker_thread and accessed via RPC
     ),
 
     vscode.window.registerWebviewViewProvider(RealtimeWebviewProvider.viewType, realtime),

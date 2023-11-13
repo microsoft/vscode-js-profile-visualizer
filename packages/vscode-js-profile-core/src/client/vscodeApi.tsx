@@ -15,10 +15,12 @@ export interface IVscodeApi<T = unknown> {
 
 declare const acquireVsCodeApi: () => IVscodeApi;
 
+export const vscodeApi = acquireVsCodeApi();
+
 /**
  * Context key for the VS Code API object.
  */
-export const VsCodeApi = createContext(acquireVsCodeApi());
+export const VsCodeApi = createContext(vscodeApi);
 
 /**
  * Parses the vscode CSS variables from the document.

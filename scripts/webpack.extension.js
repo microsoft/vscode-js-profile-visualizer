@@ -1,20 +1,20 @@
 const path = require('path');
 const production = process.argv.includes('production');
-const node = process.argv.includes('node');
 
-module.exports = dirname => ({
+module.exports = (dirname, target) => ({
   mode: production ? 'production' : 'development',
   devtool: production ? false : 'source-map',
   entry: './src/extension.ts',
+  target,
   output: {
     path: path.join(dirname, 'out'),
-    filename: process.argv.includes('web') ? 'extension.web.js' : 'extension.js',
+    filename: target === 'web' ? 'extension.web.js' : 'extension.js',
     libraryTarget: 'commonjs2',
   },
   resolve: {
     extensions: ['.ts', '.js', '.json'],
     ...(
-      node ? {} : {
+      target === 'node' ? {} : {
         fallback: {
           path: require.resolve('path-browserify'),
           os: require.resolve('os-browserify/browser'),
@@ -44,5 +44,8 @@ module.exports = dirname => ({
         },
       },
     ],
+  },
+  experiments: {
+    syncWebAssembly: true,
   },
 });

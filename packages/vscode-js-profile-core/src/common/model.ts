@@ -22,9 +22,8 @@ export interface INode {
   src?: ISourceLocation;
 }
 
-export interface ICommonNode extends INode {
-  children: { [id: number]: ICommonNode };
-  childrenSize: number;
+export interface ICommonNode {
+  id: number;
   parent?: ICommonNode;
 }
 

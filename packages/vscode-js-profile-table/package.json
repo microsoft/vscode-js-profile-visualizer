@@ -23,15 +23,8 @@
   },
   "scripts": {
     "pack": "vsce package --yarn",
-    "compile": "rimraf out && concurrently \"npm:compile:*\"",
-    "compile:cpu-client": "webpack --mode production --config webpack.cpu-client.js",
-    "compile:heap-client": "webpack --mode production --config webpack.heap-client.js",
-    "compile:ext": "webpack --mode production --config webpack.extension.js --target node",
-    "compile:ext:web": "webpack --mode production --config webpack.extension.js --target web",
-    "watch": "concurrently \"npm:watch:*\"",
-    "watch:cpu-client": "webpack --mode development --config webpack.cpu-client.js --watch",
-    "watch:heap-client": "webpack --mode development --config webpack.heap-client.js --watch",
-    "watch:ext": "webpack --mode development --config webpack.extension.js --watch --target node"
+    "compile": "rimraf out && webpack --mode production",
+    "watch": "webpack --mode development --watch"
   },
   "icon": "resources/icon.png",
   "publisher": "ms-vscode",
@@ -60,6 +53,16 @@
             "filenamePattern": "*.heapprofile"
           }
         ]
+      },
+      {
+        "viewType": "jsProfileVisualizer.heapsnapshot.table",
+        "displayName": "Heap Snapshot Table Visualizer",
+        "priority": "default",
+        "selector": [
+          {
+            "filenamePattern": "*.heapsnapshot"
+          }
+        ]
       }
     ],
     "commands": [
@@ -82,6 +85,7 @@
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.35",
+    "pretty-bytes": "^6.1.1",
     "vscode-js-profile-core": "*"
   }
 }

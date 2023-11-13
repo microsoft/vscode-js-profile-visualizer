@@ -5,10 +5,11 @@ import { ComponentType, Fragment, FunctionComponent, h } from 'preact';
 import { useMemo, useState } from 'preact/hooks';
 import { RichFilterComponent, richFilter } from '../client/rich-filter';
 import styles from '../common/layout.css';
-import { IDataSource, IQueryResults } from '../ql';
+import { DataProvider, IDataSource, IQueryResults } from '../ql';
 
 export interface IBodyProps<T> {
-  data: IQueryResults<T>;
+  query: IQueryResults<T>;
+  data: DataProvider<T>;
 }
 
 type HeapProfileLayoutComponent<T> = FunctionComponent<{
@@ -49,7 +50,9 @@ export const heapProfileLayoutFactory = <T,>(): HeapProfileLayoutComponent<T> =>
             foot={footer}
           />
         </div>
-        <div className={styles.rows}>{filteredData && <RowBody data={filteredData} />}</div>
+        <div className={styles.rows}>
+          {filteredData && <RowBody query={filteredData} data={data.data} />}
+        </div>
       </Fragment>
     );
   };

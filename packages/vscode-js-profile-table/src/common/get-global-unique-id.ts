@@ -2,10 +2,9 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { IGraphNode } from 'vscode-js-profile-core/out/esm/cpu/model';
-import { ITreeNode } from 'vscode-js-profile-core/out/esm/heap/model';
+import { ICommonNode } from 'vscode-js-profile-core/out/esm/common/model';
 
-export default (node: IGraphNode | ITreeNode) => {
+export default (node: ICommonNode) => {
   const parts = [node.id];
   for (let n = node.parent; n; n = n.parent) {
     parts.push(n.id);

@@ -9,11 +9,11 @@ import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
 import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/common/types';
 import { heapProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/heap/layout';
 import { IProfileModel } from 'vscode-js-profile-core/out/esm/heap/model';
-import { IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
+import { DataProvider, IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
 import styles from '../common/client.css';
 import { IColumn } from '../common/types';
 import { FlameGraph } from './flame-graph';
-import { buildColumns, TreeNodeAccessor } from './stacks';
+import { TreeNodeAccessor, buildColumns } from './stacks';
 
 declare const MODEL: IProfileModel;
 
@@ -57,12 +57,12 @@ const Root: FunctionComponent = () => {
 
   const cols = getTimelineCols();
   const FlameGraphWrapper: FunctionComponent<{
-    data: IQueryResults<TreeNodeAccessor>;
+    query: IQueryResults<TreeNodeAccessor>;
   }> = useCallback(
-    ({ data }) => {
+    ({ query }) => {
       const filtered = useMemo(
-        () => TreeNodeAccessor.getFilteredColumns(cols, data.selectedAndParents),
-        [data],
+        () => TreeNodeAccessor.getFilteredColumns(cols, query.selectedAndParents),
+        [query],
       );
       return <FlameGraph model={MODEL} columns={cols} filtered={filtered} />;
     },
@@ -72,8 +72,7 @@ const Root: FunctionComponent = () => {
   return (
     <HeapProfileLayout
       data={{
-        data: TreeNodeAccessor.rootAccessors(cols),
-        getChildren: n => n.children,
+        data: DataProvider.fromArray(TreeNodeAccessor.rootAccessors(cols), n => n.children),
         genericMatchStr: n =>
           [n.callFrame.functionName, n.callFrame.url, n.src?.source.path ?? ''].join(' '),
         properties: {

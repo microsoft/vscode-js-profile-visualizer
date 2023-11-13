@@ -3,8 +3,8 @@
  *--------------------------------------------------------*/
 
 import { describe, expect, it } from 'vitest';
-import { IDataSource, IQuery, PropertyType } from '.';
-import { compile, lex, LexOutput, ParseError, Token } from './parser';
+import { DataProvider, IDataSource, IQuery, PropertyType } from '.';
+import { LexOutput, ParseError, Token, compile, lex } from './parser';
 
 describe('ql', () => {
   describe('lex', () => {
@@ -85,13 +85,15 @@ describe('ql', () => {
     }
 
     const datasource: IDataSource<IUser> = {
-      data: [
-        { username: 'u11', age: 10 },
-        { username: 'u21', age: 20 },
-        { username: 'u12', age: 30 },
-        { username: 'u22', age: 40 },
-      ],
-      getChildren: () => [],
+      data: DataProvider.fromArray(
+        [
+          { username: 'u11', age: 10 },
+          { username: 'u21', age: 20 },
+          { username: 'u12', age: 30 },
+          { username: 'u22', age: 40 },
+        ],
+        () => [],
+      ),
       properties: {
         username: {
           accessor: u => u.username,
@@ -165,7 +167,7 @@ describe('ql', () => {
         if (typeof out === 'string') {
           expect(getFilter).to.throw(ParseError, out);
         } else {
-          const models = datasource.data.filter(getFilter()).map(u => u.username);
+          const models = datasource.data.loaded.filter(getFilter()).map(u => u.username);
           expect(models).to.deep.equal(out);
         }
       });
