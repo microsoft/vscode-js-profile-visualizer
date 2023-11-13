@@ -11,9 +11,10 @@ import { DownloadFileProvider } from './download-file-provider';
 import { ISourceLocation } from './location-mapping';
 import { properRelative } from './path';
 
-const exists = async (file: string) => {
+const exists = async (uristr: string) => {
   try {
-    await vscode.workspace.fs.stat(vscode.Uri.file(file));
+    const uri = parseUri(uristr);
+    await vscode.workspace.fs.stat(uri);
     return true;
   } catch {
     return false;
@@ -59,11 +60,29 @@ const showPosition = async (
   await vscode.window.showTextDocument(doc, { viewColumn, selection: new vscode.Range(pos, pos) });
 };
 
+const isCommand = (location: ISourceLocation) => !!location.source.path?.match(/^command:/);
+const runIfCommand = async (location: ISourceLocation) => {
+  if (isCommand(location)) {
+    const uri = vscode.Uri.parse(location.source.path || '');
+    const baseparams = { sourceLocation: location };
+    const params = !uri.query
+      ? baseparams
+      : uri.query.split('&').reduce((acc, param) => {
+          const [name, value] = param.split('=');
+          return { ...acc, [name]: decodeURIComponent(value) };
+        }, baseparams);
+    await vscode.commands.executeCommand(uri.path, params); // delegate finding the position to the command provider
+    return true;
+  }
+  return false;
+};
+
 const showPositionInFile = async (
   rootPath: string | undefined,
   location: ISourceLocation,
   viewColumn?: vscode.ViewColumn,
 ) => {
+  if (isCommand(location)) return await runIfCommand(location);
   const diskPaths = getCandidateDiskPaths(rootPath, location.source);
   const foundPaths = await Promise.all(diskPaths.map(exists));
   const existingIndex = foundPaths.findIndex(ok => ok);
@@ -71,7 +90,7 @@ const showPositionInFile = async (
     return false;
   }
 
-  const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(diskPaths[existingIndex]));
+  const doc = await vscode.workspace.openTextDocument(parseUri(diskPaths[existingIndex]));
   await showPosition(doc, location.lineNumber, location.columnNumber, viewColumn);
   return true;
 };
@@ -102,6 +121,28 @@ const showPositionInUrl = async (
   await showPosition(document, lineNumber + 1, columnNumber + 1, viewColumn);
   return true;
 };
+/**
+ * Checks if an URL is virtual
+ * @param url
+ * @returns true if part of a virtual filesystem
+ */
+const isVirtual = (url: string) => {
+  const matches = url.match(/^(\w+):/);
+  if (!matches) return false;
+  if (matches[1].length < 2) return false; // single character scheme is likely to be a windows drive letter
+  return true;
+};
+/**
+ *
+ * @param url Use Uri.parse when a scheme is provided, fall back to Uri.file otherwise
+ * @returns
+ */
+const parseUri = (url: string) => {
+  if (isVirtual(url)) {
+    return vscode.Uri.parse(url);
+  }
+  return vscode.Uri.file(url);
+};
 
 /**
  * Gets possible locations for the source on the local disk.
@@ -112,7 +153,7 @@ export const getCandidateDiskPaths = (rootPath: string | undefined, source: Dap.
   }
 
   const locations = [source.path];
-  if (!rootPath) {
+  if (!rootPath || isVirtual(source.path)) {
     return locations;
   }
 
