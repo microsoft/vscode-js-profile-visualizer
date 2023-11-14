@@ -68,8 +68,8 @@ const runIfCommand = async (location: ISourceLocation) => {
     const params = !uri.query
       ? baseparams
       : uri.query.split('&').reduce((acc, param) => {
-          const [name, value] = param.split('=');
-          return { ...acc, [name]: decodeURIComponent(value) };
+          const [name] = param.split('=',1);
+          return { ...acc, [name]: decodeURIComponent(param.replace(/[^=]+=/, "")) };
         }, baseparams);
     await vscode.commands.executeCommand(uri.path, params); // delegate finding the position to the command provider
     return true;
