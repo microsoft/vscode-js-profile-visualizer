@@ -3,7 +3,7 @@ module.exports = [
   require('../../scripts/webpack.extension')(__dirname, 'node'),
   ...(process.argv.includes('--watch')
     ? []
-    : [require('../../scripts/webpack.extension')(__dirname, 'web')]),
+    : [require('../../scripts/webpack.extension')(__dirname, 'webworker')]),
   {
     ...require('../../scripts/webpack.client')(__dirname, 'realtime'),
     entry: `./src/realtime/client.ts`,

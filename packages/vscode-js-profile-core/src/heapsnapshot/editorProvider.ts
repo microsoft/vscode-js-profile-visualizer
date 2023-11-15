@@ -3,13 +3,20 @@
  *--------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { Worker } from 'worker_threads';
 import { bundlePage } from '../bundlePage';
 import { Message } from '../common/types';
 import { reopenWithEditor } from '../reopenWithEditor';
+import { GraphRPCCall } from './rpc';
+import { startWorker } from './startWorker';
+
+export interface Workerish {
+  postMessage(message: GraphRPCCall): void;
+  onMessage(listener: (message: unknown) => void): vscode.Disposable;
+  terminate(): Promise<void>;
+}
 
 interface IWorker extends vscode.Disposable {
-  worker: Worker;
+  worker: Workerish;
 }
 
 class HeapSnapshotDocument implements vscode.CustomDocument {
@@ -35,14 +42,12 @@ class HeapSnapshotDocument implements vscode.CustomDocument {
 const workerRegistry = ((globalThis as any).__jsHeapSnapshotWorkers ??= new (class {
   private readonly workers = new Map<
     /* uri */ string,
-    { worker: Worker; rc: number; closer?: NodeJS.Timeout }
+    { worker: Workerish; rc: number; closer?: NodeJS.Timeout }
   >();
   public async create(uri: vscode.Uri): Promise<IWorker> {
     let rec = this.workers.get(uri.with({ query: '' }).toString());
     if (!rec) {
-      const worker = new Worker(`${__dirname}/heapsnapshotWorker.js`, {
-        workerData: uri.scheme === 'file' ? uri.fsPath : await vscode.workspace.fs.readFile(uri),
-      });
+      const worker = await startWorker(uri);
       rec = { worker, rc: 0 };
       this.workers.set(uri.toString(), rec);
     }
@@ -111,13 +116,11 @@ export class HeapSnapshotEditorProvider
       }
     });
 
-    const listener = (message: unknown) => {
+    const listener = document.value.worker.onMessage((message: unknown) => {
       webviewPanel.webview.postMessage({ method: 'graphRet', message });
-    };
-
-    document.value.worker.on('message', listener);
+    });
     webviewPanel.onDidDispose(() => {
-      document.value.worker.removeListener('message', listener);
+      listener.dispose();
     });
 
     webviewPanel.webview.options = { enableScripts: true };
