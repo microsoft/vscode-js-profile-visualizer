@@ -18,11 +18,7 @@ export function properRelative(fromPath: string, toPath: string): string {
   }
 }
 
-let isCaseSensitive = process.platform !== 'win32';
-
-export function resetCaseSensitivePaths() {
-  isCaseSensitive = process.platform !== 'win32';
-}
+let isCaseSensitive = typeof process !== 'undefined' && process.platform !== 'win32';
 
 export function setCaseSensitivePaths(sensitive: boolean) {
   isCaseSensitive = sensitive;

@@ -13,7 +13,7 @@ const allConfig = [Config.PollInterval, Config.ViewDuration, Config.Easing];
 import * as vscode from 'vscode';
 import { CpuProfileEditorProvider } from 'vscode-js-profile-core/out/cpu/editorProvider';
 import { HeapProfileEditorProvider } from 'vscode-js-profile-core/out/heap/editorProvider';
-import { HeapSnapshotEditorProvider } from 'vscode-js-profile-core/out/heapsnapshot/editorProvider';
+import { HeapSnapshotEditorProvider } from 'vscode-js-profile-core/out/esm/heapsnapshot/editorProvider';
 import { ProfileCodeLensProvider } from 'vscode-js-profile-core/out/profileCodeLensProvider';
 import { createMetrics } from './realtime/metrics';
 import { readRealtimeSettings, RealtimeSessionTracker } from './realtimeSessionTracker';

@@ -8,18 +8,20 @@ module.exports = (dirname, target) => ({
   target,
   output: {
     path: path.join(dirname, 'out'),
-    filename: target === 'web' ? 'extension.web.js' : 'extension.js',
+    filename: target === 'webworker' ? 'extension.web.js' : 'extension.js',
     libraryTarget: 'commonjs2',
   },
   resolve: {
-    extensions: ['.ts', '.js', '.json'],
-    ...(
-      target === 'node' ? {} : {
-        fallback: {
-          path: require.resolve('path-browserify'),
-          os: require.resolve('os-browserify/browser'),
-        }
-      }),
+    extensions: (target === 'webworker' ? ['.web.js'] : []).concat(['.ts', '.js', '.json']),
+    conditionNames: ['bundler', 'module', 'require'],
+    ...(target === 'node'
+      ? {}
+      : {
+          fallback: {
+            path: require.resolve('path-browserify'),
+            os: require.resolve('os-browserify/browser'),
+          },
+        }),
   },
   node: {
     __dirname: false,

@@ -29,7 +29,7 @@ extends:
         displayName: Install dependencies
 
       - script: npm run compile
-        displayName: Install dependencies
+        displayName: Compile
     tsa:
       enabled: true
       options:
