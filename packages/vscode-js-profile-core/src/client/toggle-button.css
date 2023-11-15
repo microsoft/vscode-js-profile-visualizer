@@ -21,6 +21,10 @@
   background-color: var(--vscode-inputOption-hoverBackground);
 }
 
+.button:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
 .button[aria-checked='true'] {
   background: var(--vscode-inputOption-activeBackground) !important;
   color: var(--vscode-inputOption-activeForeground);
