@@ -6,4 +6,5 @@
   height: 33px;
   padding: 4px;
   box-sizing: border-box;
+  position: relative;
 }

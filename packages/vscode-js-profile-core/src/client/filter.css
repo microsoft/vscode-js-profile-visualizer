@@ -38,3 +38,7 @@
   padding-bottom: 1px;
   align-self: stretch;
 }
+
+.error {
+  outline: 1px solid var(--vscode-inputValidation-errorBorder) !important;
+}

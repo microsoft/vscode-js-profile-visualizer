@@ -76,6 +76,7 @@ export const richFilter =
           value={text}
           placeholder={placeholder}
           onChange={setText}
+          hasError={!!error}
           foot={
             <Fragment>
               <ToggleButton

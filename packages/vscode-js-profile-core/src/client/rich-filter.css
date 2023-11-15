@@ -1,0 +1,8 @@
+.error {
+  background: var(--vscode-inputValidation-errorBackground);
+  border: 1px solid var(--vscode-inputValidation-errorBorder);
+  padding: 4px;
+  position: absolute;
+  top: calc(100% - 4px);
+  z-index: 1;
+}
