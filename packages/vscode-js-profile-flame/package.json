@@ -1,7 +1,7 @@
 {
   "name": "vscode-js-profile-flame",
   "displayName": "Flame Chart Visualizer for JavaScript Profiles",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Flame graph visualizer for Heap and CPU profiles taken from the JavaScript debugger",
   "author": "Connor Peet <connor@peet.io>",
   "homepage": "https://github.com/microsoft/vscode-js-profile-visualizer#readme",
@@ -28,17 +28,8 @@
   },
   "scripts": {
     "pack": "vsce package --yarn",
-    "compile": "rimraf out && concurrently \"npm:compile:*\"",
-    "compile:cpu-client": "webpack --mode production --config webpack.cpu-client.js",
-    "compile:heap-client": "webpack --mode production --config webpack.heap-client.js",
-    "compile:realtime": "webpack --mode production --config webpack.realtime.js",
-    "compile:ext": "webpack --mode production --config webpack.extension.js --target node",
-    "compile:ext:web": "webpack --mode production --config webpack.extension.js --target web",
-    "watch": "concurrently \"npm:watch:*\"",
-    "watch:cpu-client": "webpack --mode development --config webpack.cpu-client.js --watch",
-    "watch:heap-client": "webpack --mode development --config webpack.heap-client.js --watch",
-    "watch:realtime": "webpack --mode development --config webpack.realtime.js --watch",
-    "watch:ext": "webpack --mode development --config webpack.extension.js --watch --target node"
+    "compile": "rimraf out && webpack --mode production",
+    "watch": "webpack --mode development --watch"
   },
   "icon": "resources/logo.png",
   "contributes": {
@@ -60,6 +51,16 @@
         "selector": [
           {
             "filenamePattern": "*.heapprofile"
+          }
+        ]
+      },
+      {
+        "viewType": "jsProfileVisualizer.heapsnapshot.flame",
+        "displayName": "Heap Snapshot Retainers Graph Visualizer",
+        "priority": "option",
+        "selector": [
+          {
+            "filenamePattern": "*.heapsnapshot"
           }
         ]
       }
@@ -159,11 +160,14 @@
   },
   "devDependencies": {
     "@types/chroma-js": "^2.4.3",
+    "@types/cytoscape": "^3.19.15",
     "@types/resize-observer-browser": "^0.1.7"
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.35",
     "chroma-js": "^2.4.2",
+    "cytoscape": "^3.27.0",
+    "cytoscape-klay": "^3.1.4",
     "vscode-js-profile-core": "*",
     "vscode-webview-tools": "^0.1.1"
   }

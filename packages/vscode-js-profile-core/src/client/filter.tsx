@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { h, FunctionComponent, ComponentChild } from 'preact';
+import { ComponentChild, FunctionComponent, h } from 'preact';
 import { useCallback } from 'preact/hooks';
 import styles from './filter.css';
 
@@ -11,10 +11,12 @@ import styles from './filter.css';
  */
 export const Filter: FunctionComponent<{
   value: string;
+  type?: string;
+  min?: number;
   onChange: (value: string) => void;
   placeholder?: string;
   foot?: ComponentChild;
-}> = ({ value, onChange, placeholder = 'Filter for function', foot }) => {
+}> = ({ value, min, type, onChange, placeholder = 'Filter for function', foot }) => {
   const onChangeRaw = useCallback(
     (evt: Event) => {
       onChange((evt.target as HTMLInputElement).value);
@@ -24,7 +26,14 @@ export const Filter: FunctionComponent<{
 
   return (
     <div className={styles.wrapper}>
-      <input value={value} placeholder={placeholder} onPaste={onChangeRaw} onKeyUp={onChangeRaw} />
+      <input
+        type={type}
+        min={min}
+        value={value}
+        placeholder={placeholder}
+        onPaste={onChangeRaw}
+        onKeyUp={onChangeRaw}
+      />
       {foot}
     </div>
   );

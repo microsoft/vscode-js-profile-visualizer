@@ -5,7 +5,7 @@ import { FunctionComponent, h, render } from 'preact';
 import { createBottomUpGraph } from 'vscode-js-profile-core/out/esm/cpu/bottomUpGraph';
 import { cpuProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/cpu/layout';
 import { IGraphNode, IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
-import { IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
+import { DataProvider, IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
 import styles from '../common/client.css';
 import OpenFlameButton from '../common/open-flame-buttom';
 import { TimeView } from './time-view';
@@ -16,8 +16,9 @@ const graph = createBottomUpGraph(MODEL);
 
 const allChildren = Object.values(graph.children);
 const TimeViewWrapper: FunctionComponent<{
-  data: IQueryResults<IGraphNode>;
-}> = ({ data }) => <TimeView query={data} data={allChildren} />;
+  query: IQueryResults<IGraphNode>;
+  data: DataProvider<IGraphNode>;
+}> = ({ query, data }) => <TimeView query={query} data={data} />;
 
 const CpuProfileLayout = cpuProfileLayoutFactory<IGraphNode>();
 
@@ -27,8 +28,7 @@ document.body.appendChild(container);
 render(
   <CpuProfileLayout
     data={{
-      data: allChildren,
-      getChildren: n => Object.values(n.children),
+      data: DataProvider.fromArray(allChildren, n => Object.values(n.children)),
       genericMatchStr: n =>
         [n.callFrame.functionName, n.callFrame.url, n.src?.source.path ?? ''].join(' '),
       properties: {

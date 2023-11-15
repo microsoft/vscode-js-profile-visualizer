@@ -4,28 +4,31 @@
 
 import * as ChevronDown from '@vscode/codicons/src/icons/chevron-down.svg';
 import { FunctionComponent, h } from 'preact';
-import { useCallback, useState } from 'preact/hooks';
+import { useCallback, useContext, useState } from 'preact/hooks';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
+import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
+import { getNodeText } from 'vscode-js-profile-core/out/esm/common/display';
+import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/common/types';
 import { decimalFormat } from 'vscode-js-profile-core/out/esm/heap/display';
 import { IHeapProfileNode, ITreeNode } from 'vscode-js-profile-core/out/esm/heap/model';
-import { IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
+import { DataProvider, IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
 import { IRowProps, makeBaseTimeView } from '../common/base-time-view';
 import { makeBaseTimeViewRow } from '../common/base-time-view-row';
 import ImpactBar from '../common/impact-bar';
 import styles from '../common/time-view.css';
 import { SortFn } from '../common/types';
 
-const selfSize: SortFn = n => (n as IHeapProfileNode).selfSize;
-const totalSize: SortFn = n => (n as IHeapProfileNode).totalSize;
+const selfSize: SortFn<ITreeNode> = n => (n as IHeapProfileNode).selfSize;
+const totalSize: SortFn<ITreeNode> = n => (n as IHeapProfileNode).totalSize;
 
 const BaseTimeView = makeBaseTimeView<ITreeNode>();
 
 export const TimeView: FunctionComponent<{
   query: IQueryResults<ITreeNode>;
-  data: ITreeNode[];
+  data: DataProvider<ITreeNode>;
 }> = ({ data, query }) => {
-  const [sortFn, setSortFn] = useState<SortFn | undefined>(() => selfSize);
+  const [sortFn, setSortFn] = useState<SortFn<ITreeNode> | undefined>(() => selfSize);
 
   return (
     <BaseTimeView
@@ -41,8 +44,8 @@ export const TimeView: FunctionComponent<{
 const BaseTimeViewRow = makeBaseTimeViewRow<ITreeNode>();
 
 const TimeViewHeader: FunctionComponent<{
-  sortFn: SortFn | undefined;
-  onChangeSort: (newFn: () => SortFn | undefined) => void;
+  sortFn: SortFn<ITreeNode> | undefined;
+  onChangeSort: (newFn: () => SortFn<ITreeNode> | undefined) => void;
 }> = ({ sortFn, onChangeSort }) => (
   <div className={styles.row}>
     <div
@@ -80,8 +83,25 @@ const TimeViewRow: FunctionComponent<IRowProps<ITreeNode>> = props => {
     root = root.parent;
   }
 
+  const vscode = useContext(VsCodeApi);
+  const onClick = useCallback(
+    (evt: MouseEvent) =>
+      vscode.postMessage<IOpenDocumentMessage>({
+        type: 'openDocument',
+        callFrame: node.callFrame,
+        location: node.src,
+        toSide: evt.altKey,
+      }),
+    [vscode, node],
+  );
+
   return (
-    <BaseTimeViewRow {...props}>
+    <BaseTimeViewRow
+      {...props}
+      onClick={onClick}
+      rowText={node.callFrame.functionName}
+      locationText={getNodeText(node)}
+    >
       <div className={styles.duration} aria-labelledby="self-size-header">
         <ImpactBar impact={node.selfSize / node.totalSize} />
         {decimalFormat.format(node.selfSize / 1000)}kB

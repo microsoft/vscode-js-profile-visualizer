@@ -21,6 +21,11 @@
   margin: 2px 4px;
 }
 
+.footer {
+  margin-left: calc(220px + 24px) !important;
+  cursor: pointer;
+}
+
 .duration,
 .heading.timing {
   text-align: right;
@@ -110,6 +115,7 @@
 .expander svg,
 .expander {
   width: 1em;
+  cursor: pointer;
 }
 
 .row:hover .expander {

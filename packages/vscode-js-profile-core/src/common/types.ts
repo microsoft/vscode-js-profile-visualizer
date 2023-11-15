@@ -3,6 +3,7 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
+import { GraphRPCCall } from '../heapsnapshot/rpc';
 import { ISourceLocation } from '../location-mapping';
 
 export interface IAnnotationLocation {
@@ -50,7 +51,17 @@ export interface IOpenDocumentMessage {
 export interface IReopenWithEditor {
   type: 'reopenWith';
   viewType: string;
+  toSide?: boolean;
+  withQuery?: string;
   requireExtension?: string;
 }
 
-export type Message = IOpenDocumentMessage | IReopenWithEditor;
+/**
+ * Calls a graph method, used in the heapsnapshot.
+ */
+export interface ICallHeapGraph {
+  type: 'callGraph';
+  inner: GraphRPCCall;
+}
+
+export type Message = IOpenDocumentMessage | IReopenWithEditor | ICallHeapGraph;

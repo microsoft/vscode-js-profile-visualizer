@@ -4,28 +4,31 @@
 
 import * as ChevronDown from '@vscode/codicons/src/icons/chevron-down.svg';
 import { FunctionComponent, h } from 'preact';
-import { useCallback, useState } from 'preact/hooks';
+import { useCallback, useContext, useState } from 'preact/hooks';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
+import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
+import { getNodeText } from 'vscode-js-profile-core/out/esm/common/display';
+import { IOpenDocumentMessage } from 'vscode-js-profile-core/out/esm/common/types';
 import { decimalFormat } from 'vscode-js-profile-core/out/esm/cpu/display';
-import { IGraphNode, ILocation } from 'vscode-js-profile-core/out/esm/cpu/model';
-import { IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
+import { IGraphNode } from 'vscode-js-profile-core/out/esm/cpu/model';
+import { DataProvider, IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
 import { IRowProps, makeBaseTimeView } from '../common/base-time-view';
 import { makeBaseTimeViewRow } from '../common/base-time-view-row';
 import ImpactBar from '../common/impact-bar';
 import styles from '../common/time-view.css';
 import { SortFn } from '../common/types';
 
-const selfTime: SortFn = n => (n as ILocation).selfTime;
-const aggTime: SortFn = n => (n as ILocation).aggregateTime;
+const selfTime: SortFn<IGraphNode> = n => n.selfTime;
+const aggTime: SortFn<IGraphNode> = n => n.aggregateTime;
 
 const BaseTimeView = makeBaseTimeView<IGraphNode>();
 
 export const TimeView: FunctionComponent<{
   query: IQueryResults<IGraphNode>;
-  data: IGraphNode[];
+  data: DataProvider<IGraphNode>;
 }> = ({ data, query }) => {
-  const [sortFn, setSortFn] = useState<SortFn | undefined>(() => selfTime);
+  const [sortFn, setSortFn] = useState<SortFn<IGraphNode> | undefined>(() => selfTime);
 
   return (
     <BaseTimeView
@@ -39,8 +42,8 @@ export const TimeView: FunctionComponent<{
 };
 
 const TimeViewHeader: FunctionComponent<{
-  sortFn: SortFn | undefined;
-  onChangeSort: (newFn: () => SortFn | undefined) => void;
+  sortFn: SortFn<IGraphNode> | undefined;
+  onChangeSort: (newFn: () => SortFn<IGraphNode> | undefined) => void;
 }> = ({ sortFn, onChangeSort }) => (
   <div className={styles.row}>
     <div
@@ -80,8 +83,25 @@ const TimeViewRow: FunctionComponent<IRowProps<IGraphNode>> = props => {
     root = root.parent;
   }
 
+  const vscode = useContext(VsCodeApi);
+  const onClick = useCallback(
+    (evt: MouseEvent) =>
+      vscode.postMessage<IOpenDocumentMessage>({
+        type: 'openDocument',
+        callFrame: node.callFrame,
+        location: node.src,
+        toSide: evt.altKey,
+      }),
+    [vscode, node],
+  );
+
   return (
-    <BaseTimeViewRow {...props}>
+    <BaseTimeViewRow
+      {...props}
+      onClick={onClick}
+      rowText={node.callFrame.functionName}
+      locationText={getNodeText(node)}
+    >
       <div className={styles.duration} aria-labelledby="self-time-header">
         <ImpactBar impact={node.selfTime / root.selfTime} />
         {decimalFormat.format(node.selfTime / 1000)}ms

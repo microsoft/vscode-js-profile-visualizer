@@ -5,7 +5,7 @@ import { FunctionComponent, h, render } from 'preact';
 import { heapProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/heap/layout';
 import { IProfileModel, ITreeNode } from 'vscode-js-profile-core/out/esm/heap/model';
 import { createTree } from 'vscode-js-profile-core/out/esm/heap/tree';
-import { IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
+import { DataProvider, IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
 import styles from '../common/client.css';
 import OpenFlameButton from '../common/open-flame-buttom';
 import { TimeView } from './time-view';
@@ -16,8 +16,9 @@ const tree = createTree(MODEL);
 
 const allChildren = Object.values(tree.children);
 const TimeViewWrapper: FunctionComponent<{
-  data: IQueryResults<ITreeNode>;
-}> = ({ data }) => <TimeView query={data} data={allChildren} />;
+  query: IQueryResults<ITreeNode>;
+  data: DataProvider<ITreeNode>;
+}> = ({ query, data }) => <TimeView query={query} data={data} />;
 
 const HeapProfileLayout = heapProfileLayoutFactory<ITreeNode>();
 
@@ -27,8 +28,7 @@ document.body.appendChild(container);
 render(
   <HeapProfileLayout
     data={{
-      data: allChildren,
-      getChildren: n => Object.values(n.children),
+      data: DataProvider.fromArray(allChildren, n => Object.values(n.children)),
       genericMatchStr: n =>
         [n.callFrame.functionName, n.callFrame.url, n.src?.source.path ?? ''].join(' '),
       properties: {

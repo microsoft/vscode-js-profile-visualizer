@@ -1,0 +1,12 @@
+.graph {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+.toolbar {
+  position: relative;
+  z-index: 1;
+}

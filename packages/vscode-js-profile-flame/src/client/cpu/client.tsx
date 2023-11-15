@@ -11,11 +11,11 @@ import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
 import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/common/types';
 import { cpuProfileLayoutFactory } from 'vscode-js-profile-core/out/esm/cpu/layout';
 import { IProfileModel } from 'vscode-js-profile-core/out/esm/cpu/model';
-import { IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
+import { DataProvider, IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
 import styles from '../common/client.css';
 import { IColumn } from '../common/types';
 import { FlameGraph } from './flame-graph';
-import { buildColumns, buildLeftHeavyColumns, LocationAccessor } from './stacks';
+import { LocationAccessor, buildColumns, buildLeftHeavyColumns } from './stacks';
 
 declare const MODEL: IProfileModel;
 
@@ -77,12 +77,12 @@ const Root: FunctionComponent = () => {
   const cols = leftHeavy ? getLeftHeavyCols() : getTimelineCols();
 
   const FlameGraphWrapper: FunctionComponent<{
-    data: IQueryResults<LocationAccessor>;
+    query: IQueryResults<LocationAccessor>;
   }> = useCallback(
-    ({ data }) => {
+    ({ query }) => {
       const filtered = useMemo(
-        () => LocationAccessor.getFilteredColumns(cols, data.selectedAndParents),
-        [data],
+        () => LocationAccessor.getFilteredColumns(cols, query.selectedAndParents),
+        [query],
       );
       return <FlameGraph model={MODEL} columns={cols} filtered={filtered} />;
     },
@@ -92,8 +92,7 @@ const Root: FunctionComponent = () => {
   return (
     <CpuProfileLayout
       data={{
-        data: LocationAccessor.rootAccessors(cols),
-        getChildren: n => n.children,
+        data: DataProvider.fromArray(LocationAccessor.rootAccessors(cols), n => n.children),
         genericMatchStr: n =>
           [n.callFrame.functionName, n.callFrame.url, n.src?.source.path ?? ''].join(' '),
         properties: {
