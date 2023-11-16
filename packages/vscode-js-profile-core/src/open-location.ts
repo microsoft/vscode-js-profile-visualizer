@@ -11,9 +11,20 @@ import { DownloadFileProvider } from './download-file-provider';
 import { ISourceLocation } from './location-mapping';
 import { properRelative } from './path';
 
-const exists = async (file: string) => {
+const enum LinkType {
+  Command,
+  URI,
+}
+
+type CommandLink = { type: LinkType.Command; command: string; args: unknown[] };
+type UriLink = { type: LinkType.URI; uri: vscode.Uri; isFile: boolean };
+type Link = CommandLink | UriLink;
+
+const exists = async (uristr: string) => {
   try {
-    await vscode.workspace.fs.stat(vscode.Uri.file(file));
+    const uri = parseLink(uristr);
+    if (uri.type === LinkType.Command) return true;
+    await vscode.workspace.fs.stat(uri.uri);
     return true;
   } catch {
     return false;
@@ -59,11 +70,14 @@ const showPosition = async (
   await vscode.window.showTextDocument(doc, { viewColumn, selection: new vscode.Range(pos, pos) });
 };
 
+const runCommand = (link: CommandLink) =>
+  vscode.commands.executeCommand(link.command, ...link.args);
+
 const showPositionInFile = async (
   rootPath: string | undefined,
   location: ISourceLocation,
   viewColumn?: vscode.ViewColumn,
-) => {
+): Promise<boolean> => {
   const diskPaths = getCandidateDiskPaths(rootPath, location.source);
   const foundPaths = await Promise.all(diskPaths.map(exists));
   const existingIndex = foundPaths.findIndex(ok => ok);
@@ -71,7 +85,13 @@ const showPositionInFile = async (
     return false;
   }
 
-  const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(diskPaths[existingIndex]));
+  const resolvedLink = parseLink(diskPaths[existingIndex]);
+  if (resolvedLink.type === LinkType.Command) {
+    await runCommand(resolvedLink); // delegate finding the position to the command provider
+    return true;
+  }
+
+  const doc = await vscode.workspace.openTextDocument(resolvedLink.uri);
   await showPosition(doc, location.lineNumber, location.columnNumber, viewColumn);
   return true;
 };
@@ -102,6 +122,23 @@ const showPositionInUrl = async (
   await showPosition(document, lineNumber + 1, columnNumber + 1, viewColumn);
   return true;
 };
+/**
+ * Parses a link into a link object
+ * @param url
+ * @returns
+ */
+const parseLink = (link: string | undefined): Link => {
+  const matchCommand = link?.match(/^command:([\w\.]+)(?:\?(.*))?/);
+  if (matchCommand) {
+    const [command, rawArgs] = matchCommand.slice(1);
+    const parsed = rawArgs ? JSON.parse(decodeURIComponent(rawArgs)) : [];
+    const args = Array.isArray(parsed) ? parsed : [parsed];
+    return { type: LinkType.Command, command, args };
+  }
+  if (link?.match(/\w\w+:/))
+    return { type: LinkType.URI, uri: vscode.Uri.parse(link || ''), isFile: false };
+  return { type: LinkType.URI, uri: vscode.Uri.file(link || ''), isFile: true };
+};
 
 /**
  * Gets possible locations for the source on the local disk.
@@ -111,8 +148,11 @@ export const getCandidateDiskPaths = (rootPath: string | undefined, source: Dap.
     return [];
   }
 
+  const uri = parseLink(source.path);
+
   const locations = [source.path];
-  if (!rootPath) {
+  if (!rootPath || uri.type === LinkType.Command || !uri.isFile) {
+    // no resolution for commands and virtual filesystems
     return locations;
   }
 
