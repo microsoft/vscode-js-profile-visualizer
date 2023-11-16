@@ -11,10 +11,20 @@ import { DownloadFileProvider } from './download-file-provider';
 import { ISourceLocation } from './location-mapping';
 import { properRelative } from './path';
 
+const enum LinkType {
+  Command,
+  URI,
+}
+
+type CommandLink = { type: LinkType.Command; command: string; args: unknown[] };
+type UriLink = { type: LinkType.URI; uri: vscode.Uri; isFile: boolean };
+type Link = CommandLink | UriLink;
+
 const exists = async (uristr: string) => {
   try {
-    const uri = parseUri(uristr);
-    await vscode.workspace.fs.stat(uri);
+    const uri = parseLink(uristr);
+    if (uri.type === LinkType.Command) return true;
+    await vscode.workspace.fs.stat(uri.uri);
     return true;
   } catch {
     return false;
@@ -60,29 +70,14 @@ const showPosition = async (
   await vscode.window.showTextDocument(doc, { viewColumn, selection: new vscode.Range(pos, pos) });
 };
 
-const isCommand = (location: ISourceLocation) => !!location.source.path?.match(/^command:/);
-const runIfCommand = async (location: ISourceLocation) => {
-  if (isCommand(location)) {
-    const uri = vscode.Uri.parse(location.source.path || '');
-    const baseparams = { sourceLocation: location };
-    const params = !uri.query
-      ? baseparams
-      : uri.query.split('&').reduce((acc, param) => {
-          const [name] = param.split('=',1);
-          return { ...acc, [name]: decodeURIComponent(param.replace(/[^=]+=/, "")) };
-        }, baseparams);
-    await vscode.commands.executeCommand(uri.path, params); // delegate finding the position to the command provider
-    return true;
-  }
-  return false;
-};
+const runCommand = (link: CommandLink) =>
+  vscode.commands.executeCommand(link.command, ...link.args);
 
 const showPositionInFile = async (
   rootPath: string | undefined,
   location: ISourceLocation,
   viewColumn?: vscode.ViewColumn,
-) => {
-  if (isCommand(location)) return await runIfCommand(location);
+): Promise<boolean> => {
   const diskPaths = getCandidateDiskPaths(rootPath, location.source);
   const foundPaths = await Promise.all(diskPaths.map(exists));
   const existingIndex = foundPaths.findIndex(ok => ok);
@@ -90,7 +85,13 @@ const showPositionInFile = async (
     return false;
   }
 
-  const doc = await vscode.workspace.openTextDocument(parseUri(diskPaths[existingIndex]));
+  const resolvedLink = parseLink(diskPaths[existingIndex]);
+  if (resolvedLink.type === LinkType.Command) {
+    await runCommand(resolvedLink); // delegate finding the position to the command provider
+    return true;
+  }
+
+  const doc = await vscode.workspace.openTextDocument(resolvedLink.uri);
   await showPosition(doc, location.lineNumber, location.columnNumber, viewColumn);
   return true;
 };
@@ -122,26 +123,21 @@ const showPositionInUrl = async (
   return true;
 };
 /**
- * Checks if an URL is virtual
+ * Parses a link into a link object
  * @param url
- * @returns true if part of a virtual filesystem
- */
-const isVirtual = (url: string) => {
-  const matches = url.match(/^(\w+):/);
-  if (!matches) return false;
-  if (matches[1].length < 2) return false; // single character scheme is likely to be a windows drive letter
-  return true;
-};
-/**
- *
- * @param url Use Uri.parse when a scheme is provided, fall back to Uri.file otherwise
  * @returns
  */
-const parseUri = (url: string) => {
-  if (isVirtual(url)) {
-    return vscode.Uri.parse(url);
+const parseLink = (link: string | undefined): Link => {
+  const matchCommand = link?.match(/^command:([\w\.]+)(?:\?(.*))?/);
+  if (matchCommand) {
+    const [command, rawArgs] = matchCommand.slice(1);
+    const parsed = rawArgs ? JSON.parse(decodeURIComponent(rawArgs)) : [];
+    const args = Array.isArray(parsed) ? parsed : [parsed];
+    return { type: LinkType.Command, command, args };
   }
-  return vscode.Uri.file(url);
+  if (link?.match(/\w\w+:/))
+    return { type: LinkType.URI, uri: vscode.Uri.parse(link || ''), isFile: false };
+  return { type: LinkType.URI, uri: vscode.Uri.file(link || ''), isFile: true };
 };
 
 /**
@@ -152,8 +148,11 @@ export const getCandidateDiskPaths = (rootPath: string | undefined, source: Dap.
     return [];
   }
 
+  const uri = parseLink(source.path);
+
   const locations = [source.path];
-  if (!rootPath || isVirtual(source.path)) {
+  if (!rootPath || uri.type === LinkType.Command || !uri.isFile) {
+    // no resolution for commands and virtual filesystems
     return locations;
   }
 
