@@ -13,6 +13,7 @@
 		"jsx": "react",
 		"jsxFactory": "h",
 		"moduleResolution": "node",
+		"noUncheckedIndexedAccess": true,
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
 		"noUnusedParameters": true,

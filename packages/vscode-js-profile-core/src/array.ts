@@ -1,7 +1,13 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
-
+/**
+ * simple type guard for undefined values
+ *
+ * @param x a possibly undefined value
+ * @returns whether x is defined
+ */
+export const isDefined = <T>(x: T | undefined): x is T => x !== undefined;
 /**
  * Runs a binary search in the array. Returns the index where the exact value
  * is found, or the *negative* of the index where it should be placed to
@@ -13,7 +19,9 @@ export function binarySearch<T>(array: ReadonlyArray<T>, comparator: (value: T) 
 
   while (low <= high) {
     const mid = ((low + high) / 2) | 0;
-    const comp = comparator(array[mid]);
+    const cur = array[mid];
+    if (!isDefined(cur)) break; // out of bound, should never happen
+    const comp = comparator(cur);
     if (comp < 0) {
       low = mid + 1;
     } else if (comp > 0) {

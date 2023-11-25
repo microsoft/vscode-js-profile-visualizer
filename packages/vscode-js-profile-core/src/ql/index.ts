@@ -110,7 +110,7 @@ export class DataProvider<T> {
       return Promise.resolve(this.loaded);
     }
 
-    const last = this.asyncLoads[this.asyncLoads.length - 1] || { upTo: 0, p: Promise.resolve() };
+    const last = this.asyncLoads[this.asyncLoads.length - 1] || { upTo: 0, p: Promise.resolve([]) };
     // already loaded past `upTo`:
     if (last.upTo >= upTo) {
       return last.p;

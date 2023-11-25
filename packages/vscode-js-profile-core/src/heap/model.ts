@@ -118,7 +118,7 @@ export const buildModel = (profile: IHeapProfileRaw): IProfileModel => {
 
     if (node) {
       if (node.locationId) {
-        node.src = getBestLocation(profile, sourceLocations[node.locationId].locations);
+        node.src = getBestLocation(profile, sourceLocations[node.locationId]?.locations);
       }
       nodes = nodes.concat(node.children);
     }

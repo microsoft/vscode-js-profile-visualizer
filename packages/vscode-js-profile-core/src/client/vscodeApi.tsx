@@ -32,7 +32,7 @@ export const parseVariables = () => {
 
   let match: string[] | null;
   while ((match = re.exec(rawVars)) !== null) {
-    const [, key, value] = match;
+    const [, key = '', value = ''] = match;
     vars[key] = value;
   }
 

@@ -8,7 +8,7 @@ import { buildModel } from './model';
 describe('model', () => {
   for (let i = 0; i < profiles.length; i++) {
     it(`models #${i}`, () => {
-      expect(buildModel(profiles[i])).toMatchSnapshot();
+      expect(buildModel(profiles[i]!)).toMatchSnapshot();
     });
   }
 

@@ -112,7 +112,7 @@ const showPositionInUrl = async (
   }
 
   const path = resolve(
-    vscode.workspace.workspaceFolders?.[0].uri.fsPath ?? tmpdir(),
+    vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? tmpdir(),
     url.pathname.slice(1) || 'index.js',
   );
 
@@ -130,7 +130,7 @@ const showPositionInUrl = async (
 const parseLink = (link: string | undefined): Link => {
   const matchCommand = link?.match(/^command:([\w\.]+)(?:\?(.*))?/);
   if (matchCommand) {
-    const [command, rawArgs] = matchCommand.slice(1);
+    const [command = '', rawArgs] = matchCommand.slice(1);
     const parsed = rawArgs ? JSON.parse(decodeURIComponent(rawArgs)) : [];
     const args = Array.isArray(parsed) ? parsed : [parsed];
     return { type: LinkType.Command, command, args };

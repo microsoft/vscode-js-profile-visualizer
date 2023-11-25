@@ -32,12 +32,12 @@ export class HeapProfileAnnotations extends ProfileAnnotations<ITreeNode> {
     }
 
     let index = 0;
-    while (index < list.length && list[index].position.line < position.line) {
+    while (index < list.length && (list[index]?.position.line || Infinity) < position.line) {
       index++;
     }
 
-    if (list[index]?.position.line === position.line) {
-      const existing = list[index];
+    const existing = list[index];
+    if (existing?.position.line === position.line) {
       if (position.character < existing.position.character) {
         existing.position = new Position(position.line, position.character);
       }

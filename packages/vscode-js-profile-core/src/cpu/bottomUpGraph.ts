@@ -76,16 +76,19 @@ const processNode = (
   initialNode = node,
 ) => {
   let child = aggregate.children[node.locationId];
-  if (!child) {
-    child = new BottomUpNode(model.locations[node.locationId], aggregate);
+  const location = model.locations[node.locationId]; // should always be defined
+  if (!child && location) {
+    child = new BottomUpNode(location, aggregate);
     aggregate.childrenSize++;
     aggregate.children[node.locationId] = child;
   }
+  if (!child) return;
 
   child.addNode(initialNode);
 
   if (node.parent) {
-    processNode(child, model.nodes[node.parent], model, initialNode);
+    const parent = model.nodes[node.parent];
+    if (parent) processNode(child, parent, model, initialNode);
   }
 };
 

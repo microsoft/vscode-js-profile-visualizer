@@ -52,7 +52,7 @@ export const lex = (expr: string) => {
     let text = '';
     const start = i;
     while (i < expr.length) {
-      const char = expr[i];
+      const char = expr[i] || '';
       if (char === Chars.Escape) {
         text += expr[++i];
         i++;
@@ -122,7 +122,7 @@ export const compile = <T>(lexed: ILexed[], query: IQuery<T>, ops = operators) =
   const text: string[] = [];
   for (let i = 0; i < lexed.length; i++) {
     const token = lexed[i];
-    switch (token.token) {
+    switch (token?.token) {
       case Token.Column:
         const prop = query.datasource.properties[token.text];
         if (!prop) {
@@ -144,17 +144,16 @@ export const compile = <T>(lexed: ILexed[], query: IQuery<T>, ops = operators) =
 
         const value = lexed[++i];
         if (value?.token !== Token.Value) {
-          throw new ParseError(`Missing operand for column @${value.text}`, token.start);
+          throw new ParseError(`Missing operand for column @${value?.text}`, token.start);
         }
-
-        const compiled = ops[prop.type][op.text](value.text) as (a: unknown) => boolean;
+        const compiled = ops[prop.type]?.[op.text]?.(value.text) as (a: unknown) => boolean;
         filterList.push(m => compiled(prop.accessor(m)));
         break;
       case Token.Text:
         text.push(token.text.trim());
         break;
       default:
-        throw new Error(`Illegal token ${token.token}`);
+        throw new Error(`Illegal token ${token?.token}`);
     }
   }
 
@@ -162,8 +161,8 @@ export const compile = <T>(lexed: ILexed[], query: IQuery<T>, ops = operators) =
   if (joinedText) {
     const re =
       `/${query.regex ? joinedText : reEscape(joinedText)}/` + (query.caseSensitive ? '' : 'i');
-    const compiled = ops[PropertyType.String]['~='](re);
-    filterList.push(m => compiled(query.datasource.genericMatchStr(m)));
+    const compiled = ops[PropertyType.String]?.['~=']?.(re);
+    filterList.push(m => !!compiled && compiled(query.datasource.genericMatchStr(m)));
   }
 
   return (model: T) => {

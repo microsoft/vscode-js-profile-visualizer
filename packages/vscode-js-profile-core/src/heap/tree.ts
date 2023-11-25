@@ -74,7 +74,7 @@ const processNode = (node: IProfileModelNode, parent: TreeNode) => {
   treeNode.totalSize = node.selfSize;
 
   for (const child in treeNode.children) {
-    treeNode.totalSize += treeNode.children[child].totalSize;
+    treeNode.totalSize += treeNode.children[child]?.totalSize || 0;
   }
 
   return treeNode;
@@ -93,7 +93,7 @@ export const createTree = (model: IProfileModel) => {
   }
 
   for (const child in root.children) {
-    root.totalSize += root.children[child].totalSize;
+    root.totalSize += root.children[child]?.totalSize || 0;
   }
 
   return root;

@@ -2,6 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
+import { isDefined } from '../array';
 import { IPropertyToPrimitiveType, Property, PropertyType } from './types';
 
 export interface IOperator<T> {
@@ -32,8 +33,8 @@ export const operators: IOperatorMap = {
     '!=': n => v => v !== n,
     '<>': n => v => v !== n,
     '~=': n => {
-      const reExtract = /^\/(.+)\/([a-z])*$/.exec(n);
-      const re = reExtract ? new RegExp(reExtract[1], reExtract[2]) : new RegExp(n);
+      const [, p1, p2] = /^\/(.+)\/([a-z])*$/.exec(n) || [];
+      const re = isDefined(p1) && isDefined(p2) ? new RegExp(p1, p2) : new RegExp(n);
       return v => {
         re.lastIndex = 0;
         return re.test(v);

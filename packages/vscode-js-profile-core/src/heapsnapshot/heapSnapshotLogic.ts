@@ -17,8 +17,10 @@ const mapInto = <T extends { free(): void }, R>(
   const transmuted = new Array<R>(arr.length);
   for (let i = 0; i < arr.length; i++) {
     const value = arr[i];
-    transmuted[i] = mapper(value, i);
-    value.free();
+    if (value) {
+      transmuted[i] = mapper(value, i);
+      value.free();
+    }
   }
 
   return transmuted;

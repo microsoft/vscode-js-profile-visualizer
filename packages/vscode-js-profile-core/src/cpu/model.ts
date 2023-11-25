@@ -3,6 +3,7 @@
  *--------------------------------------------------------*/
 
 import { Protocol as Cdp } from 'devtools-protocol';
+import { isDefined } from '../array';
 import { categorize, INode } from '../common/model';
 import { IAnnotationLocation } from '../common/types';
 import { getBestLocation } from '../getBestLocation';
@@ -61,6 +62,7 @@ export interface IProfileModel {
  */
 const computeAggregateTime = (index: number, nodes: IComputedNode[]): number => {
   const row = nodes[index];
+  if (!row) return 0;
   if (row.aggregateTime) {
     return row.aggregateTime;
   }
@@ -189,9 +191,7 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
   // 1. Created a sorted list of nodes. It seems that the profile always has
   // incrementing IDs, although they are just not initially sorted.
   const nodes = new Array<IComputedNode>(profile.nodes.length);
-  for (let i = 0; i < profile.nodes.length; i++) {
-    const node = profile.nodes[i];
-
+  for (const node of profile.nodes) {
     // make them 0-based:
     const id = mapId(node.id);
     nodes[id] = {
@@ -204,24 +204,29 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
 
     for (const child of node.positionTicks || []) {
       if (child.startLocationId) {
-        locations[child.startLocationId].ticks += child.ticks;
+        const childLocation = locations[child.startLocationId];
+        if (childLocation) childLocation.ticks += child.ticks;
       }
     }
   }
 
   for (const node of nodes) {
-    for (const child of node.children) {
-      nodes[child].parent = node.id;
+    for (const childId of node.children) {
+      const child = nodes[childId];
+      if (child) child.parent = node.id;
     }
   }
+
+  const sampledNode = (i: number) => isDefined(samples[i]) && nodes[mapId(samples[i]!)];
 
   // 2. The profile samples are the 'bottom-most' node, the currently running
   // code. Sum of these in the self time.
   const duration = profile.endTime - profile.startTime;
-  let lastNodeTime = duration - timeDeltas[0];
+  let lastNodeTime = duration - (timeDeltas[0] || 0);
   for (let i = 0; i < timeDeltas.length - 1; i++) {
-    const d = timeDeltas[i + 1];
-    nodes[mapId(samples[i])].selfTime += d;
+    const d = timeDeltas[i + 1] || 0;
+    const node = sampledNode(i);
+    if (node) node.selfTime += d;
     lastNodeTime -= d;
   }
 
@@ -230,16 +235,19 @@ export const buildModel = (profile: ICpuProfileRaw): IProfileModel => {
   // derived (approximately) by the missing time in the sum of deltas. Save
   // some work by calculating it here.
   if (nodes.length) {
-    nodes[mapId(samples[timeDeltas.length - 1])].selfTime += lastNodeTime;
+    const node = sampledNode(timeDeltas.length - 1);
+    if (node) node.selfTime += lastNodeTime;
     timeDeltas.push(lastNodeTime);
   }
 
   // 3. Add the aggregate times for all node children and locations
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
-    const location = locations[node.locationId];
-    location.aggregateTime += computeAggregateTime(i, nodes);
-    location.selfTime += node.selfTime;
+    const location = node && locations[node.locationId];
+    if (location) {
+      location.aggregateTime += computeAggregateTime(i, nodes);
+      location.selfTime += node.selfTime;
+    }
   }
 
   return {

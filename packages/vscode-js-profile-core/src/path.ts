@@ -55,7 +55,7 @@ export function maybeFileUrlToPath(fileUrl: string): string {
 
   if (isWindowsPath(fileUrl)) {
     // If the path starts with a drive letter, ensure lowercase. VS Code uses a lowercase drive letter
-    fileUrl = fileUrl[0].toLowerCase() + fileUrl.substr(1);
+    fileUrl = (fileUrl[0] || '').toLowerCase() + fileUrl.substr(1);
   }
 
   return fileUrl;
