@@ -59,6 +59,7 @@ export const makeBaseTimeViewRow =
     return (
       <div
         className={styles.row}
+        style={{ cursor: numChildren > 0 ? 'pointer' : 'default' }}
         data-row-id={getGlobalUniqueId(node)}
         onKeyDown={onKeyDown}
         onFocus={onFocus}
@@ -79,7 +80,7 @@ export const makeBaseTimeViewRow =
           </div>
         ) : (
           <div className={styles.location} style={{ marginLeft: depth * 15 }}>
-            {expand} <span className={styles.fn}>{rowText}</span>
+            {expand} <span className={styles.fn} style={{ maxWidth: '80%' }}>{rowText}</span>
             <span className={styles.file}>
               <a href="#" onClick={onClick}>
                 {locationText}
