@@ -9,7 +9,6 @@ import { GraphRPCInterface } from 'vscode-js-profile-core/out/esm/heapsnapshot/r
 import { useGraph } from 'vscode-js-profile-core/out/esm/heapsnapshot/useGraph';
 import { DataProvider, IQueryResults, PropertyType } from 'vscode-js-profile-core/out/esm/ql';
 import styles from '../common/client.css';
-import OpenFlameButton from '../common/open-flame-buttom';
 import { SortFn } from '../common/types';
 import { TableNode, TimeView, sortByName, sortBySelfSize } from './time-view';
 
@@ -99,7 +98,6 @@ const Root: FunctionComponent = () => {
         },
       }}
       body={TimeViewWrapper}
-      filterFooter={OpenFlameButton}
     />
   );
 };

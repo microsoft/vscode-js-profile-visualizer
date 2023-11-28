@@ -89,7 +89,7 @@
 }
 
 .fn {
-  max-width: 80%;
+  max-width: calc(100% - 20px);
   text-overflow: ellipsis;
   flex-shrink: 0;
 }

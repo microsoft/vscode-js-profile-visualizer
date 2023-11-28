@@ -39,7 +39,7 @@ export const TimeView: FunctionComponent<{
   return (
     <BaseTimeView
       data={data}
-      sortFn={sortFn}
+      sortFn={sortFn || sortByRetainedSize}
       query={query}
       header={<TimeViewHeader sort={sortFn} onChangeSort={setSortFn} />}
       row={useMemo(() => timeViewRow(data), [data])}
@@ -85,16 +85,16 @@ const timeViewRow =
   (data: DataProvider<TableNode>): FunctionComponent<IRowProps<TableNode>> =>
   props => {
     const { node } = props;
-    const { selfSize, retainedSize } =
-      node.parent ||
-      data.loaded.reduce(
-        (acc, n) => {
-          acc.selfSize += n.selfSize;
-          acc.retainedSize += n.retainedSize;
-          return acc;
-        },
-        { selfSize: 0, retainedSize: 0 },
-      );
+    const ret = node.parent
+      ? undefined
+      : data.loaded.reduce(
+          (acc, n) => {
+            acc.selfSize += n.selfSize;
+            acc.retainedSize += n.retainedSize;
+            return acc;
+          },
+          { selfSize: 0, retainedSize: 0 },
+        );
 
     const vscode = useContext(VsCodeApi);
     const onClick = useCallback(
@@ -110,6 +110,11 @@ const timeViewRow =
       },
       [vscode, node.index],
     );
+
+    const pct = ret && {
+      self: node.selfSize / ret.selfSize,
+      ret: node.retainedSize / ret.retainedSize,
+    };
 
     return (
       <BaseTimeViewRow
@@ -133,12 +138,20 @@ const timeViewRow =
           </Fragment>
         }
       >
-        <div className={styles.duration} aria-labelledby="self-size-header">
-          <ImpactBar impact={node.selfSize / selfSize} />
+        <div
+          className={styles.duration}
+          aria-labelledby="self-size-header"
+          title={pct && `${node.selfSize} bytes, ${(pct.self * 100).toFixed(1)}% of total`}
+        >
+          {pct && <ImpactBar impact={pct.self} />}
           {prettyBytes(node.selfSize)}
         </div>
-        <div className={styles.duration} aria-labelledby="retained-size-header">
-          <ImpactBar impact={node.retainedSize / retainedSize} />
+        <div
+          className={styles.duration}
+          aria-labelledby="retained-size-header"
+          title={pct && `${node.retainedSize} bytes, ${(pct.ret * 100).toFixed(1)}% of total`}
+        >
+          {pct && <ImpactBar impact={pct.ret} />}
           {prettyBytes(node.retainedSize)}
         </div>
       </BaseTimeViewRow>
