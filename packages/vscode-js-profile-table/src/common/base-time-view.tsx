@@ -3,7 +3,6 @@
  *--------------------------------------------------------*/
 
 import { ComponentChild, ComponentType, Fragment, FunctionComponent, h } from 'preact';
-import VirtualList from 'preact-virtual-list';
 import {
   StateUpdater,
   useCallback,
@@ -18,6 +17,7 @@ import { ICommonNode } from 'vscode-js-profile-core/out/esm/common/model';
 import { DataProvider, IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
 import styles from './time-view.css';
 import { SortFn } from './types';
+import { makeVirtualList } from './virtual-list';
 
 const getGlobalUniqueId = (node: ICommonNode) => {
   const parts = [node.id];
@@ -58,35 +58,34 @@ const onDidFinishRead = <T,>(
   });
 };
 
-export const makeBaseTimeView =
-  <T extends ICommonNode>(): FunctionComponent<{
-    query: IQueryResults<T>;
-    data: DataProvider<T>;
-    sortFn: SortFn<T> | undefined;
-    header: ComponentChild;
-    row: ComponentType<IRowProps<T>>;
-  }> =>
-  ({ data, header, query, sortFn, row: Row }) => {
-    /**
-     * Type for rendered nodes. `node` is omitted for the 'footer' of the
-     * category.
-     */
-    type NodeAtDepth = {
-      node: T;
-      entireSubtree?: boolean;
-      isFooter?: boolean;
-      provider: DataProvider<T>;
-      depth: number;
-      position: number;
-    };
-
+export const makeBaseTimeView = <T extends ICommonNode>(): FunctionComponent<{
+  query: IQueryResults<T>;
+  data: DataProvider<T>;
+  sortFn: SortFn<T> | undefined;
+  header: ComponentChild;
+  row: ComponentType<IRowProps<T>>;
+}> => {
+  /**
+   * Type for rendered nodes. `node` is omitted for the 'footer' of the
+   * category.
+   */
+  type NodeAtDepth = {
+    node: T;
+    entireSubtree?: boolean;
+    isFooter?: boolean;
+    provider: DataProvider<T>;
+    depth: number;
+    position: number;
+  };
+  const VirtualList = makeVirtualList<NodeAtDepth>();
+  return ({ data, header, query, sortFn, row: Row }) => {
     /** Map of nodes to the provider that created them. */
     const providers = useRef<WeakMap<T, DataProvider<T>>>(new Map());
 
     /** Map of nodes to promises that resolve when all their children are loaded. */
     const [childLoads, setChildLoads] = useState<ReadonlyMap<T, Promise<void>>>(new Map());
 
-    const listRef = useRef<{ base: HTMLElement }>();
+    const listRef = useRef<HTMLDivElement>(null);
     const [focused, setFocused] = useState<T | undefined>(undefined);
     const [expanded, setExpanded] = useState<ReadonlySet<T>>(new Set());
 
@@ -195,14 +194,14 @@ export const makeBaseTimeView =
           }
           case 'Home':
             if (listRef.current) {
-              listRef.current.base.scrollTop = 0;
+              listRef.current.scrollTop = 0;
             }
 
             nextFocus = rendered[0]?.node;
             break;
           case 'End':
             if (listRef.current) {
-              listRef.current.base.scrollTop = listRef.current.base.scrollHeight;
+              listRef.current.scrollTop = listRef.current.scrollHeight;
             }
 
             nextFocus = rendered[rendered.length - 1]?.node;
@@ -250,10 +249,10 @@ export const makeBaseTimeView =
       // data to be thrown away and we would need to re-request it.
     }, [expanded, sortFn]);
 
-    useEffect(() => listRef.current?.base.setAttribute('role', 'tree'), [listRef.current]);
+    useEffect(() => listRef.current?.setAttribute('role', 'tree'), [listRef.current]);
 
     useLayoutEffect(() => {
-      const el = listRef.current?.base;
+      const el = listRef.current;
       if (!el || !focused) {
         return;
       }
@@ -323,18 +322,17 @@ export const makeBaseTimeView =
       <Fragment>
         {header}
         <VirtualList
-          ref={listRef}
+          containerRef={listRef}
           className={styles.rows}
           data={rendered}
           renderRow={renderRow}
           rowHeight={25}
-          overscanCount={100}
-          sync
+          overscanCount={30}
         />
       </Fragment>
     );
   };
-
+};
 const FooterRow: FunctionComponent<{
   depth: number;
   position: number;
