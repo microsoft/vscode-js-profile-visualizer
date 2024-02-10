@@ -17,8 +17,8 @@ const wholeNumberFormat = new Intl.NumberFormat(undefined, {
 
 const formatSize = (bytes: number) => {
   let size = 0;
-  while (bytes > 1000 && size < sizeLabels.length) {
-    bytes /= 1000;
+  while (bytes > 1024 && size < sizeLabels.length) {
+    bytes /= 1024;
     size++;
   }
 
