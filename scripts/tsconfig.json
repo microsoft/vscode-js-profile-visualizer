@@ -1,26 +1,21 @@
 {
-	"compilerOptions": {
-		"module": "commonjs",
-		"target": "ES2019",
-		"outDir": "out",
-		"lib": [
-			"ES2019",
-			"dom"
-		],
-		"declaration": false,
-		"sourceMap": true,
-		"strict": true,
-		"jsx": "react",
-		"jsxFactory": "h",
-		"moduleResolution": "node",
-		"noImplicitReturns": true,
-		"noFallthroughCasesInSwitch": true,
-		"noUnusedParameters": true,
-		"esModuleInterop": true,
-		"preserveWatchOutput": true
-	},
-	"exclude": [
-		"node_modules",
-		".vscode-test"
-	]
+  "compilerOptions": {
+    "module": "ES2022",
+    "target": "ES2022",
+    "outDir": "out",
+    "lib": ["ES2022", "dom"],
+    "declaration": false,
+    "sourceMap": true,
+    "strict": true,
+    "jsx": "react",
+    "jsxFactory": "h",
+    "moduleResolution": "bundler",
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedParameters": true,
+    "esModuleInterop": true,
+    "preserveWatchOutput": true,
+		"useDefineForClassFields": false,
+  },
+  "exclude": ["node_modules", ".vscode-test"]
 }

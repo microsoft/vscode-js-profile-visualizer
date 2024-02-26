@@ -38,8 +38,7 @@ const processNodes = (nodes: readonly (Node | RetainerNode)[]): (INode | IRetain
   }));
 
 export const prepareGraphParser = async () => {
-  const r = await import('@vscode/v8-heap-parser');
-  const { decode_bytes, init_panic_hook } = await r.default;
+  const { decode_bytes, init_panic_hook } = await import('@vscode/v8-heap-parser');
   init_panic_hook();
   return decode_bytes;
 };
