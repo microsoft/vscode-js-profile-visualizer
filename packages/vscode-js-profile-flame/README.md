@@ -20,7 +20,7 @@ You can further configure the realtime performance view with the following user 
 
 ### Flame Chart View
 
-You can open a `.cpuprofile` file (such as one taken by clicking the "profile" button in the realtime performance view), then click the 🔥 button in the upper right to open a flame chart view.
+You can open a `.cpuprofile` or `.heapprofile` file (such as one taken by clicking the "profile" button in the realtime performance view), then click the 🔥 button in the upper right to open a flame chart view.
 
 By default, this view shows chronological "snapshots" of your program's stack taken roughly each millisecond. You can zoom and explore the flamechart, and ctrl or cmd+click on stacks to jump to the stack location.
 
@@ -33,3 +33,9 @@ This view groups call stacks and orders them by time, creating a visual represen
 ![](/packages/vscode-js-profile-flame/resources/flame-leftheavy.png)
 
 The flame chart color is tweakable via the `charts-red` color token in your VS Code theme.
+
+### Memory Graph View
+
+You can open a `.heapsnapshot` file in VS Code and click on the "graph" icon beside an object in memory to view a chart of its retainers:
+
+![](/packages/vscode-js-profile-flame/resources/retainers.png)
