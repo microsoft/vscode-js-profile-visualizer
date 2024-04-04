@@ -5,7 +5,7 @@
 import * as vscode from 'vscode';
 import { bundlePage } from '../bundlePage';
 import { Message } from '../common/types';
-import { reopenWithEditor } from '../reopenWithEditor';
+import { reopenWithEditor, requireExtension } from '../reopenWithEditor';
 import { GraphRPCCall } from './rpc';
 import { startWorker } from './startWorker';
 
@@ -19,7 +19,7 @@ interface IWorker extends vscode.Disposable {
   worker: Workerish;
 }
 
-class HeapSnapshotDocument implements vscode.CustomDocument {
+export class HeapSnapshotDocument implements vscode.CustomDocument {
   constructor(
     public readonly uri: vscode.Uri,
     public readonly value: IWorker,
@@ -73,6 +73,53 @@ const workerRegistry = ((globalThis as any).__jsHeapSnapshotWorkers ??= new (cla
   }
 })());
 
+export const createHeapSnapshotWorker = (uri: vscode.Uri): Promise<IWorker> =>
+  workerRegistry.create(uri);
+
+export const setupHeapSnapshotWebview = async (
+  { worker }: IWorker,
+  bundle: vscode.Uri,
+  uri: vscode.Uri,
+  webview: vscode.Webview,
+  extraConsts: Record<string, unknown>,
+) => {
+  webview.onDidReceiveMessage((message: Message) => {
+    switch (message.type) {
+      case 'reopenWith':
+        reopenWithEditor(
+          uri.with({ query: message.withQuery }),
+          message.viewType,
+          message.requireExtension,
+          message.toSide,
+        );
+        return;
+      case 'command':
+        requireExtension(message.requireExtension, () =>
+          vscode.commands.executeCommand(message.command, ...message.args),
+        );
+        return;
+      case 'callGraph':
+        worker.postMessage(message.inner);
+        return;
+      default:
+        console.warn(`Unknown request from webview: ${JSON.stringify(message)}`);
+    }
+  });
+
+  const listener = worker.onMessage((message: unknown) => {
+    webview.postMessage({ method: 'graphRet', message });
+  });
+
+  webview.options = { enableScripts: true };
+  webview.html = await bundlePage(webview.asWebviewUri(bundle), {
+    SNAPSHOT_URI: webview.asWebviewUri(uri).toString(),
+    DOCUMENT_URI: uri.toString(),
+    ...extraConsts,
+  });
+
+  return listener;
+};
+
 export class HeapSnapshotEditorProvider
   implements vscode.CustomEditorProvider<HeapSnapshotDocument>
 {
@@ -87,7 +134,7 @@ export class HeapSnapshotEditorProvider
    * @inheritdoc
    */
   async openCustomDocument(uri: vscode.Uri) {
-    const worker = await workerRegistry.create(uri);
+    const worker = await createHeapSnapshotWorker(uri);
     return new HeapSnapshotDocument(uri, worker);
   }
 
@@ -98,36 +145,16 @@ export class HeapSnapshotEditorProvider
     document: HeapSnapshotDocument,
     webviewPanel: vscode.WebviewPanel,
   ): Promise<void> {
-    webviewPanel.webview.onDidReceiveMessage((message: Message) => {
-      switch (message.type) {
-        case 'reopenWith':
-          reopenWithEditor(
-            document.uri.with({ query: message.withQuery }),
-            message.viewType,
-            message.requireExtension,
-            message.toSide,
-          );
-          return;
-        case 'callGraph':
-          document.value.worker.postMessage(message.inner);
-          return;
-        default:
-          console.warn(`Unknown request from webview: ${JSON.stringify(message)}`);
-      }
-    });
+    const disposable = await setupHeapSnapshotWebview(
+      document.value,
+      this.bundle,
+      document.uri,
+      webviewPanel.webview,
+      this.extraConsts,
+    );
 
-    const listener = document.value.worker.onMessage((message: unknown) => {
-      webviewPanel.webview.postMessage({ method: 'graphRet', message });
-    });
     webviewPanel.onDidDispose(() => {
-      listener.dispose();
-    });
-
-    webviewPanel.webview.options = { enableScripts: true };
-    webviewPanel.webview.html = await bundlePage(webviewPanel.webview.asWebviewUri(this.bundle), {
-      SNAPSHOT_URI: webviewPanel.webview.asWebviewUri(document.uri).toString(),
-      DOCUMENT_URI: document.uri.toString(),
-      ...this.extraConsts,
+      disposable.dispose();
     });
   }
 

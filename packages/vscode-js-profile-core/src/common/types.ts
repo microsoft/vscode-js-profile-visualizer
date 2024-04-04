@@ -57,6 +57,17 @@ export interface IReopenWithEditor {
 }
 
 /**
+ * Reopens the current document with the given editor, optionally only if
+ * the given extension is installed.
+ */
+export interface IRunCommand {
+  type: 'command';
+  command: string;
+  args: unknown[];
+  requireExtension?: string;
+}
+
+/**
  * Calls a graph method, used in the heapsnapshot.
  */
 export interface ICallHeapGraph {
@@ -64,4 +75,4 @@ export interface ICallHeapGraph {
   inner: GraphRPCCall;
 }
 
-export type Message = IOpenDocumentMessage | IReopenWithEditor | ICallHeapGraph;
+export type Message = IOpenDocumentMessage | IRunCommand | IReopenWithEditor | ICallHeapGraph;
