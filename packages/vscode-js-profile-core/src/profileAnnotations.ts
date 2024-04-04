@@ -20,14 +20,13 @@ export abstract class ProfileAnnotations<TNode extends INode> {
 
   public add(rootPath: string | undefined, node: TNode) {
     const expand = once(() => {
-      this.set(
-        node.callFrame.url,
-        new Position(
-          Math.max(0, node.callFrame.lineNumber),
-          Math.max(0, node.callFrame.columnNumber),
-        ),
-        node,
+      const seen = new Set<string>();
+      const basePosition = new Position(
+        Math.max(0, node.callFrame.lineNumber),
+        Math.max(0, node.callFrame.columnNumber),
       );
+      seen.add(`${node.callFrame.url}/${basePosition.line}`);
+      this.set(node.callFrame.url, basePosition, node);
 
       const src = node.src;
       if (
@@ -40,11 +39,16 @@ export abstract class ProfileAnnotations<TNode extends INode> {
       }
 
       for (const path of getCandidateDiskPaths(rootPath, src.source)) {
-        this.set(
-          path,
-          new Position(Math.max(0, src.lineNumber - 1), Math.max(0, src.columnNumber - 1)),
-          node,
+        const position = new Position(
+          Math.max(0, src.lineNumber - 1),
+          Math.max(0, src.columnNumber - 1),
         );
+
+        const key = `${path}/${position.line}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          this.set(path, position, node);
+        }
       }
     });
 
