@@ -19,8 +19,8 @@ import ImpactBar from '../common/impact-bar';
 import styles from '../common/time-view.css';
 import { SortFn } from '../common/types';
 
-const selfTime: SortFn<IGraphNode> = n => n.selfTime;
-const aggTime: SortFn<IGraphNode> = n => n.aggregateTime;
+const selfTime: SortFn<IGraphNode> = (a, b) => b.selfTime - a.selfTime;
+const aggTime: SortFn<IGraphNode> = (a, b) => b.aggregateTime - a.aggregateTime;
 
 const BaseTimeView = makeBaseTimeView<IGraphNode>();
 
