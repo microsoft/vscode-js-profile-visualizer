@@ -12,11 +12,14 @@ const allConfig = [Config.PollInterval, Config.ViewDuration, Config.Easing];
 
 import * as vscode from 'vscode';
 import { CpuProfileEditorProvider } from 'vscode-js-profile-core/out/cpu/editorProvider';
+import {
+  createHeapSnapshotWorker,
+  setupHeapSnapshotWebview,
+} from 'vscode-js-profile-core/out/esm/heapsnapshot/editorProvider';
 import { HeapProfileEditorProvider } from 'vscode-js-profile-core/out/heap/editorProvider';
-import { HeapSnapshotEditorProvider } from 'vscode-js-profile-core/out/esm/heapsnapshot/editorProvider';
 import { ProfileCodeLensProvider } from 'vscode-js-profile-core/out/profileCodeLensProvider';
 import { createMetrics } from './realtime/metrics';
-import { readRealtimeSettings, RealtimeSessionTracker } from './realtimeSessionTracker';
+import { RealtimeSessionTracker, readRealtimeSettings } from './realtimeSessionTracker';
 import { RealtimeWebviewProvider } from './realtimeWebviewProvider';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -50,14 +53,43 @@ export function activate(context: vscode.ExtensionContext) {
       },
     ),
 
-    vscode.window.registerCustomEditorProvider(
-      'jsProfileVisualizer.heapsnapshot.flame',
-      new HeapSnapshotEditorProvider(
-        vscode.Uri.joinPath(context.extensionUri, 'out', 'heapsnapshot-client.bundle.js'),
-      ),
-      // note: context is not retained when hidden, unlike other editors, because
-      // the model is kept in a worker_thread and accessed via RPC
+    vscode.commands.registerCommand(
+      'jsProfileVisualizer.heapsnapshot.flame.show',
+      async ({ uri: rawUri, index, name }) => {
+        const panel = vscode.window.createWebviewPanel(
+          'jsProfileVisualizer.heapsnapshot.flame',
+          vscode.l10n.t('Memory Graph: {0}', name),
+          vscode.ViewColumn.Beside,
+          {
+            enableScripts: true,
+            localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'out')],
+          },
+        );
+
+        const uri = vscode.Uri.parse(rawUri);
+        const worker = await createHeapSnapshotWorker(uri);
+        const webviewDisposable = await setupHeapSnapshotWebview(
+          worker,
+          vscode.Uri.joinPath(context.extensionUri, 'out', 'heapsnapshot-client.bundle.js'),
+          uri,
+          panel.webview,
+          { SNAPSHOT_INDEX: index },
+        );
+
+        panel.onDidDispose(() => {
+          worker.dispose();
+          webviewDisposable.dispose();
+        });
+      },
     ),
+
+    // there's no state we actually need to serialize/deserialize, but register
+    // this so VS Code knows that it can
+    vscode.window.registerWebviewPanelSerializer('jsProfileVisualizer.heapsnapshot.flame.show', {
+      deserializeWebviewPanel() {
+        return Promise.resolve();
+      },
+    }),
 
     vscode.window.registerWebviewViewProvider(RealtimeWebviewProvider.viewType, realtime),
 

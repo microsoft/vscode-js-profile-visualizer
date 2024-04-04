@@ -10,7 +10,7 @@ import prettyBytes from 'pretty-bytes';
 import { Icon } from 'vscode-js-profile-core/out/esm/client/icons';
 import { classes } from 'vscode-js-profile-core/out/esm/client/util';
 import { VsCodeApi } from 'vscode-js-profile-core/out/esm/client/vscodeApi';
-import { IReopenWithEditor } from 'vscode-js-profile-core/out/esm/common/types';
+import { IRunCommand } from 'vscode-js-profile-core/out/esm/common/types';
 import { IClassGroup, INode } from 'vscode-js-profile-core/out/esm/heapsnapshot/rpc';
 import { DataProvider, IQueryResults } from 'vscode-js-profile-core/out/esm/ql';
 import { IRowProps, makeBaseTimeView } from '../common/base-time-view';
@@ -25,6 +25,8 @@ export type TableNode = (IClassGroup | INode) & {
 };
 
 const BaseTimeView = makeBaseTimeView<TableNode>();
+
+declare const DOCUMENT_URI: string;
 
 export const sortBySelfSize: SortFn<TableNode> = (a, b) => b.selfSize - a.selfSize;
 export const sortByRetainedSize: SortFn<TableNode> = (a, b) => b.retainedSize - a.retainedSize;
@@ -100,11 +102,10 @@ const timeViewRow =
     const onClick = useCallback(
       (evt: MouseEvent) => {
         evt.stopPropagation();
-        vscode.postMessage<IReopenWithEditor>({
-          type: 'reopenWith',
-          withQuery: `index=${node.index}`,
-          toSide: true,
-          viewType: 'jsProfileVisualizer.heapsnapshot.flame',
+        vscode.postMessage<IRunCommand>({
+          type: 'command',
+          command: 'jsProfileVisualizer.heapsnapshot.flame.show',
+          args: [{ uri: DOCUMENT_URI, index: node.index, name: node.name }],
           requireExtension: 'ms-vscode.vscode-js-profile-flame',
         });
       },

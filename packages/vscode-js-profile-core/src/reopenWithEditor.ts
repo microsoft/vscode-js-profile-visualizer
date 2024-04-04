@@ -4,22 +4,29 @@
 
 import * as vscode from 'vscode';
 
-export function reopenWithEditor(
-  uri: vscode.Uri,
-  viewType: string,
-  requireExtension?: string,
-  toSide?: boolean,
-) {
-  if (requireExtension && !vscode.extensions.all.some(e => e.id === requireExtension)) {
+export function requireExtension<T>(extension: string | undefined, thenDo: () => T): T | undefined {
+  if (requireExtension && !vscode.extensions.all.some(e => e.id === extension)) {
     vscode.commands.executeCommand('workbench.extensions.action.showExtensionsWithIds', [
       requireExtension,
     ]);
-  } else {
+    return undefined;
+  }
+
+  return thenDo();
+}
+
+export function reopenWithEditor(
+  uri: vscode.Uri,
+  viewType: string,
+  requireExtensionId?: string,
+  toSide?: boolean,
+) {
+  return requireExtension(requireExtensionId, () =>
     vscode.commands.executeCommand(
       'vscode.openWith',
       uri,
       viewType,
       toSide ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active,
-    );
-  }
+    ),
+  );
 }

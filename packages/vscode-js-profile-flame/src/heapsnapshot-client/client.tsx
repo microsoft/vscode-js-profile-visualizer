@@ -19,9 +19,7 @@ import styles from './client.css';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 cytoscape.use(require('cytoscape-klay'));
 
-declare const DOCUMENT_URI: string;
-const snapshotUri = new URL(DOCUMENT_URI.replace(/\%3D/g, '='));
-const index = snapshotUri.searchParams.get('index');
+declare const SNAPSHOT_INDEX: number;
 
 const DEFAULT_RETAINER_DISTANCE = 4;
 
@@ -52,7 +50,7 @@ const Graph: FunctionComponent<{ maxDistance: number }> = ({ maxDistance }) => {
   const [nodes, setNodes] = useState<IRetainingNode[]>();
 
   useEffect(() => {
-    doGraphRpc(vscodeApi, 'getRetainers', [Number(index), maxDistance]).then(r =>
+    doGraphRpc(vscodeApi, 'getRetainers', [Number(SNAPSHOT_INDEX), maxDistance]).then(r =>
       setNodes(r as IRetainingNode[]),
     );
   }, [maxDistance]);
@@ -150,7 +148,7 @@ const Graph: FunctionComponent<{ maxDistance: number }> = ({ maxDistance }) => {
       } as any,
     });
 
-    const root = cy.$(`#${index}`);
+    const root = cy.$(`#${SNAPSHOT_INDEX}`);
     root.style('background-color', colors['charts-blue']);
 
     attachPathHoverHandle(root, cy);
