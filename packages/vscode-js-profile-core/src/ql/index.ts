@@ -62,8 +62,12 @@ export class DataProvider<T> {
     }
   }
 
-  /** Recursively updates the sorting used for data in the provider. */
+  /** Updates the sorting used for data in the provider. */
   public setSort(sort?: (a: T, b: T) => number) {
+    if (sort === this.sortFn) {
+      return;
+    }
+
     this.sortFn = sort;
     if (!this.eof) {
       // if we didn't read all the data from the provider, we need to throw away
@@ -72,10 +76,6 @@ export class DataProvider<T> {
       this.asyncLoads = [];
     } else if (this.data) {
       this.data.sort(sort);
-    }
-
-    for (const child of this.children.values()) {
-      child.setSort(sort);
     }
   }
 
@@ -86,6 +86,8 @@ export class DataProvider<T> {
       children = this._getChildren(item);
       this.children.set(item, children);
     }
+
+    children.setSort(this.sortFn); // sort lazily
 
     return children;
   }

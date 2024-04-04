@@ -19,8 +19,10 @@ import ImpactBar from '../common/impact-bar';
 import styles from '../common/time-view.css';
 import { SortFn } from '../common/types';
 
-const selfSize: SortFn<ITreeNode> = n => (n as IHeapProfileNode).selfSize;
-const totalSize: SortFn<ITreeNode> = n => (n as IHeapProfileNode).totalSize;
+const selfSize: SortFn<ITreeNode> = (a, b) =>
+  (b as IHeapProfileNode).selfSize - (a as IHeapProfileNode).selfSize;
+const totalSize: SortFn<ITreeNode> = (a, b) =>
+  (b as IHeapProfileNode).totalSize - (a as IHeapProfileNode).totalSize;
 
 const BaseTimeView = makeBaseTimeView<ITreeNode>();
 
