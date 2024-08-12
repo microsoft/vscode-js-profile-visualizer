@@ -5,9 +5,9 @@
 import * as vscode from 'vscode';
 
 export function requireExtension<T>(extension: string | undefined, thenDo: () => T): T | undefined {
-  if (requireExtension && !vscode.extensions.all.some(e => e.id === extension)) {
+  if (extension && !vscode.extensions.all.some(e => e.id === extension)) {
     vscode.commands.executeCommand('workbench.extensions.action.showExtensionsWithIds', [
-      requireExtension,
+      extension,
     ]);
     return undefined;
   }
