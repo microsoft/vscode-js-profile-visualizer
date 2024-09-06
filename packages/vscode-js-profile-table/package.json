@@ -8,9 +8,6 @@
   "license": "MIT",
   "main": "out/extension.js",
   "browser": "out/extension.web.js",
-  "files": [
-    "out"
-  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/vscode-js-profile-visualizer.git"
