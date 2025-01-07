@@ -26,3 +26,6 @@ pipelines:
           lastModifiedDate: 2024-09-13
         armory:
           lastModifiedDate: 2024-09-13
+        policheck:
+          lastModifiedDate: 2025-01-07
+    usedNonDefaultBranch: true
