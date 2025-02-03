@@ -35,4 +35,11 @@ pipelines:
           lastModifiedDate: 2024-09-13
         policheck:
           lastModifiedDate: 2025-01-07
+      binary:
+        credscan:
+          lastModifiedDate: 2025-02-03
+        binskim:
+          lastModifiedDate: 2025-02-03
+        spotbugs:
+          lastModifiedDate: 2025-02-03
     usedNonDefaultBranch: true
