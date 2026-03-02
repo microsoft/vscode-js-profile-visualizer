@@ -31,6 +31,9 @@
     "printWidth": 100,
     "tabWidth": 2
   },
+  "overrides": {
+    "serialize-javascript": "^7.0.3"
+  },
   "devDependencies": {
     "@types/glob": "^8.1.0",
     "@types/node": "^20.9.0",
