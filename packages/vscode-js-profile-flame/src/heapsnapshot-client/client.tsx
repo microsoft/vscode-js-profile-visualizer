@@ -17,7 +17,7 @@ import styles from './client.css';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-cytoscape.use(require('cytoscape-klay'));
+cytoscape.use(require('cytoscape-elk'));
 
 declare const SNAPSHOT_INDEX: number;
 
@@ -130,20 +130,21 @@ const Graph: FunctionComponent<{ maxDistance: number }> = ({ maxDistance }) => {
       ],
 
       layout: {
-        name: 'klay',
+        name: 'elk',
         animate: false,
         nodeDimensionsIncludeLabels: true,
-        klay: {
+        elk: {
           // preferred since this opens to the side by default
-          direction: 'DOWN',
+          algorithm: 'layered',
+          'elk.direction': 'DOWN',
           // makes the graph more deterministic, without it the retained node
           // can end up in the middle vs. in nice layers
-          nodeLayering: 'LONGEST_PATH',
+          'elk.layered.nodeLayering.strategy': 'LONGEST_PATH',
           // determinism
-          randomizationSeed: 42,
+          'elk.randomSeed': 42,
           // not sure this does anything with a prescribed direction and
           // layering, it's here for the vibes
-          aspectRatio: window.innerWidth / window.innerHeight,
+          'elk.aspectRatio': window.innerWidth / window.innerHeight,
         },
       } as any,
     });
