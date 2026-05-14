@@ -141,10 +141,10 @@ const Graph: FunctionComponent<{ maxDistance: number }> = ({ maxDistance }) => {
           // can end up in the middle vs. in nice layers
           'elk.layered.nodeLayering.strategy': 'LONGEST_PATH',
           // determinism
-          'elk.randomSeed': '42',
+          'elk.randomSeed': 42,
           // not sure this does anything with a prescribed direction and
           // layering, it's here for the vibes
-          'elk.aspectRatio': String(window.innerWidth / window.innerHeight),
+          'elk.aspectRatio': window.innerWidth / window.innerHeight,
         },
       } as any,
     });
