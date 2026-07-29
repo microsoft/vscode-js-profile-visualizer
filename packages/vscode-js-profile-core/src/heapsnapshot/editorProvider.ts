@@ -4,6 +4,7 @@
 
 import * as vscode from 'vscode';
 import { bundlePage } from '../bundlePage';
+import { executeProfileCommand } from '../command-execution';
 import { Message } from '../common/types';
 import { reopenWithEditor, requireExtension } from '../reopenWithEditor';
 import { GraphRPCCall } from './rpc';
@@ -95,7 +96,7 @@ export const setupHeapSnapshotWebview = async (
         return;
       case 'command':
         requireExtension(message.requireExtension, () =>
-          vscode.commands.executeCommand(message.command, ...message.args),
+          executeProfileCommand(message.command, message.args),
         );
         return;
       case 'callGraph':
