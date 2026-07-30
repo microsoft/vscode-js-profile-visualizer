@@ -7,6 +7,7 @@ import { tmpdir } from 'os';
 import { resolve } from 'path';
 import * as vscode from 'vscode';
 import { DebugProtocol as Dap } from 'vscode-debugprotocol';
+import { executeProfileCommand } from './command-execution';
 import { DownloadFileProvider } from './download-file-provider';
 import { ISourceLocation } from './location-mapping';
 import { properRelative } from './path';
@@ -23,6 +24,7 @@ type Link = CommandLink | UriLink;
 const exists = async (uristr: string) => {
   try {
     const uri = parseLink(uristr);
+    if (!uri) return false;
     if (uri.type === LinkType.Command) return true;
     await vscode.workspace.fs.stat(uri.uri);
     return true;
@@ -70,8 +72,7 @@ const showPosition = async (
   await vscode.window.showTextDocument(doc, { viewColumn, selection: new vscode.Range(pos, pos) });
 };
 
-const runCommand = (link: CommandLink) =>
-  vscode.commands.executeCommand(link.command, ...link.args);
+const runCommand = (link: CommandLink) => executeProfileCommand(link.command, link.args);
 
 const showPositionInFile = async (
   rootPath: string | undefined,
@@ -86,6 +87,10 @@ const showPositionInFile = async (
   }
 
   const resolvedLink = parseLink(diskPaths[existingIndex]);
+  if (!resolvedLink) {
+    return false;
+  }
+
   if (resolvedLink.type === LinkType.Command) {
     await runCommand(resolvedLink); // delegate finding the position to the command provider
     return true;
@@ -123,15 +128,23 @@ const showPositionInUrl = async (
   return true;
 };
 /**
- * Parses a link into a link object
+ * Parses a link into a link object. Returns undefined if the link is not
+ * something we can act upon, such as a `command:` link with malformed
+ * arguments.
  * @param url
  * @returns
  */
-const parseLink = (link: string | undefined): Link => {
+export const parseLink = (link: string | undefined): Link | undefined => {
   const matchCommand = link?.match(/^command:([\w\.]+)(?:\?(.*))?/);
   if (matchCommand) {
     const [command, rawArgs] = matchCommand.slice(1);
-    const parsed = rawArgs ? JSON.parse(decodeURIComponent(rawArgs)) : [];
+    let parsed: unknown;
+    try {
+      parsed = rawArgs ? JSON.parse(decodeURIComponent(rawArgs)) : [];
+    } catch {
+      return undefined;
+    }
+
     const args = Array.isArray(parsed) ? parsed : [parsed];
     return { type: LinkType.Command, command, args };
   }
@@ -151,7 +164,7 @@ export const getCandidateDiskPaths = (rootPath: string | undefined, source: Dap.
   const uri = parseLink(source.path);
 
   const locations = [source.path];
-  if (!rootPath || uri.type === LinkType.Command || !uri.isFile) {
+  if (!rootPath || !uri || uri.type === LinkType.Command || !uri.isFile) {
     // no resolution for commands and virtual filesystems
     return locations;
   }
