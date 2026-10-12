@@ -46,7 +46,7 @@
     "cpy-cli": "^5.0.0",
     "cross-env": "^7.0.3",
     "css-loader": "^6.8.1",
-    "cssnano": "^6.0.1",
+    "cssnano": "^9.6.0",
     "devtools-protocol": "0.0.1222075",
     "eslint": "^8.53.0",
     "eslint-plugin-header": "^3.1.1",
