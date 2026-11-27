@@ -22,11 +22,7 @@ extends:
   parameters:
     workingDirectory: $(Build.SourcesDirectory)/packages/vscode-js-profile-table
     publishExtension: ${{ parameters.publishExtension }}
-    skipAPIScan: >-
-      ${{ or(eq(variables['Build.Reason'], 'PullRequest'),
-      not(or(eq(variables['Build.SourceBranch'], 'refs/heads/main'),
-      startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'),
-      startsWith(variables['Build.SourceBranch'], 'refs/tags/')))) }}
+    skipAPIScan: ${{ eq(variables['Build.Reason'], 'PullRequest') }}
     vscePackageArgs: --no-dependencies
     ghCreateRelease: true
     ghReleaseAddChangeLog: true
